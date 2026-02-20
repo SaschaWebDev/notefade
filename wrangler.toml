@@ -1,0 +1,17 @@
+name = "notefade-shard-api"
+main = "worker/index.ts"
+compatibility_date = "2024-12-01"
+
+# Development KV namespace (preview)
+[[kv_namespaces]]
+binding = "SHARDS"
+id = "PLACEHOLDER_KV_ID"
+preview_id = "PLACEHOLDER_PREVIEW_KV_ID"
+
+# Production environment
+[env.production]
+routes = [{ pattern = "shard-api.notefade.com", custom_domain = true }]
+
+[[env.production.kv_namespaces]]
+binding = "SHARDS"
+id = "PLACEHOLDER_PRODUCTION_KV_ID"
