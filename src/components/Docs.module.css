@@ -1,10 +1,10 @@
 .container {
-  padding: 28px 28px 36px;
+  padding: 36px 36px 44px;
 }
 
 .backLink {
   display: inline-block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.35);
   text-decoration: none;
@@ -17,7 +17,7 @@
 }
 
 .title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: #f5f5f5;
   margin: 0 0 8px;
@@ -25,7 +25,7 @@
 }
 
 .intro {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.4);
   margin: 0 0 28px;
@@ -44,7 +44,7 @@
 }
 
 .sectionTitle {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #f5f5f5;
   margin: 0 0 12px;
@@ -52,7 +52,7 @@
 }
 
 .paragraph {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.55);
   margin: 0 0 12px;
@@ -64,11 +64,11 @@
 }
 
 .detail {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.35);
-  padding: 12px 14px;
+  padding: 14px 16px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 10px;

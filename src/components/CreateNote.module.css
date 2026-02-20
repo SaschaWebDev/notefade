@@ -5,14 +5,14 @@
 
 .textarea {
   width: 100%;
-  min-height: 140px;
-  padding: 20px;
+  min-height: 260px;
+  padding: 28px;
   background: transparent;
   border: none;
   outline: none;
   resize: vertical;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 400;
   line-height: 1.6;
   color: #e0e0e0;
@@ -32,7 +32,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 20px;
+  padding: 16px 28px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -43,44 +43,58 @@
 }
 
 .ttlLabel {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.3);
   letter-spacing: 0.02em;
 }
 
-.ttlGroup {
+.ttlToggle {
+  position: relative;
   display: flex;
-  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 3px;
 }
 
-.ttlButton,
-.ttlButtonActive {
-  padding: 4px 10px;
-  font-size: 11px;
+.ttlSlider {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(100% / 3 - 2px);
+  height: calc(100% - 6px);
+  background: rgba(79, 143, 247, 0.15);
+  border: 1px solid rgba(79, 143, 247, 0.3);
+  border-radius: 6px;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.ttlOption {
+  position: relative;
+  z-index: 1;
+  padding: 5px 14px;
+  font-size: 13px;
   font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.35);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color 0.2s ease;
 }
 
-.ttlButton:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
+.ttlOption:hover:not(:disabled) {
   color: rgba(255, 255, 255, 0.6);
 }
 
-.ttlButtonActive {
-  background: rgba(79, 143, 247, 0.12);
-  border-color: rgba(79, 143, 247, 0.3);
+.ttlOptionActive {
   color: #4f8ff7;
 }
 
-.ttlButton:disabled,
-.ttlButtonActive:disabled {
+.ttlOption:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -92,7 +106,7 @@
 }
 
 .charCount {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.2);
   font-variant-numeric: tabular-nums;
@@ -103,11 +117,11 @@
 }
 
 .encryptButton {
-  padding: 6px 18px;
-  font-size: 13px;
+  padding: 10px 28px;
+  font-size: 15px;
   font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  border-radius: 8px;
+  border-radius: 10px;
   border: none;
   background: #4f8ff7;
   color: #ffffff;
@@ -125,8 +139,8 @@
 }
 
 .error {
-  padding: 10px 20px;
-  font-size: 12px;
+  padding: 14px 28px;
+  font-size: 14px;
   color: #f87171;
   border-top: 1px solid rgba(248, 113, 113, 0.1);
 }

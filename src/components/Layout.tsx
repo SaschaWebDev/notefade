@@ -63,7 +63,7 @@ export function Layout({ children, isDocs }: LayoutProps) {
           ))}
         </div>
 
-        <p className={styles.hint}>end-to-end encrypted in your browser</p>
+        <p className={styles.hint}>encrypted entirely in your browser</p>
       </div>
     </div>
   )

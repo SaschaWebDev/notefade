@@ -1,6 +1,6 @@
-import { useCreateNote } from '@/hooks/use-create-note'
-import { NoteLink } from './NoteLink'
-import styles from './CreateNote.module.css'
+import { useCreateNote } from '@/hooks/use-create-note';
+import { NoteLink } from './NoteLink';
+import styles from './CreateNote.module.css';
 
 export function CreateNote() {
   const {
@@ -17,10 +17,10 @@ export function CreateNote() {
     ttlOptions,
     handleCreate,
     resetNote,
-  } = useCreateNote()
+  } = useCreateNote();
 
   if (noteUrl) {
-    return <NoteLink url={noteUrl} onCreateAnother={resetNote} />
+    return <NoteLink url={noteUrl} onCreateAnother={resetNote} />;
   }
 
   return (
@@ -29,24 +29,26 @@ export function CreateNote() {
         className={`${styles.textarea} ${isOverLimit ? styles.textareaOver : ''}`}
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder="type your secret..."
+        placeholder='type your secret...'
         rows={5}
         disabled={loading}
       />
 
       <div className={styles.footer}>
         <div className={styles.footerLeft}>
-          <span className={styles.ttlLabel}>expires</span>
-          <div className={styles.ttlGroup}>
+          <span className={styles.ttlLabel}>self-destruct</span>
+          <div className={styles.ttlToggle}>
+            <div
+              className={styles.ttlSlider}
+              style={{
+                transform: `translateX(${ttlOptions.findIndex((o) => o.value === ttl) * 100}%)`,
+              }}
+            />
             {ttlOptions.map((opt) => (
               <button
                 key={opt.value}
-                type="button"
-                className={
-                  ttl === opt.value
-                    ? styles.ttlButtonActive
-                    : styles.ttlButton
-                }
+                type='button'
+                className={`${styles.ttlOption} ${ttl === opt.value ? styles.ttlOptionActive : ''}`}
                 onClick={() => setTtl(opt.value)}
                 disabled={loading}
               >
@@ -64,7 +66,7 @@ export function CreateNote() {
           </span>
 
           <button
-            type="button"
+            type='button'
             className={styles.encryptButton}
             onClick={handleCreate}
             disabled={isEmpty || isOverLimit || loading}
@@ -76,5 +78,5 @@ export function CreateNote() {
 
       {error && <div className={styles.error}>{error}</div>}
     </div>
-  )
+  );
 }
