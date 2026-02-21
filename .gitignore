@@ -2,8 +2,10 @@ node_modules/
 dist/
 dist-node/
 .wrangler/
+wrangler.toml
 .env
 .env.local
+.env.development
 .dev.vars
 *.tsbuildinfo
 
