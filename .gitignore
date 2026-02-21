@@ -6,6 +6,7 @@ wrangler.toml
 .env
 .env.local
 .env.development
+.env.production
 .dev.vars
 *.tsbuildinfo
 
