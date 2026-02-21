@@ -15,12 +15,37 @@
   justify-content: center;
 }
 
+.headingRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .heading {
   font-size: 18px;
   font-weight: 600;
   color: #f5f5f5;
   margin: 0 0 6px;
   letter-spacing: -0.01em;
+}
+
+.gearButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  margin-bottom: 6px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.gearButton:hover {
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .description {
@@ -30,18 +55,101 @@
   margin: 0 0 20px;
 }
 
+.settingsRow {
+  width: 100%;
+  margin-bottom: 16px;
+  animation: settings-in 0.15s ease;
+}
+
+.settingsLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.35);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.settingsInputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.baseUrlInput {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.baseUrlInput:focus {
+  border-color: rgba(79, 143, 247, 0.4);
+}
+
+.resetLink {
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  padding: 4px 8px;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.resetLink:hover {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+@keyframes settings-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .linkBox {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
   width: 100%;
   padding: 14px 16px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
-  margin-bottom: 14px;
-  overflow: hidden;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  text-align: left;
+  font-family: inherit;
+}
+
+.linkBox:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.linkBoxCopied {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.04);
+}
+
+.linkBoxCopied:hover {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.04);
 }
 
 .linkText {
-  display: block;
+  flex: 1;
+  min-width: 0;
   font-size: 13px;
   font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
   color: rgba(255, 255, 255, 0.5);
@@ -49,41 +157,62 @@
   line-height: 1.5;
 }
 
-.copyButton {
-  width: 100%;
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  border-radius: 10px;
-  border: none;
-  background: #4f8ff7;
-  color: #ffffff;
-  cursor: pointer;
+.copyIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
   transition: all 0.15s ease;
-  margin-bottom: 16px;
 }
 
-.copyButton:hover {
-  background: #3b7ee6;
+.linkBox:hover .copyIcon {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.copyButtonCopied {
-  background: #22c55e;
+.copiedHint {
+  position: absolute;
+  top: -24px;
+  right: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #22c55e;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: hint-in 0.2s ease;
+  opacity: 1;
+  transition: opacity 0.4s ease;
 }
 
-.copyButtonCopied:hover {
-  background: #22c55e;
+.copiedHintFading {
+  opacity: 0;
+}
+
+@keyframes hint-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .anotherLink {
-  font-size: 13px;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.35);
+  font-size: 15px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: #ffffff;
   text-decoration: none;
-  transition: color 0.15s ease;
+  padding: 10px 28px;
+  border: none;
+  border-radius: 10px;
+  background: #4f8ff7;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .anotherLink:hover {
-  color: rgba(255, 255, 255, 0.6);
+  background: #3b7ee6;
 }
