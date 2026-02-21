@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import { useReadNote } from '@/hooks/use-read-note';
 import { fromBase64Url, computeCheck } from '@/crypto';
+import { ContentFade } from './ContentFade';
 import { NoteGone } from './NoteGone';
 import styles from './ReadNote.module.css';
 
@@ -48,13 +49,29 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
   );
   const pathname = window.location.pathname;
 
-  // Show gone/error immediately (before disclaimer) if shard fetch resolved
-  if (!validationError && state.status === 'gone') {
-    return <NoteGone />;
-  }
+  // Derive state key for transitions
+  const stateKey = validationError
+    ? 'invalid'
+    : !confirmed && state.status === 'gone'
+      ? 'gone'
+      : !confirmed && state.status === 'error'
+        ? 'pre-error'
+        : !confirmed
+          ? 'disclaimer'
+          : state.status === 'loading' || state.status === 'idle'
+            ? 'loading'
+            : state.status === 'gone'
+              ? 'gone'
+              : state.status === 'error'
+                ? 'error'
+                : 'decrypted';
 
-  if (!validationError && !confirmed && state.status === 'error') {
-    return (
+  let content: ReactNode;
+
+  if (!validationError && state.status === 'gone') {
+    content = <NoteGone />;
+  } else if (!validationError && !confirmed && state.status === 'error') {
+    content = (
       <div className={styles.containerCentered}>
         <div className={styles.errorIcon}>
           <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
@@ -73,10 +90,8 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
         </a>
       </div>
     );
-  }
-
-  if (validationError) {
-    return (
+  } else if (validationError) {
+    content = (
       <div className={styles.containerCentered}>
         <div className={styles.errorIcon}>
           <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
@@ -96,10 +111,8 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
         </a>
       </div>
     );
-  }
-
-  if (!confirmed) {
-    return (
+  } else if (!confirmed) {
+    content = (
       <div className={styles.disclaimer}>
         <div className={styles.disclaimerIcon}>
           <svg width='24' height='24' viewBox='0 0 24 24' fill='none'>
@@ -154,23 +167,15 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
         </button>
       </div>
     );
-  }
-
-  if (state.status === 'idle' || state.status === 'loading') {
-    return (
+  } else if (state.status === 'idle' || state.status === 'loading') {
+    content = (
       <div className={styles.loadingContainer}>
         <div className={styles.spinner} />
         <span className={styles.loadingText}>decrypting...</span>
       </div>
     );
-  }
-
-  if (state.status === 'gone') {
-    return <NoteGone />;
-  }
-
-  if (state.status === 'error') {
-    return (
+  } else if (state.status === 'error') {
+    content = (
       <div className={styles.containerCentered}>
         <div className={styles.errorIcon}>
           <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
@@ -189,25 +194,27 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
         </a>
       </div>
     );
+  } else if (state.status === 'decrypted') {
+    content = (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h2 className={styles.heading}>decrypted note</h2>
+          <span className={styles.badge}>this note has self-destructed</span>
+        </div>
+
+        <div className={styles.noteContent}>{state.plaintext}</div>
+
+        <div className={styles.footer}>
+          <p className={styles.destroyNotice}>
+            this note has been read and permanently deleted from the server
+          </p>
+          <a href={pathname} className={styles.newLink}>
+            create another
+          </a>
+        </div>
+      </div>
+    );
   }
 
-  return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h2 className={styles.heading}>decrypted note</h2>
-        <span className={styles.badge}>this note has self-destructed</span>
-      </div>
-
-      <div className={styles.noteContent}>{state.plaintext}</div>
-
-      <div className={styles.footer}>
-        <p className={styles.destroyNotice}>
-          this note has been read and permanently deleted from the server
-        </p>
-        <a href={pathname} className={styles.newLink}>
-          create another
-        </a>
-      </div>
-    </div>
-  );
+  return <ContentFade contentKey={stateKey}>{content}</ContentFade>;
 }
