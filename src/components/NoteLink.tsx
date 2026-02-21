@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import styles from './NoteLink.module.css'
 
 const STORAGE_KEY = 'notefade-base-url'
@@ -58,6 +58,14 @@ export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
 
   const pathname = window.location.pathname
   const defaultBase = window.location.origin + pathname
+  const baseUrlInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (settingsOpen) {
+      baseUrlInputRef.current?.focus()
+      baseUrlInputRef.current?.select()
+    }
+  }, [settingsOpen])
 
   return (
     <div className={styles.container}>
@@ -108,6 +116,7 @@ export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
           <label className={styles.settingsLabel}>base url</label>
           <div className={styles.settingsInputRow}>
             <input
+              ref={baseUrlInputRef}
               type="text"
               className={styles.baseUrlInput}
               value={customBase || defaultBase}
@@ -126,8 +135,24 @@ export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
                 type="button"
                 className={styles.resetLink}
                 onClick={handleReset}
+                title="reset to default"
               >
-                reset
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path
+                    d="M1.5 1.5v4h4"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M2.1 8.5a5 5 0 108.4-4.6A5 5 0 002.1 5.5L1.5 5.5"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
             )}
           </div>
