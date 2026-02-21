@@ -29,6 +29,13 @@ export async function storeShard(
   return parsed.id
 }
 
+export async function checkShard(id: string): Promise<boolean> {
+  const res = await fetch(`${API_BASE}/shard/${encodeURIComponent(id)}`, {
+    method: 'HEAD',
+  })
+  return res.status === 200
+}
+
 export async function fetchShard(id: string): Promise<string | null> {
   const res = await fetch(`${API_BASE}/shard/${encodeURIComponent(id)}`)
 

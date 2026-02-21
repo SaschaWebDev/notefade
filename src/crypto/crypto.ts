@@ -129,6 +129,23 @@ export function fromBase64Url(str: string): Uint8Array {
   return bytes
 }
 
+// --- INTEGRITY CHECK (FNV-1a 32-bit) ---
+
+/** Compute a 4-byte FNV-1a hash of a string, returned as base64url (~6 chars) */
+export function computeCheck(payload: string): string {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < payload.length; i++) {
+    hash ^= payload.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  const bytes = new Uint8Array(4)
+  bytes[0] = (hash >>> 24) & 0xff
+  bytes[1] = (hash >>> 16) & 0xff
+  bytes[2] = (hash >>> 8) & 0xff
+  bytes[3] = hash & 0xff
+  return toBase64Url(bytes)
+}
+
 // --- FULL FLOW ---
 
 /** Sender creates a note: encrypts and splits key */

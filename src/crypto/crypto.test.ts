@@ -8,6 +8,7 @@ import {
   fromBase64Url,
   createNote,
   openNote,
+  computeCheck,
 } from './crypto'
 
 describe('toBase64Url / fromBase64Url', () => {
@@ -296,6 +297,43 @@ describe('createNote / openNote', () => {
     const note2 = await createNote('message two')
     // Using note1's payload with note2's shard should fail
     await expect(openNote(note1.urlPayload, note2.serverShard)).rejects.toThrow()
+  })
+})
+
+describe('computeCheck — URL integrity', () => {
+  it('produces consistent output for the same input', () => {
+    const payload = 'someBase64UrlPayload'
+    expect(computeCheck(payload)).toBe(computeCheck(payload))
+  })
+
+  it('produces different output for different inputs', () => {
+    const a = computeCheck('payloadA')
+    const b = computeCheck('payloadB')
+    expect(a).not.toBe(b)
+  })
+
+  it('produces URL-safe characters only', () => {
+    const check = computeCheck('test-payload-12345')
+    expect(check).toMatch(/^[A-Za-z0-9_-]+$/)
+  })
+
+  it('detects a single appended character', async () => {
+    const { urlPayload } = await createNote('hello')
+    const check = computeCheck(urlPayload)
+    expect(computeCheck(urlPayload + '3')).not.toBe(check)
+  })
+
+  it('detects a single removed character', async () => {
+    const { urlPayload } = await createNote('hello')
+    const check = computeCheck(urlPayload)
+    expect(computeCheck(urlPayload.slice(0, -1))).not.toBe(check)
+  })
+
+  it('detects a single changed character', async () => {
+    const { urlPayload } = await createNote('hello')
+    const check = computeCheck(urlPayload)
+    const corrupted = urlPayload.slice(0, -1) + (urlPayload.endsWith('A') ? 'B' : 'A')
+    expect(computeCheck(corrupted)).not.toBe(check)
   })
 })
 

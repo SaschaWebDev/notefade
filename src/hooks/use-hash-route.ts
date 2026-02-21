@@ -8,6 +8,7 @@ interface ReadRoute {
   mode: 'read'
   shardId: string
   urlPayload: string
+  check: string | null
 }
 
 export type HashRoute = CreateRoute | ReadRoute
@@ -24,13 +25,25 @@ function parseHash(): HashRoute {
   }
 
   const shardId = hash.slice(0, colonIndex)
-  const urlPayload = hash.slice(colonIndex + 1)
+  const rest = hash.slice(colonIndex + 1)
 
-  if (!shardId || !urlPayload) {
+  if (!shardId || !rest) {
     return { mode: 'create' }
   }
 
-  return { mode: 'read', shardId, urlPayload }
+  // New format: shardId:check:urlPayload (two colons)
+  // Old format: shardId:urlPayload (one colon)
+  const secondColon = rest.indexOf(':')
+  if (secondColon !== -1) {
+    const check = rest.slice(0, secondColon)
+    const urlPayload = rest.slice(secondColon + 1)
+    if (!check || !urlPayload) {
+      return { mode: 'create' }
+    }
+    return { mode: 'read', shardId, check, urlPayload }
+  }
+
+  return { mode: 'read', shardId, check: null, urlPayload: rest }
 }
 
 export function useHashRoute(): HashRoute {

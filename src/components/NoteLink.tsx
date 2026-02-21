@@ -10,6 +10,8 @@ interface NoteLinkProps {
 
 export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
   const [copyState, setCopyState] = useState<'idle' | 'shown' | 'fading'>('idle')
+  const [hasCopied, setHasCopied] = useState(false)
+  const [confirmingLeave, setConfirmingLeave] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [customBase, setCustomBase] = useState(
     () => localStorage.getItem(STORAGE_KEY) ?? ''
@@ -31,6 +33,8 @@ export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
       document.execCommand('copy')
       document.body.removeChild(input)
     }
+    setHasCopied(true)
+    setConfirmingLeave(false)
     setCopyState('shown')
     setTimeout(() => setCopyState('fading'), 1200)
     setTimeout(() => setCopyState('idle'), 1600)
@@ -77,7 +81,12 @@ export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
         <button
           type="button"
           className={styles.gearButton}
-          onClick={() => setSettingsOpen((prev) => !prev)}
+          onClick={() => setSettingsOpen((prev) => {
+            if (prev) {
+              handleReset()
+            }
+            return !prev
+          })}
           title="link settings"
         >
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
@@ -130,7 +139,16 @@ export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
         className={`${styles.linkBox} ${copied ? styles.linkBoxCopied : ''}`}
         onClick={handleCopy}
       >
-        <span className={styles.linkText}>{displayUrl}</span>
+        <span className={styles.linkText}>
+          {settingsOpen ? (
+            <>
+              <span className={styles.linkBase}>
+                {customBase ? customBase.replace(/\/+$/, '') + '/' : displayUrl.slice(0, displayUrl.indexOf('#'))}
+              </span>
+              {fragment}
+            </>
+          ) : displayUrl}
+        </span>
         <span className={styles.copyIcon} title={copied ? 'copied' : 'copy to clipboard'}>
           {copied ? (
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -168,15 +186,25 @@ export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
         )}
       </button>
 
+      {confirmingLeave && (
+        <div className={styles.confirmBanner}>
+          you haven't copied the link yet — it can't be recovered
+        </div>
+      )}
+
       <a
         href={pathname}
-        className={styles.anotherLink}
+        className={confirmingLeave ? styles.anotherLinkDanger : styles.anotherLink}
         onClick={(e) => {
           e.preventDefault()
+          if (!hasCopied && !confirmingLeave) {
+            setConfirmingLeave(true)
+            return
+          }
           onCreateAnother()
         }}
       >
-        create another
+        {confirmingLeave ? 'discard note' : 'create another'}
       </a>
     </div>
   )

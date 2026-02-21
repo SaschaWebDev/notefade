@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createNote } from '@/crypto'
+import { createNote, computeCheck } from '@/crypto'
 import { storeShard } from '@/api'
 
 const MAX_CHARS = 1800
@@ -48,7 +48,8 @@ export function useCreateNote(): UseCreateNoteReturn {
       const { urlPayload, serverShard } = await createNote(message)
       const id = await storeShard(serverShard, ttl)
       const pathname = window.location.pathname
-      const url = `${window.location.origin}${pathname}#${id}:${urlPayload}`
+      const check = computeCheck(urlPayload)
+      const url = `${window.location.origin}${pathname}#${id}:${check}:${urlPayload}`
       setNoteUrl(url)
       setMessage('')
     } catch (err) {

@@ -20,7 +20,7 @@ const StoreShardSchema = z.object({
 function corsHeaders(origin: string): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age': '86400',
   }
@@ -74,6 +74,17 @@ async function handleRequest(
     const id = crypto.randomUUID().slice(0, 8)
     await store.put(id, parsed.data.shard, parsed.data.ttl)
     return Response.json({ id }, { status: 201, headers })
+  }
+
+  // HEAD /shard/:id — check if shard exists (non-destructive)
+  if (request.method === 'HEAD' && url.pathname.startsWith('/shard/')) {
+    const id = url.pathname.slice('/shard/'.length)
+    if (!id) {
+      return new Response(null, { status: 400, headers })
+    }
+
+    const found = await store.exists(id)
+    return new Response(null, { status: found ? 200 : 404, headers })
   }
 
   // GET /shard/:id — fetch and delete shard

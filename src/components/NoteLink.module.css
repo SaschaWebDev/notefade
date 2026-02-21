@@ -95,19 +95,21 @@
 }
 
 .resetLink {
-  background: none;
-  border: none;
   font-size: 12px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.3);
+  color: #f5f5f5;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 8px 14px;
   white-space: nowrap;
-  transition: color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .resetLink:hover {
-  color: rgba(255, 255, 255, 0.55);
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.4);
 }
 
 @keyframes settings-in {
@@ -155,6 +157,14 @@
   color: rgba(255, 255, 255, 0.5);
   word-break: break-all;
   line-height: 1.5;
+}
+
+.linkBase {
+  color: rgba(79, 143, 247, 0.85);
+  background: rgba(79, 143, 247, 0.08);
+  border-radius: 3px;
+  padding: 1px 3px;
+  margin-right: 1px;
 }
 
 .copyIcon {
@@ -215,4 +225,36 @@
 
 .anotherLink:hover {
   background: #3b7ee6;
+}
+
+.confirmBanner {
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(239, 68, 68, 0.85);
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: 4px;
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  text-align: center;
+  animation: settings-in 0.15s ease;
+}
+
+.anotherLinkDanger {
+  font-size: 15px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: #f5f5f5;
+  text-decoration: none;
+  padding: 10px 28px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.15);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.anotherLinkDanger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.4);
 }

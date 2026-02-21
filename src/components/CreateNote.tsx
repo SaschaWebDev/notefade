@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useCreateNote } from '@/hooks/use-create-note';
+import { useTypewriter } from '@/hooks/use-typewriter';
 import { NoteLink } from './NoteLink';
 import styles from './CreateNote.module.css';
 
@@ -18,6 +20,9 @@ export function CreateNote() {
     handleCreate,
     resetNote,
   } = useCreateNote();
+  const [focused, setFocused] = useState(false);
+  const showTypewriter = isEmpty && !focused;
+  const placeholder = useTypewriter(showTypewriter);
 
   if (noteUrl) {
     return <NoteLink url={noteUrl} onCreateAnother={resetNote} />;
@@ -25,14 +30,23 @@ export function CreateNote() {
 
   return (
     <div className={styles.container}>
-      <textarea
-        className={`${styles.textarea} ${isOverLimit ? styles.textareaOver : ''}`}
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder='type your secret...'
-        rows={5}
-        disabled={loading}
-      />
+      <div className={styles.textareaWrap}>
+        <textarea
+          className={`${styles.textarea} ${isOverLimit ? styles.textareaOver : ''}`}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          rows={5}
+          disabled={loading}
+        />
+        {showTypewriter && (
+          <span className={styles.placeholder} aria-hidden>
+            {placeholder}
+            <span className={styles.cursor} />
+          </span>
+        )}
+      </div>
 
       <div className={styles.footer}>
         <div className={styles.footerLeft}>
@@ -59,11 +73,20 @@ export function CreateNote() {
         </div>
 
         <div className={styles.footerRight}>
-          <span
-            className={`${styles.charCount} ${isOverLimit ? styles.charCountOver : ''}`}
-          >
-            {message.length}/{maxChars}
-          </span>
+          {isOverLimit ? (
+            <button
+              type='button'
+              className={styles.truncateButton}
+              onClick={() => setMessage(message.slice(0, maxChars))}
+            >
+              <span>{message.length} chars</span>
+              <span>truncate to {maxChars}</span>
+            </button>
+          ) : (
+            <span className={styles.charCount}>
+              {message.length}/{maxChars}
+            </span>
+          )}
 
           <button
             type='button'

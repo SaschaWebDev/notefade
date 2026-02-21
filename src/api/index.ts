@@ -1,1 +1,1 @@
-export { storeShard, fetchShard } from './shard-api'
+export { storeShard, fetchShard, checkShard } from './shard-api'

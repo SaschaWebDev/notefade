@@ -3,6 +3,10 @@
   flex-direction: column;
 }
 
+.textareaWrap {
+  position: relative;
+}
+
 .textarea {
   width: 100%;
   min-height: 260px;
@@ -17,10 +21,37 @@
   line-height: 1.6;
   color: #e0e0e0;
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
-.textarea::placeholder {
+.placeholder {
+  position: absolute;
+  top: 28px;
+  left: 28px;
+  right: 28px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.6;
   color: rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+  white-space: pre-wrap;
+}
+
+.cursor {
+  display: inline-block;
+  width: 1.5px;
+  height: 1.1em;
+  background: rgba(255, 255, 255, 0.35);
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  animation: blink 0.6s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 .textareaOver {
@@ -112,8 +143,26 @@
   font-variant-numeric: tabular-nums;
 }
 
-.charCountOver {
-  color: #f87171;
+.truncateButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  line-height: 1.4;
+  color: #f5f5f5;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.truncateButton:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.4);
 }
 
 .encryptButton {

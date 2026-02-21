@@ -4,6 +4,8 @@ export interface ShardStore {
   put(id: string, shard: string, ttl: number): Promise<void>
   /** Fetch a shard by ID and delete it (one-time read). Returns null if not found. */
   get(id: string): Promise<string | null>
+  /** Check whether a shard exists without consuming it */
+  exists(id: string): Promise<boolean>
 }
 
 /** Cloudflare KV implementation of ShardStore */
@@ -23,6 +25,11 @@ export class CloudflareKVShardStore implements ShardStore {
     await this.kv.delete(id)
     return shard
   }
+
+  async exists(id: string): Promise<boolean> {
+    const shard = await this.kv.get(id)
+    return shard !== null
+  }
 }
 
 /** In-memory implementation for testing */
@@ -39,5 +46,9 @@ export class InMemoryShardStore implements ShardStore {
       this.store.delete(id)
     }
     return shard
+  }
+
+  async exists(id: string): Promise<boolean> {
+    return this.store.has(id)
   }
 }
