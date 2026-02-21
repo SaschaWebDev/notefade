@@ -43,7 +43,7 @@ export function Layout({ children, isDocs }: LayoutProps) {
           <a href="/" onClick={handleLogoClick} className={styles.logo}>
             notefade
           </a>
-          <p className={styles.tagline}>private notes that vanish</p>
+          <p className={styles.tagline}>private notes that <span className={styles.fade}>fade</span></p>
         </header>
 
         <div className={`${styles.palette} ${isDocs ? styles.paletteDocs : ''}`}>

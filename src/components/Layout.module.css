@@ -57,10 +57,22 @@
   letter-spacing: 0.02em;
 }
 
+.fade {
+  display: inline;
+  animation: blur-dissolve 3.5s ease-in-out infinite;
+}
+
+@keyframes blur-dissolve {
+  0%, 10% { filter: blur(0px); opacity: 1; }
+  35% { filter: blur(12px); opacity: 0; }
+  100% { filter: blur(0px); opacity: 1; }
+}
+
 /* The floating command palette card */
 .palette {
   width: 100%;
   max-width: 840px;
+  min-height: 342px;
   background: #1a1a1a;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
