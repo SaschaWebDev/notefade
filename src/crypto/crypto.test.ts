@@ -140,6 +140,25 @@ describe('encrypt / decrypt', () => {
     expect(decrypted).toBe(message)
   })
 
+  it('replaces lone surrogates with U+FFFD on round-trip', async () => {
+    // Lone surrogates are invalid Unicode — TextEncoder silently
+    // replaces them with U+FFFD (replacement character), so the
+    // decrypted output will NOT match the original input.
+    const lone = '\uD800'
+    const { ciphertext, iv, key } = await encrypt(lone)
+    const decrypted = await decrypt(ciphertext, iv, key)
+    expect(decrypted).not.toBe(lone)
+    expect(decrypted).toBe('\uFFFD')
+  })
+
+  it('replaces mixed lone surrogates with U+FFFD preserving valid chars', async () => {
+    const message = 'hello\uD800world\uDBFFend'
+    const { ciphertext, iv, key } = await encrypt(message)
+    const decrypted = await decrypt(ciphertext, iv, key)
+    expect(decrypted).not.toBe(message)
+    expect(decrypted).toBe('hello\uFFFDworld\uFFFDend')
+  })
+
   it('rejects tampered ciphertext', async () => {
     const { ciphertext, iv, key } = await encrypt('secret')
     // Flip a byte in the ciphertext
@@ -277,5 +296,194 @@ describe('createNote / openNote', () => {
     const note2 = await createNote('message two')
     // Using note1's payload with note2's shard should fail
     await expect(openNote(note1.urlPayload, note2.serverShard)).rejects.toThrow()
+  })
+})
+
+describe('stress tests — character encoding edge cases', () => {
+  // Helper: full round-trip through createNote/openNote and verify byte math
+  async function roundTrip(message: string) {
+    const { urlPayload, serverShard } = await createNote(message)
+    const decrypted = await openNote(urlPayload, serverShard)
+    return { decrypted, urlPayload, serverShard }
+  }
+
+  // --- Max-length payloads by script ---
+
+  it('max ASCII (1800 chars, 1 byte each)', async () => {
+    const message = 'a'.repeat(1800)
+    const { decrypted, urlPayload } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+    const rawBytes = fromBase64Url(urlPayload)
+    // urlShare(48) + iv(12) + plaintext(1800) + gcm tag(16)
+    expect(rawBytes.length).toBe(48 + 12 + 1800 + 16)
+  })
+
+  it('max CJK (1800 chars, 3 bytes each) — worst single-code-unit expansion', async () => {
+    const message = '中'.repeat(1800)
+    const { decrypted, urlPayload } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+    const rawBytes = fromBase64Url(urlPayload)
+    // 1800 CJK chars × 3 UTF-8 bytes = 5400 plaintext bytes
+    expect(rawBytes.length).toBe(48 + 12 + 5400 + 16)
+  })
+
+  it('max emoji (900 emoji, .length === 1800, 4 bytes each)', async () => {
+    const message = '😀'.repeat(900)
+    expect(message.length).toBe(1800) // surrogate pairs, 2 code units each
+    const { decrypted, urlPayload } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+    const rawBytes = fromBase64Url(urlPayload)
+    // 900 emoji × 4 UTF-8 bytes = 3600 plaintext bytes
+    expect(rawBytes.length).toBe(48 + 12 + 3600 + 16)
+  })
+
+  it('max Latin extended (1800 chars, 2 bytes each)', async () => {
+    const message = 'é'.repeat(1800)
+    const { decrypted, urlPayload } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+    const rawBytes = fromBase64Url(urlPayload)
+    // 1800 × 2 UTF-8 bytes = 3600 plaintext bytes
+    expect(rawBytes.length).toBe(48 + 12 + 3600 + 16)
+  })
+
+  // --- Invisible / zero-width characters ---
+
+  it('zero-width spaces (invisible but consume char budget)', async () => {
+    const message = '\u200B'.repeat(1800)
+    const { decrypted } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+    expect(decrypted.length).toBe(1800)
+  })
+
+  it('BOM characters — leading BOM stripped by TextDecoder', async () => {
+    // TextDecoder strips a leading U+FEFF (BOM) by default.
+    // A message of 500 BOMs decrypts to 499 because the first is consumed.
+    const message = '\uFEFF'.repeat(500)
+    const { decrypted } = await roundTrip(message)
+    expect(decrypted).not.toBe(message)
+    expect(decrypted).toBe('\uFEFF'.repeat(499))
+    expect(decrypted.length).toBe(499)
+  })
+
+  it('BOM after non-BOM prefix survives round-trip', async () => {
+    // Only a *leading* BOM is stripped — interior BOMs are preserved
+    const message = 'x' + '\uFEFF'.repeat(500)
+    const { decrypted } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+  })
+
+  it('LTR/RTL directional marks', async () => {
+    const message = '\u200Ehello\u200Fworld\u200E\u200F'.repeat(100)
+    const { decrypted } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+  })
+
+  it('mixed invisible characters', async () => {
+    // Zero-width space, zero-width non-joiner, zero-width joiner, word joiner
+    const message = '\u200B\u200C\u200D\u2060'.repeat(450)
+    const { decrypted } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+  })
+
+  // --- Zalgo text ---
+
+  it('Zalgo text — extreme combining diacriticals per visible char', async () => {
+    // Each combining mark is 2 UTF-8 bytes. Stack 20 marks on one letter.
+    const base = 'Z'
+    const marks = '\u0335\u0339\u0346\u034A\u034B\u034C\u0350\u0351\u0352\u0353'
+      + '\u0354\u0355\u0356\u0357\u0358\u035B\u035C\u035D\u035E\u035F'
+    const zalgoChar = base + marks // 1 visible char, 21 code units
+    const message = zalgoChar.repeat(85) // 85 × 21 = 1785 code units
+    const { decrypted } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+  })
+
+  // --- Null bytes and control characters ---
+
+  it('null bytes (1800 \\0 characters)', async () => {
+    const message = '\0'.repeat(1800)
+    const { decrypted } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+    expect(decrypted.length).toBe(1800)
+  })
+
+  it('only newlines', async () => {
+    const message = '\n'.repeat(1800)
+    const { decrypted } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+  })
+
+  it('all ASCII control characters (0x00–0x1F)', async () => {
+    let message = ''
+    for (let i = 0; i < 32; i++) message += String.fromCharCode(i)
+    const { decrypted } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+  })
+
+  it('DEL and high control characters', async () => {
+    // DEL (0x7F) and C1 control chars (0x80–0x9F)
+    let message = ''
+    for (let i = 0x7F; i <= 0x9F; i++) message += String.fromCharCode(i)
+    const { decrypted } = await roundTrip(message)
+    expect(decrypted).toBe(message)
+  })
+
+  // --- Lone surrogates through full flow ---
+
+  it('lone surrogates corrupt through full createNote/openNote flow', async () => {
+    const message = '\uD800secret\uDBFF'
+    const { decrypted } = await roundTrip(message)
+    // TextEncoder replaces lone surrogates with U+FFFD
+    expect(decrypted).not.toBe(message)
+    expect(decrypted).toBe('\uFFFDsecret\uFFFD')
+  })
+
+  it('lone low surrogate without preceding high surrogate', async () => {
+    const message = 'abc\uDC00def'
+    const { decrypted } = await roundTrip(message)
+    expect(decrypted).toBe('abc\uFFFDdef')
+  })
+
+  it('reversed surrogate pair (low before high)', async () => {
+    const message = '\uDC00\uD800'
+    const { decrypted } = await roundTrip(message)
+    // Both are lone surrogates — each replaced with U+FFFD
+    expect(decrypted).toBe('\uFFFD\uFFFD')
+  })
+
+  // --- Mixed worst-case ---
+
+  it('mixed scripts, emoji, surrogates, and zero-width chars', async () => {
+    // Valid parts round-trip; lone surrogates become U+FFFD
+    const message = 'a😀中\u200B\uD800é'.repeat(200)
+    const { decrypted } = await roundTrip(message)
+    const expected = 'a😀中\u200B\uFFFDé'.repeat(200)
+    expect(decrypted).toBe(expected)
+  })
+
+  // --- URL payload size verification ---
+
+  it('CJK payload is ~3x longer than ASCII payload for same char count', async () => {
+    const asciiMsg = 'a'.repeat(1000)
+    const cjkMsg = '中'.repeat(1000)
+    const ascii = await createNote(asciiMsg)
+    const cjk = await createNote(cjkMsg)
+    const asciiBytes = fromBase64Url(ascii.urlPayload).length
+    const cjkBytes = fromBase64Url(cjk.urlPayload).length
+    // CJK plaintext is 3x the bytes, but the 76-byte overhead is shared
+    // (76 + 3000) / (76 + 1000) ≈ 2.86
+    const ratio = (cjkBytes - 76) / (asciiBytes - 76)
+    expect(ratio).toBeCloseTo(3, 1)
+  })
+
+  it('base64url output length matches expected formula', async () => {
+    const message = 'test payload here'
+    const utf8Len = new TextEncoder().encode(message).length
+    const { urlPayload } = await createNote(message)
+    const rawLen = 48 + 12 + utf8Len + 16 // urlShare + iv + ciphertext(plaintext + gcm tag)
+    const expectedBase64Len = Math.ceil((rawLen * 4) / 3)
+    // base64url strips trailing '=', so length <= ceil(n*4/3)
+    expect(urlPayload.length).toBeLessThanOrEqual(expectedBase64Len)
+    expect(urlPayload.length).toBeGreaterThanOrEqual(expectedBase64Len - 2)
   })
 })
