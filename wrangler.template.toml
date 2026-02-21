@@ -5,8 +5,8 @@ compatibility_date = "2024-12-01"
 # Development KV namespace (preview)
 [[kv_namespaces]]
 binding = "SHARDS"
-id = "22ece35f219b45558583526db41a4592"
-preview_id = "f4ccf2e4266d487cbe9d71aaf534e5e0"
+id = "${CF_KV_SHARDS_ID}"
+preview_id = "${CF_KV_SHARDS_PREVIEW_ID}"
 
 # Production environment
 [env.production]
@@ -14,4 +14,4 @@ routes = [{ pattern = "shard-api.notefade.com", custom_domain = true }]
 
 [[env.production.kv_namespaces]]
 binding = "SHARDS"
-id = "22ece35f219b45558583526db41a4592"
+id = "${CF_KV_SHARDS_ID}"

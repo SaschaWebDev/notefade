@@ -9,8 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "worker:dev": "wrangler dev worker/index.ts --port 8787",
-    "worker:deploy": "wrangler deploy worker/index.ts",
+    "worker:config": "node scripts/gen-wrangler-config.cjs",
+    "worker:dev": "node scripts/gen-wrangler-config.cjs && wrangler dev worker/index.ts --port 8787",
+    "worker:deploy": "node scripts/gen-wrangler-config.cjs && wrangler deploy worker/index.ts",
     "deploy": "yarn build && wrangler pages deploy dist/"
   },
   "dependencies": {
