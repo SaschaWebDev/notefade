@@ -1,6 +1,6 @@
 import { useHashRoute } from '@/hooks'
 import { Layout } from '@/components/Layout'
-import { CreateNote } from '@/components/CreateNote'
+import { Landing } from '@/components/Landing'
 import { ReadNote } from '@/components/ReadNote'
 import { Docs } from '@/components/Docs'
 
@@ -15,13 +15,13 @@ export function App() {
     )
   }
 
+  if (route.mode === 'create') {
+    return <Landing />
+  }
+
   return (
     <Layout>
-      {route.mode === 'create' ? (
-        <CreateNote />
-      ) : (
-        <ReadNote shardId={route.shardId} urlPayload={route.urlPayload} />
-      )}
+      <ReadNote shardId={route.shardId} urlPayload={route.urlPayload} />
     </Layout>
   )
 }
