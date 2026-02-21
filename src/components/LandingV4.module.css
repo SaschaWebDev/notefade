@@ -1,0 +1,373 @@
+/* ---- Sections ---- */
+
+.section {
+  position: relative;
+  z-index: 1;
+  padding: 100px 24px 120px;
+}
+
+.sectionInner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.sectionLabel {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 56px;
+}
+
+.divider {
+  position: relative;
+  z-index: 1;
+  width: 160px;
+  height: 1px;
+  margin: 0 auto;
+  background: linear-gradient(to right, transparent, rgba(79, 143, 247, 0.25), transparent);
+}
+
+/* ============================================================
+   Architecture Diagram
+   ============================================================ */
+
+.diagramWrapper {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto 72px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 600px;
+}
+
+/* ---- Nodes ---- */
+
+.node {
+  fill: rgba(79, 143, 247, 0.05);
+  stroke: rgba(79, 143, 247, 0.18);
+  stroke-width: 1;
+  transition: fill 0.3s ease;
+}
+
+.nodeSplit {
+  fill: rgba(79, 143, 247, 0.08);
+  stroke: rgba(79, 143, 247, 0.3);
+  stroke-width: 1.5;
+  filter: url(#v4-glow);
+}
+
+.nodeRecipient {
+  fill: rgba(79, 143, 247, 0.06);
+  stroke: rgba(79, 143, 247, 0.22);
+  stroke-width: 1;
+}
+
+.nodeGone {
+  fill: rgba(255, 80, 80, 0.04);
+  stroke: rgba(255, 80, 80, 0.2);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  opacity: 0.6;
+}
+
+.nodeLabel {
+  fill: #e0e0e0;
+  font-size: 13px;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+.nodeSubLabel {
+  fill: rgba(255, 255, 255, 0.35);
+  font-size: 10px;
+  font-weight: 400;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+.branchLabel {
+  fill: rgba(79, 143, 247, 0.4);
+  font-size: 10px;
+  font-weight: 400;
+  text-anchor: middle;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-style: italic;
+}
+
+.arrowHead {
+  fill: rgba(79, 143, 247, 0.4);
+}
+
+/* ---- Connector lines (static base) ---- */
+
+.connector {
+  stroke: rgba(79, 143, 247, 0.12);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+/* ---- Animated flow lines ---- */
+
+.flowLine,
+.flowLineUp,
+.flowLineDown,
+.flowLineConvergeUp,
+.flowLineConvergeDown {
+  stroke: url(#v4-strokeGrad);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 8 16;
+  animation: flowDash 2.4s linear infinite;
+}
+
+.flowLineUp {
+  animation-delay: 0.4s;
+}
+
+.flowLineDown {
+  animation-delay: 0.6s;
+}
+
+.flowLineConvergeUp {
+  animation-delay: 0.8s;
+}
+
+.flowLineConvergeDown {
+  animation-delay: 1.0s;
+}
+
+@keyframes flowDash {
+  from {
+    stroke-dashoffset: 48;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ============================================================
+   Explanation Cards (3 column grid)
+   ============================================================ */
+
+.explanationGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.explanationCard {
+  padding: 28px 24px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition:
+    border-color 0.3s ease,
+    background 0.3s ease;
+}
+
+.explanationCard:hover {
+  border-color: rgba(79, 143, 247, 0.2);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.explanationTitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #f0f0f0;
+  margin: 0 0 12px;
+  letter-spacing: 0.01em;
+}
+
+.explanationBody {
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ============================================================
+   Comparison Table
+   ============================================================ */
+
+.tableWrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.comparisonTable {
+  width: 100%;
+  min-width: 540px;
+  border-collapse: collapse;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+.comparisonTable th,
+.comparisonTable td {
+  padding: 14px 20px;
+  text-align: left;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* ---- Table header ---- */
+
+.thLabel {
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 400;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.thNotefade {
+  color: rgba(79, 143, 247, 0.85);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  background: rgba(79, 143, 247, 0.04);
+  border-bottom: 1px solid rgba(79, 143, 247, 0.12);
+}
+
+.thTypical {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ---- Table rows ---- */
+
+.rowEven td {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.rowOdd td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rowEven:hover td,
+.rowOdd:hover td {
+  background: rgba(79, 143, 247, 0.03);
+}
+
+.tdLabel {
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 500;
+}
+
+.tdNotefade {
+  color: rgba(79, 143, 247, 0.8);
+  font-weight: 500;
+  border-left: 1px solid rgba(79, 143, 247, 0.08);
+  border-right: 1px solid rgba(79, 143, 247, 0.08);
+  background: rgba(79, 143, 247, 0.02);
+}
+
+.tdTypical {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 400;
+}
+
+/* Notefade column highlight in even/odd rows */
+.rowEven .tdNotefade {
+  background: rgba(79, 143, 247, 0.035);
+}
+
+.rowOdd .tdNotefade {
+  background: rgba(79, 143, 247, 0.05);
+}
+
+.rowEven:hover .tdNotefade,
+.rowOdd:hover .tdNotefade {
+  background: rgba(79, 143, 247, 0.06);
+}
+
+/* ---- Table footnote ---- */
+
+.tableFootnote {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.3);
+  line-height: 1.6;
+  margin-top: 32px;
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .explanationGrid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .section {
+    padding: 80px 24px 100px;
+  }
+
+  .sectionLabel {
+    margin-bottom: 40px;
+  }
+
+  .diagramWrapper {
+    margin-bottom: 56px;
+  }
+}
+
+@media (max-width: 600px) {
+  .section {
+    padding: 64px 16px 80px;
+  }
+
+  .sectionLabel {
+    font-size: 13px;
+    margin-bottom: 32px;
+  }
+
+  .explanationCard {
+    padding: 22px 18px;
+  }
+
+  .explanationTitle {
+    font-size: 16px;
+  }
+
+  .explanationBody {
+    font-size: 13px;
+  }
+
+  .comparisonTable th,
+  .comparisonTable td {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
+  .tableFootnote {
+    font-size: 12px;
+    margin-top: 24px;
+  }
+}

@@ -1,0 +1,251 @@
+/* ---- Bento Dashboard Section ---- */
+
+.section {
+  position: relative;
+  z-index: 1;
+  padding: 100px 24px 120px;
+}
+
+.sectionInner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.sectionLabel {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 56px;
+}
+
+/* ---- Bento Grid ---- */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ---- Card ---- */
+
+.card {
+  position: relative;
+  padding: 32px 28px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    background 0.35s ease;
+  overflow: hidden;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(79, 143, 247, 0) 0%,
+    rgba(79, 143, 247, 0) 100%
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+  transition: background 0.35s ease;
+}
+
+.card:hover {
+  border-color: rgba(79, 143, 247, 0.25);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow:
+    0 0 32px rgba(79, 143, 247, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.card:hover::before {
+  background: linear-gradient(
+    135deg,
+    rgba(79, 143, 247, 0.15) 0%,
+    rgba(79, 143, 247, 0.03) 50%,
+    rgba(79, 143, 247, 0.1) 100%
+  );
+}
+
+/* ---- Wide card (spans 2 columns) ---- */
+
+.cardWide {
+  grid-column: 1 / -1;
+}
+
+/* ---- Highlighted card (16 bytes) ---- */
+
+.cardHighlight {
+  border-color: rgba(79, 143, 247, 0.15);
+  background: rgba(79, 143, 247, 0.03);
+}
+
+.cardHighlight:hover {
+  border-color: rgba(79, 143, 247, 0.35);
+  background: rgba(79, 143, 247, 0.05);
+  box-shadow:
+    0 0 48px rgba(79, 143, 247, 0.1),
+    0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* ---- Card content ---- */
+
+.cardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(79, 143, 247, 0.08);
+  border: 1px solid rgba(79, 143, 247, 0.12);
+  margin-bottom: 20px;
+  color: rgba(79, 143, 247, 0.7);
+  flex-shrink: 0;
+}
+
+.cardTitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #f0f0f0;
+  margin: 0 0 10px;
+  letter-spacing: 0.01em;
+}
+
+.cardBody {
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ---- Wide card layout ---- */
+
+.cardWideLayout {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+}
+
+.cardWideContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.flowSteps {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.flowStep {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(79, 143, 247, 0.7);
+  background: rgba(79, 143, 247, 0.06);
+  border: 1px solid rgba(79, 143, 247, 0.1);
+  border-radius: 8px;
+  padding: 6px 14px;
+  white-space: nowrap;
+}
+
+.flowArrow {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  user-select: none;
+}
+
+/* ---- 16-byte accent number ---- */
+
+.byteNumber {
+  font-size: 48px;
+  font-weight: 200;
+  color: rgba(79, 143, 247, 0.25);
+  line-height: 1;
+  margin-bottom: 4px;
+  letter-spacing: -0.03em;
+}
+
+.byteUnit {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(79, 143, 247, 0.4);
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cardWide {
+    grid-column: 1;
+  }
+
+  .cardWideLayout {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .section {
+    padding: 80px 24px;
+  }
+
+  .byteNumber {
+    font-size: 40px;
+  }
+
+  .flowSteps {
+    gap: 8px;
+  }
+
+  .flowStep {
+    font-size: 12px;
+    padding: 5px 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .section {
+    padding: 64px 16px;
+  }
+
+  .card {
+    padding: 24px 20px;
+  }
+
+  .sectionLabel {
+    margin-bottom: 40px;
+  }
+
+  .cardTitle {
+    font-size: 16px;
+  }
+
+  .cardBody {
+    font-size: 14px;
+  }
+}

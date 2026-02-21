@@ -1,0 +1,350 @@
+/* ---- V1: Terminal Manuscript ---- */
+
+.section {
+  position: relative;
+  z-index: 1;
+  padding: 100px 24px 120px;
+}
+
+.terminal {
+  max-width: 640px;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0d0d0d;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 80px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(56, 203, 137, 0.04);
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+}
+
+/* ---- Window chrome ---- */
+
+.chrome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #1a1a1a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.chromeDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.chromeDotRed {
+  background: #ff5f57;
+}
+
+.chromeDotYellow {
+  background: #febc2e;
+}
+
+.chromeDotGreen {
+  background: #28c840;
+}
+
+.chromeTitle {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.04em;
+  margin-right: 44px; /* balance the dots on the left */
+}
+
+/* ---- Terminal body ---- */
+
+.body {
+  padding: 24px 0;
+}
+
+/* ---- Log entries ---- */
+
+.logSection {
+  padding: 0 20px;
+}
+
+.logEntry {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  font-size: 13px;
+  line-height: 2;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.lineNum {
+  flex-shrink: 0;
+  width: 28px;
+  text-align: right;
+  margin-right: 16px;
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 11px;
+  user-select: none;
+}
+
+.timestamp {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.25);
+  margin-right: 12px;
+}
+
+.label {
+  flex-shrink: 0;
+  font-weight: 600;
+  margin-right: 12px;
+  min-width: 68px;
+}
+
+.labelWrite {
+  color: rgba(56, 203, 137, 0.9);
+}
+
+.labelEncrypt {
+  color: rgba(56, 203, 137, 0.9);
+}
+
+.labelSplit {
+  color: rgba(56, 203, 137, 0.9);
+}
+
+.labelStore {
+  color: rgba(247, 196, 67, 0.9);
+}
+
+.labelRead {
+  color: rgba(79, 143, 247, 0.9);
+}
+
+.labelGone {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.desc {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.descGone {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* ---- Separator within terminal ---- */
+
+.termSep {
+  margin: 20px 20px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ---- ASCII diagram ---- */
+
+.diagramSection {
+  padding: 0 20px;
+}
+
+.diagramHeader {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+}
+
+.ascii {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(56, 203, 137, 0.55);
+  white-space: pre;
+  overflow-x: auto;
+  padding: 0;
+  margin: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+/* ---- Query section ---- */
+
+.querySection {
+  padding: 0 20px;
+}
+
+.promptLine {
+  display: flex;
+  align-items: baseline;
+  font-size: 13px;
+  line-height: 2;
+  margin-bottom: 8px;
+}
+
+.promptSymbol {
+  color: rgba(56, 203, 137, 0.7);
+  margin-right: 8px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.promptCmd {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.queryResult {
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 2;
+}
+
+.queryKey {
+  color: rgba(255, 255, 255, 0.25);
+  margin-right: 8px;
+}
+
+.queryValGreen {
+  color: rgba(56, 203, 137, 0.7);
+}
+
+.queryValDim {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.queryValAmber {
+  color: rgba(247, 196, 67, 0.7);
+}
+
+/* ---- Blinking cursor ---- */
+
+.cursorLine {
+  display: flex;
+  align-items: baseline;
+  font-size: 13px;
+  line-height: 2;
+  padding: 8px 20px 4px;
+}
+
+.cursor {
+  display: inline-block;
+  width: 8px;
+  height: 15px;
+  background: rgba(56, 203, 137, 0.7);
+  margin-left: 8px;
+  animation: blink 1.1s step-end infinite;
+  vertical-align: text-bottom;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 768px) {
+  .section {
+    padding: 80px 16px 100px;
+  }
+
+  .terminal {
+    max-width: 100%;
+  }
+
+  .logEntry {
+    font-size: 12px;
+  }
+
+  .lineNum {
+    width: 22px;
+    margin-right: 10px;
+    font-size: 10px;
+  }
+
+  .label {
+    min-width: 58px;
+  }
+
+  .ascii {
+    font-size: 10.5px;
+  }
+
+  .queryResult {
+    padding-left: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .section {
+    padding: 56px 10px 72px;
+  }
+
+  .body {
+    padding: 16px 0;
+  }
+
+  .logSection,
+  .diagramSection,
+  .querySection {
+    padding: 0 12px;
+  }
+
+  .termSep {
+    margin: 16px 12px;
+  }
+
+  .logEntry {
+    font-size: 11px;
+    line-height: 1.85;
+  }
+
+  .lineNum {
+    width: 18px;
+    margin-right: 8px;
+    font-size: 9px;
+  }
+
+  .timestamp {
+    display: none;
+  }
+
+  .label {
+    min-width: 52px;
+    font-size: 11px;
+  }
+
+  .ascii {
+    font-size: 9px;
+    line-height: 1.45;
+  }
+
+  .chrome {
+    padding: 10px 12px;
+  }
+
+  .chromeTitle {
+    font-size: 11px;
+    margin-right: 36px;
+  }
+
+  .chromeDot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .promptLine,
+  .queryResult {
+    font-size: 11px;
+  }
+
+  .cursorLine {
+    padding: 8px 12px 4px;
+  }
+}
