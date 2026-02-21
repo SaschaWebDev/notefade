@@ -55,7 +55,7 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
 
   if (!validationError && !confirmed && state.status === 'error') {
     return (
-      <div className={styles.container}>
+      <div className={styles.containerCentered}>
         <div className={styles.errorIcon}>
           <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
             <circle cx='10' cy='10' r='10' fill='rgba(248,113,113,0.12)' />
@@ -69,7 +69,7 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
         </div>
         <p className={styles.errorMessage}>{state.message}</p>
         <a href={pathname} className={styles.newLink}>
-          create a note
+          create note
         </a>
       </div>
     );
@@ -77,7 +77,7 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
 
   if (validationError) {
     return (
-      <div className={styles.container}>
+      <div className={styles.containerCentered}>
         <div className={styles.errorIcon}>
           <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
             <circle cx='10' cy='10' r='10' fill='rgba(248,113,113,0.12)' />
@@ -92,7 +92,7 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
         <h2 className={styles.heading}>invalid link</h2>
         <p className={styles.errorMessage}>{validationError}</p>
         <a href={pathname} className={styles.newLink}>
-          create a note
+          create note
         </a>
       </div>
     );
@@ -171,7 +171,7 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
 
   if (state.status === 'error') {
     return (
-      <div className={styles.container}>
+      <div className={styles.containerCentered}>
         <div className={styles.errorIcon}>
           <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
             <circle cx='10' cy='10' r='10' fill='rgba(248,113,113,0.12)' />
@@ -185,7 +185,7 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
         </div>
         <p className={styles.errorMessage}>{state.message}</p>
         <a href={pathname} className={styles.newLink}>
-          create a note
+          create note
         </a>
       </div>
     );
@@ -205,7 +205,7 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
           this note has been read and permanently deleted from the server
         </p>
         <a href={pathname} className={styles.newLink}>
-          create your own
+          create another
         </a>
       </div>
     </div>

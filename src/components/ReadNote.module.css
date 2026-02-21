@@ -28,8 +28,127 @@
   color: rgba(255, 255, 255, 0.35);
 }
 
+.disclaimer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 32px;
+  text-align: center;
+}
+
+.disclaimerIcon {
+  margin-bottom: 16px;
+}
+
+.disclaimerHeading {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f5f5f5;
+  margin: 0 0 10px;
+  letter-spacing: -0.01em;
+}
+
+.disclaimerText {
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.5;
+  margin: 0 0 8px;
+}
+
+.disclaimerText strong {
+  color: #f5f5f5;
+  font-weight: 600;
+}
+
+.disclaimerDetail {
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.3);
+  line-height: 1.6;
+  margin: 0 0 28px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.checkbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  margin-top: 1px;
+  transition: all 0.15s ease;
+}
+
+.checkbox:checked {
+  background: #4f8ff7;
+  border-color: #4f8ff7;
+}
+
+.checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+.checkboxText {
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.4;
+}
+
+.revealButton {
+  width: 100%;
+  max-width: 280px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  border-radius: 10px;
+  border: none;
+  background: #4f8ff7;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.revealButton:hover:not(:disabled) {
+  background: #3b7ee6;
+}
+
+.revealButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .container {
   padding: 32px;
+}
+
+.containerCentered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 44px 32px;
 }
 
 .errorIcon {
@@ -66,11 +185,11 @@
 .badge {
   font-size: 11px;
   font-weight: 500;
-  color: rgba(79, 143, 247, 0.8);
-  background: rgba(79, 143, 247, 0.1);
-  border: 1px solid rgba(79, 143, 247, 0.2);
-  border-radius: 20px;
-  padding: 3px 10px;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 4px;
+  padding: 4px 10px;
   letter-spacing: 0.02em;
 }
 
@@ -103,13 +222,20 @@
 }
 
 .newLink {
-  font-size: 13px;
-  font-weight: 400;
-  color: #4f8ff7;
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: #ffffff;
   text-decoration: none;
-  transition: opacity 0.15s ease;
+  padding: 10px 28px;
+  border: none;
+  border-radius: 10px;
+  background: #4f8ff7;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .newLink:hover {
-  opacity: 0.7;
+  background: #3b7ee6;
 }
