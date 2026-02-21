@@ -1,0 +1,11 @@
+.wrapper {
+  transition: opacity 180ms ease;
+}
+
+.visible {
+  opacity: 1;
+}
+
+.hidden {
+  opacity: 0;
+}
