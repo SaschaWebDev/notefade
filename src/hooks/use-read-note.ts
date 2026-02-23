@@ -2,10 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { openNote } from '@/crypto'
 import { checkShard, fetchShard } from '@/api'
 
+const PLAINTEXT_TTL_MS = 5 * 60 * 1000 // 5 minutes
+
 type ReadState =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'decrypted'; plaintext: string }
+  | { status: 'faded' }
   | { status: 'gone' }
   | { status: 'error'; message: string }
 
@@ -57,6 +60,17 @@ export function useReadNote(
       cancelled = true
     }
   }, [shardId])
+
+  // Auto-clear plaintext after timeout
+  useEffect(() => {
+    if (state.status !== 'decrypted') return
+
+    const timer = setTimeout(() => {
+      setState({ status: 'faded' })
+    }, PLAINTEXT_TTL_MS)
+
+    return () => clearTimeout(timer)
+  }, [state.status])
 
   // Phase 2: Destructive fetch + decrypt (only after confirmation)
   useEffect(() => {

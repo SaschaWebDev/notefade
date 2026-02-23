@@ -17,6 +17,9 @@ export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
     () => localStorage.getItem(STORAGE_KEY) ?? ''
   )
 
+  const pathname = window.location.pathname
+  const defaultBase = window.location.origin + pathname
+
   const fragment = url.includes('#') ? url.slice(url.indexOf('#')) : ''
   const displayUrl = customBase
     ? customBase.replace(/\/+$/, '') + '/' + fragment
@@ -40,6 +43,16 @@ export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
     setTimeout(() => setCopyState('idle'), 1600)
   }, [displayUrl])
 
+  const isValidBaseUrl = (url: string): boolean => {
+    if (!url) return true
+    return url.startsWith('https://') ||
+      url.startsWith('http://localhost') ||
+      url.startsWith('http://127.0.0.1')
+  }
+
+  const isCustom = Boolean(customBase) && customBase !== defaultBase
+  const isUnsafeBase = isCustom && !isValidBaseUrl(customBase)
+
   const handleBaseChange = (value: string) => {
     setCustomBase(value)
     if (value) {
@@ -56,8 +69,6 @@ export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
 
   const copied = copyState !== 'idle'
 
-  const pathname = window.location.pathname
-  const defaultBase = window.location.origin + pathname
   const baseUrlInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -118,7 +129,7 @@ export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
             <input
               ref={baseUrlInputRef}
               type="text"
-              className={styles.baseUrlInput}
+              className={`${styles.baseUrlInput} ${isUnsafeBase ? styles.baseUrlInputUnsafe : ''}`}
               value={customBase || defaultBase}
               onChange={(e) => handleBaseChange(e.target.value)}
               onFocus={(e) => {
@@ -156,6 +167,11 @@ export function NoteLink({ url, onCreateAnother }: NoteLinkProps) {
               </button>
             )}
           </div>
+          {isUnsafeBase && (
+            <p className={styles.unsafeWarning}>
+              non-https base URL — links may not be secure
+            </p>
+          )}
         </div>
       )}
 

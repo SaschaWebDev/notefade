@@ -33,6 +33,10 @@ export function splitKey(key: Uint8Array): {
   // Server stores only first 16 bytes of xorShare
   const serverShard = xorShare.slice(0, 16)
 
+  // Zero intermediate values (best-effort)
+  mask.fill(0)
+  xorShare.fill(0)
+
   return { urlShare, serverShard }
 }
 

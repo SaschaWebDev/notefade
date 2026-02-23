@@ -64,7 +64,9 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
               ? 'gone'
               : state.status === 'error'
                 ? 'error'
-                : 'decrypted';
+                : state.status === 'faded'
+                  ? 'faded'
+                  : 'decrypted';
 
   let content: ReactNode;
 
@@ -189,6 +191,29 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
           </svg>
         </div>
         <p className={styles.errorMessage}>{state.message}</p>
+        <a href={pathname} className={styles.newLink}>
+          create note
+        </a>
+      </div>
+    );
+  } else if (state.status === 'faded') {
+    content = (
+      <div className={styles.containerCentered}>
+        <div className={styles.stateIcon}>
+          <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
+            <circle cx='10' cy='10' r='10' fill='rgba(255,255,255,0.05)' />
+            <path
+              d='M6 10h8'
+              stroke='rgba(255,255,255,0.3)'
+              strokeWidth='1.5'
+              strokeLinecap='round'
+            />
+          </svg>
+        </div>
+        <h2 className={styles.stateHeading}>note has faded</h2>
+        <p className={styles.stateSubheading}>
+          the decrypted content has been cleared from memory for your security
+        </p>
         <a href={pathname} className={styles.newLink}>
           create note
         </a>

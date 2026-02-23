@@ -94,8 +94,8 @@
     <line x1="1" y1="1" x2="23" y2="23"></line>
   </svg>
   <text x="200" y="440" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">4. Build Secure URL</text>
-  <text x="200" y="465" text-anchor="middle" font-size="13" fill="#CBD5E1">notefade.com/#&lt;id&gt;:&lt;payload&gt;</text>
-  <text x="200" y="485" text-anchor="middle" font-size="13" fill="#CBD5E1">Fragment (#) hides data from server</text>
+  <text x="200" y="465" text-anchor="middle" font-size="13" fill="#CBD5E1">notefade.com/#&lt;id&gt;:&lt;check&gt;:&lt;payload&gt;</text>
+  <text x="200" y="485" text-anchor="middle" font-size="13" fill="#CBD5E1">FNV-1a integrity check + # hides data</text>
 
   <!-- SERVER: Box 3 -->
   <rect x="470" y="260" width="260" height="90" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>
@@ -112,15 +112,15 @@
   <rect x="470" y="560" width="260" height="90" rx="8" fill="#1E293B" stroke="#FB7185" stroke-width="2"/>
   <rect x="470" y="560" width="260" height="4" fill="#FB7185" rx="2"/>
   <text x="600" y="585" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">6. Fetch &amp; Auto-Delete</text>
-  <text x="600" y="610" text-anchor="middle" font-size="13" fill="#CBD5E1">Server returns 16b shard and</text>
-  <text x="600" y="630" text-anchor="middle" font-size="13" fill="#CBD5E1">instantly <tspan fill="#FB7185" font-weight="bold">deletes</tspan> it forever.</text>
+  <text x="600" y="610" text-anchor="middle" font-size="13" fill="#CBD5E1">Server returns 16b shard, then</text>
+  <text x="600" y="630" text-anchor="middle" font-size="13" fill="#CBD5E1"><tspan fill="#FB7185" font-weight="bold">deletes</tspan> it (non-atomic, near-instant)</text>
 
   <!-- RECIPIENT: Box 5 -->
   <rect x="870" y="420" width="260" height="80" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>
   <rect x="870" y="420" width="260" height="4" fill="#10B981" rx="2"/>
   <text x="1000" y="445" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">5. Open Link</text>
-  <text x="1000" y="470" text-anchor="middle" font-size="13" fill="#CBD5E1">Recipient opens URL</text>
-  <text x="1000" y="488" text-anchor="middle" font-size="13" fill="#CBD5E1">Client extracts encrypted payload</text>
+  <text x="1000" y="470" text-anchor="middle" font-size="13" fill="#CBD5E1">Disclaimer shown, HEAD pre-check</text>
+  <text x="1000" y="488" text-anchor="middle" font-size="13" fill="#CBD5E1">User confirms before destructive read</text>
 
   <!-- RECIPIENT: Box 7 -->
   <rect x="870" y="565" width="260" height="80" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>

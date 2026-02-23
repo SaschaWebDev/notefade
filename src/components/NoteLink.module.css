@@ -94,6 +94,21 @@
   border-color: rgba(79, 143, 247, 0.4);
 }
 
+.baseUrlInputUnsafe {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.baseUrlInputUnsafe:focus {
+  border-color: rgba(245, 158, 11, 0.6);
+}
+
+.unsafeWarning {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(245, 158, 11, 0.85);
+  margin: 6px 0 0;
+}
+
 .resetLink {
   display: flex;
   align-items: center;
