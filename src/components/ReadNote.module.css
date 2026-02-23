@@ -264,3 +264,15 @@
 .newLink:hover {
   background: #3b7ee6;
 }
+
+.customServerBanner {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(245, 158, 11, 0.85);
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  border-radius: 6px;
+  padding: 6px 14px;
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}

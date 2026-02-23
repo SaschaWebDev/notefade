@@ -107,7 +107,7 @@ export async function decrypt(
   return new TextDecoder().decode(decrypted)
 }
 
-// --- BASE64URL ENCODING ---
+// --- BASE64URL ENCODING (bytes) ---
 
 export function toBase64Url(bytes: Uint8Array): string {
   // Chunk to avoid call stack overflow on large arrays
@@ -131,6 +131,16 @@ export function fromBase64Url(str: string): Uint8Array {
     bytes[i] = binary.charCodeAt(i)
   }
   return bytes
+}
+
+// --- BASE64URL ENCODING (strings) ---
+
+export function stringToBase64Url(str: string): string {
+  return toBase64Url(new TextEncoder().encode(str))
+}
+
+export function stringFromBase64Url(encoded: string): string {
+  return new TextDecoder().decode(fromBase64Url(encoded))
 }
 
 // --- INTEGRITY CHECK (FNV-1a 32-bit) ---

@@ -7,6 +7,8 @@ export {
   decrypt,
   toBase64Url,
   fromBase64Url,
+  stringToBase64Url,
+  stringFromBase64Url,
   computeCheck,
 } from './crypto'
 export type { SplitResult } from './crypto'

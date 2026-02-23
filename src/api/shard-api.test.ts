@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { storeShard, fetchShard } from './shard-api'
+import { storeShard, fetchShard, checkShard } from './shard-api'
 
 const mockFetch = vi.fn()
 
@@ -45,6 +45,54 @@ describe('storeShard', () => {
 
     await expect(storeShard('shard', 86400)).rejects.toThrow()
   })
+
+  it('uses custom apiBase when provided', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: 'custom123' }),
+    })
+
+    const id = await storeShard('c2hhcmQ', 86400, 'https://custom.example.com')
+    expect(id).toBe('custom123')
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://custom.example.com/shard',
+      expect.objectContaining({
+        method: 'POST',
+      }),
+    )
+  })
+})
+
+describe('checkShard', () => {
+  it('sends HEAD request to default base', async () => {
+    mockFetch.mockResolvedValueOnce({ status: 200 })
+
+    const exists = await checkShard('abc123')
+    expect(exists).toBe(true)
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/shard/abc123',
+      expect.objectContaining({ method: 'HEAD' }),
+    )
+  })
+
+  it('uses custom apiBase when provided', async () => {
+    mockFetch.mockResolvedValueOnce({ status: 200 })
+
+    const exists = await checkShard('abc123', 'https://custom.example.com')
+    expect(exists).toBe(true)
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://custom.example.com/shard/abc123',
+      expect.objectContaining({ method: 'HEAD' }),
+    )
+  })
+
+  it('returns false on non-200', async () => {
+    mockFetch.mockResolvedValueOnce({ status: 404 })
+
+    const exists = await checkShard('nonexistent')
+    expect(exists).toBe(false)
+  })
 })
 
 describe('fetchShard', () => {
@@ -87,5 +135,19 @@ describe('fetchShard', () => {
     })
 
     await expect(fetchShard('id')).rejects.toThrow()
+  })
+
+  it('uses custom apiBase when provided', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ shard: 'customShard' }),
+    })
+
+    const shard = await fetchShard('abc123', 'https://custom.example.com')
+    expect(shard).toBe('customShard')
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://custom.example.com/shard/abc123',
+    )
   })
 })

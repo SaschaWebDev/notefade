@@ -9,6 +9,7 @@ interface ReadNoteProps {
   shardId: string;
   urlPayload: string;
   check: string | null;
+  apiUrl: string | null;
 }
 
 function validateFragment(
@@ -35,7 +36,15 @@ function validateFragment(
   return null
 }
 
-export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
+function extractHostname(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
+
+export function ReadNote({ shardId, urlPayload, check, apiUrl }: ReadNoteProps) {
   const [confirmed, setConfirmed] = useState(false);
   const [checked, setChecked] = useState(false);
   const validationError = useMemo(
@@ -46,6 +55,7 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
     validationError ? '' : shardId,
     urlPayload,
     confirmed && !validationError,
+    apiUrl,
   );
   const pathname = window.location.pathname;
 
@@ -138,6 +148,12 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
         <h2 className={styles.disclaimerHeading}>
           someone sent you a private note
         </h2>
+
+        {apiUrl && (
+          <div className={styles.customServerBanner}>
+            shard stored on: {extractHostname(apiUrl)}
+          </div>
+        )}
         <p className={styles.disclaimerText}>
           this note can only be read <strong>once</strong>
         </p>

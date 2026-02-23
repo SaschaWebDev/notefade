@@ -215,6 +215,113 @@
   cursor: not-allowed;
 }
 
+.gearButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.gearButton:hover {
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.gearButtonActive {
+  color: #4f8ff7;
+}
+
+.gearButtonActive:hover {
+  color: #4f8ff7;
+  background: rgba(79, 143, 247, 0.1);
+}
+
+.byosPanel {
+  padding: 12px 28px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  animation: byos-in 0.15s ease;
+}
+
+@keyframes byos-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.byosLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.35);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.byosInputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.byosInput {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.byosInput:focus {
+  border-color: rgba(79, 143, 247, 0.4);
+}
+
+.byosInputUnsafe {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.byosInputUnsafe:focus {
+  border-color: rgba(245, 158, 11, 0.6);
+}
+
+.byosReset {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  color: rgba(239, 68, 68, 0.7);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.byosReset:hover {
+  color: rgba(239, 68, 68, 0.95);
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.byosWarning {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(245, 158, 11, 0.85);
+  margin: 6px 0 0;
+}
+
 .error {
   padding: 14px 28px;
   font-size: 14px;

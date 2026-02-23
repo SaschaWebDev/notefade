@@ -22,6 +22,7 @@ export function useReadNote(
   shardId: string,
   urlPayload: string,
   confirmed: boolean,
+  apiUrl?: string | null,
 ): UseReadNoteReturn {
   const [state, setState] = useState<ReadState>({ status: 'idle' })
 
@@ -30,6 +31,8 @@ export function useReadNote(
   const checkPromiseRef = useRef<Promise<boolean> | null>(null)
   const fetchPromiseRef = useRef<Promise<string | null> | null>(null)
 
+  const apiBase = apiUrl ?? undefined
+
   // Phase 1: Non-destructive existence check (HEAD)
   useEffect(() => {
     if (!shardId) return
@@ -37,7 +40,7 @@ export function useReadNote(
     let cancelled = false
 
     if (!checkPromiseRef.current) {
-      checkPromiseRef.current = checkShard(shardId)
+      checkPromiseRef.current = checkShard(shardId, apiBase)
     }
 
     async function probe() {
@@ -59,7 +62,7 @@ export function useReadNote(
     return () => {
       cancelled = true
     }
-  }, [shardId])
+  }, [shardId, apiBase])
 
   // Auto-clear plaintext after timeout
   useEffect(() => {
@@ -81,7 +84,7 @@ export function useReadNote(
     let cancelled = false
 
     if (!fetchPromiseRef.current) {
-      fetchPromiseRef.current = fetchShard(shardId)
+      fetchPromiseRef.current = fetchShard(shardId, apiBase)
     }
 
     async function load() {
@@ -125,7 +128,7 @@ export function useReadNote(
     return () => {
       cancelled = true
     }
-  }, [shardId, urlPayload, confirmed])
+  }, [shardId, urlPayload, confirmed, apiBase])
 
   return { state }
 }

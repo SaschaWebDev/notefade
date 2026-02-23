@@ -6,6 +6,8 @@ import {
   decrypt,
   toBase64Url,
   fromBase64Url,
+  stringToBase64Url,
+  stringFromBase64Url,
   createNote,
   openNote,
   computeCheck,
@@ -334,6 +336,38 @@ describe('computeCheck — URL integrity', () => {
     const check = computeCheck(urlPayload)
     const corrupted = urlPayload.slice(0, -1) + (urlPayload.endsWith('A') ? 'B' : 'A')
     expect(computeCheck(corrupted)).not.toBe(check)
+  })
+})
+
+describe('stringToBase64Url / stringFromBase64Url', () => {
+  it('round-trips ASCII strings', () => {
+    const str = 'https://my-worker.example.com'
+    expect(stringFromBase64Url(stringToBase64Url(str))).toBe(str)
+  })
+
+  it('round-trips unicode strings', () => {
+    const str = 'https://例え.jp/api'
+    expect(stringFromBase64Url(stringToBase64Url(str))).toBe(str)
+  })
+
+  it('round-trips empty string', () => {
+    expect(stringFromBase64Url(stringToBase64Url(''))).toBe('')
+  })
+
+  it('produces URL-safe characters only', () => {
+    const encoded = stringToBase64Url('https://example.com/some/path?q=1')
+    expect(encoded).toMatch(/^[A-Za-z0-9_-]*$/)
+  })
+
+  it('does not contain @ character', () => {
+    // Important: @ is our BYOS delimiter, must not appear in encoded output
+    const encoded = stringToBase64Url('https://example.com')
+    expect(encoded).not.toContain('@')
+  })
+
+  it('round-trips long URLs', () => {
+    const str = 'https://my-very-long-subdomain.workers.dev/api/v2/shards'
+    expect(stringFromBase64Url(stringToBase64Url(str))).toBe(str)
   })
 })
 

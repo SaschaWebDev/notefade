@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { createNote, computeCheck } from '@/crypto'
+import { createNote, computeCheck, stringToBase64Url } from '@/crypto'
 import { storeShard } from '@/api'
 
 const MAX_CHARS = 1800
+const API_URL_STORAGE_KEY = 'notefade-api-url'
 
 const TTL_OPTIONS = [
   { label: '1h', value: 3600 },
@@ -24,6 +25,10 @@ interface UseCreateNoteReturn {
   isEmpty: boolean
   maxChars: number
   ttlOptions: readonly TTLOption[]
+  apiUrl: string
+  setApiUrl: (url: string) => void
+  resetApiUrl: () => void
+  isCustomServer: boolean
   handleCreate: () => Promise<void>
   resetNote: () => void
 }
@@ -34,9 +39,27 @@ export function useCreateNote(): UseCreateNoteReturn {
   const [noteUrl, setNoteUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [apiUrl, setApiUrlState] = useState(
+    () => localStorage.getItem(API_URL_STORAGE_KEY) ?? '',
+  )
 
   const isOverLimit = message.length > MAX_CHARS
   const isEmpty = message.trim().length === 0
+  const isCustomServer = apiUrl.length > 0
+
+  const setApiUrl = (url: string) => {
+    setApiUrlState(url)
+    if (url) {
+      localStorage.setItem(API_URL_STORAGE_KEY, url)
+    } else {
+      localStorage.removeItem(API_URL_STORAGE_KEY)
+    }
+  }
+
+  const resetApiUrl = () => {
+    setApiUrlState('')
+    localStorage.removeItem(API_URL_STORAGE_KEY)
+  }
 
   const handleCreate = async () => {
     if (isEmpty || isOverLimit || loading) return
@@ -46,10 +69,11 @@ export function useCreateNote(): UseCreateNoteReturn {
 
     try {
       const { urlPayload, serverShard } = await createNote(message)
-      const id = await storeShard(serverShard, ttl)
+      const id = await storeShard(serverShard, ttl, isCustomServer ? apiUrl : undefined)
       const pathname = window.location.pathname
       const check = computeCheck(urlPayload)
-      const url = `${window.location.origin}${pathname}#${id}:${check}:${urlPayload}`
+      const apiSuffix = isCustomServer ? `@${stringToBase64Url(apiUrl)}` : ''
+      const url = `${window.location.origin}${pathname}#${id}:${check}:${urlPayload}${apiSuffix}`
       setNoteUrl(url)
       setMessage('')
     } catch (err) {
@@ -80,6 +104,10 @@ export function useCreateNote(): UseCreateNoteReturn {
     isEmpty,
     maxChars: MAX_CHARS,
     ttlOptions: TTL_OPTIONS,
+    apiUrl,
+    setApiUrl,
+    resetApiUrl,
+    isCustomServer,
     handleCreate,
     resetNote,
   }

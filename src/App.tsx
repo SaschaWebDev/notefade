@@ -21,7 +21,7 @@ export function App() {
 
   return (
     <Layout>
-      <ReadNote shardId={route.shardId} urlPayload={route.urlPayload} check={route.check} />
+      <ReadNote shardId={route.shardId} urlPayload={route.urlPayload} check={route.check} apiUrl={route.apiUrl} />
     </Layout>
   )
 }
