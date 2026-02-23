@@ -34,6 +34,15 @@ export function Docs() {
         touches a server. Here's what happens at each step.
       </p>
 
+      <section id="architecture" className={styles.section}>
+        <h2 className={styles.sectionTitle}>architecture</h2>
+        <img
+          src="/notefade-architecture.svg"
+          alt="Notefade security architecture diagram showing the zero-knowledge encryption flow"
+          className={styles.architectureDiagram}
+        />
+      </section>
+
       <section id="encryption" className={styles.section}>
         <h2 className={styles.sectionTitle}>AES-256 encrypted</h2>
         <p className={styles.paragraph}>

@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 830" width="100%" height="100%" style="background-color: #0B1120; font-family: system-ui, -apple-system, sans-serif;">
+  <!-- Background Grid -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1E293B" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94A3B8"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="830" fill="url(#grid)"/>
+
+  <!-- Header -->
+  <text x="600" y="50" text-anchor="middle" font-size="28" font-weight="900" fill="#F8FAFC">Notefade.com Security Architecture</text>
+  <text x="600" y="80" text-anchor="middle" font-size="16" fill="#94A3B8">Zero-Knowledge, One-Time Secret Sharing via AES-256-GCM &amp; XOR Key Splitting</text>
+
+  <!-- Zone Backgrounds -->
+  <!-- Sender Zone -->
+  <rect x="40" y="110" width="320" height="460" rx="12" fill="none" stroke="#38BDF8" stroke-width="2" stroke-dasharray="6 6" opacity="0.3"/>
+  <text x="60" y="135" fill="#38BDF8" font-weight="bold" font-size="13" letter-spacing="1">SENDER (Local Browser)</text>
+  
+  <!-- Server Zone -->
+  <rect x="440" y="200" width="320" height="470" rx="12" fill="#1E293B" stroke="#A78BFA" stroke-width="2" stroke-dasharray="6 6" opacity="0.4"/>
+  <text x="460" y="225" fill="#A78BFA" font-weight="bold" font-size="13" letter-spacing="1">NOTEFADE SERVER (CF KV)</text>
+
+  <!-- Recipient Zone -->
+  <rect x="840" y="340" width="320" height="440" rx="12" fill="none" stroke="#10B981" stroke-width="2" stroke-dasharray="6 6" opacity="0.3"/>
+  <text x="860" y="365" fill="#10B981" font-weight="bold" font-size="13" letter-spacing="1">RECIPIENT (Local Browser)</text>
+
+  <!-- ==================== PATHS & ARROWS ==================== -->
+  
+  <!-- Arrow 1: Write -> Encrypt -->
+  <path d="M 200 230 L 200 260" fill="none" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <!-- Arrow 2: Encrypt -> Store Shard -->
+  <path d="M 330 305 L 470 305" fill="none" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="345" y="280" width="115" height="20" fill="#0B1120"/>
+  <text x="400" y="294" text-anchor="middle" font-size="12" fill="#94A3B8">Sends 16-byte Shard</text>
+
+  <!-- Arrow 3: Encrypt -> Build URL -->
+  <path d="M 200 350 L 200 415" fill="none" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="205" y="368" width="110" height="32" fill="#0B1120"/>
+  <text x="210" y="380" font-size="12" fill="#94A3B8">48b URL Share + IV</text>
+  <text x="210" y="395" font-size="12" fill="#94A3B8">+ Ciphertext</text>
+
+  <!-- Arrow 4: Build URL -> Open URL -->
+  <path d="M 330 460 L 870 460" fill="none" stroke="#94A3B8" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrow)"/>
+  <rect x="495" y="446" width="210" height="28" rx="14" fill="#1E293B" stroke="#475569" stroke-width="1"/>
+  <text x="600" y="465" text-anchor="middle" fill="#94A3B8" font-size="12" font-weight="bold">Shared via out-of-band channel</text>
+
+  <!-- Arrow 5: Open URL -> Fetch Shard -->
+  <path d="M 870 480 L 780 480 L 780 585 L 730 585" fill="none" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="785" y="518" width="50" height="20" fill="#0B1120"/>
+  <text x="790" y="532" font-size="12" font-family="monospace" fill="#94A3B8">GET /id</text>
+
+  <!-- Arrow 6: Server -> Reconstruct Key -->
+  <path d="M 730 625 L 870 625" fill="none" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="760" y="600" width="80" height="20" fill="#0B1120"/>
+  <text x="800" y="614" text-anchor="middle" font-size="12" fill="#94A3B8">Returns Shard</text>
+
+  <!-- Arrow 7: Open URL -> Reconstruct Key -->
+  <path d="M 1000 500 L 1000 565" fill="none" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="1005" y="520" width="80" height="20" fill="#0B1120"/>
+  <text x="1010" y="534" font-size="12" fill="#94A3B8">URL Payload</text>
+
+  <!-- Arrow 8: Reconstruct Key -> Decrypt -->
+  <path d="M 1000 645 L 1000 690" fill="none" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="1005" y="655" width="120" height="20" fill="#0B1120"/>
+  <text x="1010" y="669" font-size="12" fill="#94A3B8">Reconstructed Key</text>
+
+  <!-- ==================== BOXES ==================== -->
+  
+  <!-- SENDER: Box 1 -->
+  <rect x="70" y="160" width="260" height="70" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <rect x="70" y="160" width="260" height="4" fill="#38BDF8" rx="2"/>
+  <text x="200" y="185" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">1. Write Note</text>
+  <text x="200" y="210" text-anchor="middle" font-size="13" fill="#CBD5E1">User types message in browser</text>
+
+  <!-- SENDER: Box 2 -->
+  <rect x="70" y="260" width="260" height="90" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <rect x="70" y="260" width="260" height="4" fill="#38BDF8" rx="2"/>
+  <svg x="305" y="270" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+  </svg>
+  <text x="200" y="285" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">2. Local Encrypt &amp; Split</text>
+  <text x="200" y="310" text-anchor="middle" font-size="13" fill="#CBD5E1">AES-256-GCM encryption</text>
+  <text x="200" y="330" text-anchor="middle" font-size="13" fill="#CBD5E1">XOR split into 48b (URL) &amp; 16b (Server)</text>
+
+  <!-- SENDER: Box 4 -->
+  <rect x="70" y="415" width="260" height="90" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <rect x="70" y="415" width="260" height="4" fill="#38BDF8" rx="2"/>
+  <svg x="305" y="425" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+    <line x1="1" y1="1" x2="23" y2="23"></line>
+  </svg>
+  <text x="200" y="440" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">4. Build Secure URL</text>
+  <text x="200" y="465" text-anchor="middle" font-size="13" fill="#CBD5E1">notefade.com/#&lt;id&gt;:&lt;payload&gt;</text>
+  <text x="200" y="485" text-anchor="middle" font-size="13" fill="#CBD5E1">Fragment (#) hides data from server</text>
+
+  <!-- SERVER: Box 3 -->
+  <rect x="470" y="260" width="260" height="90" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <rect x="470" y="260" width="260" height="4" fill="#A78BFA" rx="2"/>
+  <svg x="705" y="270" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+  </svg>
+  <text x="600" y="285" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">3. Store Ephemeral Shard</text>
+  <text x="600" y="310" text-anchor="middle" font-size="13" fill="#CBD5E1">Stores 16-byte XOR shard in CF KV</text>
+  <text x="600" y="330" text-anchor="middle" font-size="13" fill="#CBD5E1">Zero encrypted content stored</text>
+
+  <!-- SERVER: Box 6 (Delete) -->
+  <rect x="470" y="560" width="260" height="90" rx="8" fill="#1E293B" stroke="#FB7185" stroke-width="2"/>
+  <rect x="470" y="560" width="260" height="4" fill="#FB7185" rx="2"/>
+  <text x="600" y="585" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">6. Fetch &amp; Auto-Delete</text>
+  <text x="600" y="610" text-anchor="middle" font-size="13" fill="#CBD5E1">Server returns 16b shard and</text>
+  <text x="600" y="630" text-anchor="middle" font-size="13" fill="#CBD5E1">instantly <tspan fill="#FB7185" font-weight="bold">deletes</tspan> it forever.</text>
+
+  <!-- RECIPIENT: Box 5 -->
+  <rect x="870" y="420" width="260" height="80" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <rect x="870" y="420" width="260" height="4" fill="#10B981" rx="2"/>
+  <text x="1000" y="445" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">5. Open Link</text>
+  <text x="1000" y="470" text-anchor="middle" font-size="13" fill="#CBD5E1">Recipient opens URL</text>
+  <text x="1000" y="488" text-anchor="middle" font-size="13" fill="#CBD5E1">Client extracts encrypted payload</text>
+
+  <!-- RECIPIENT: Box 7 -->
+  <rect x="870" y="565" width="260" height="80" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <rect x="870" y="565" width="260" height="4" fill="#10B981" rx="2"/>
+  <text x="1000" y="590" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">7. Reconstruct Key</text>
+  <text x="1000" y="615" text-anchor="middle" font-size="13" fill="#CBD5E1">URL Share ⊕ Server Shard = Key</text>
+  <text x="1000" y="633" text-anchor="middle" font-size="13" fill="#CBD5E1">(Information-theoretic split)</text>
+
+  <!-- RECIPIENT: Box 8 -->
+  <rect x="870" y="690" width="260" height="80" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <rect x="870" y="690" width="260" height="4" fill="#10B981" rx="2"/>
+  <svg x="1105" y="700" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+  </svg>
+  <text x="1000" y="715" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">8. Decrypt Note</text>
+  <text x="1000" y="740" text-anchor="middle" font-size="13" fill="#CBD5E1">Note is decrypted locally.</text>
+  <text x="1000" y="758" text-anchor="middle" font-size="13" fill="#CBD5E1">Link is now permanently dead.</text>
+
+  <!-- ==================== SECURITY BADGES ==================== -->
+  
+  <rect x="470" y="370" width="260" height="30" rx="15" fill="#312E81" stroke="#4338CA" stroke-width="1"/>
+  <text x="600" y="390" text-anchor="middle" fill="#818CF8" font-size="12" font-weight="bold">✓ Shard is meaningless on its own</text>
+
+  <rect x="70" y="525" width="260" height="30" rx="15" fill="#064E3B" stroke="#047857" stroke-width="1"/>
+  <text x="200" y="545" text-anchor="middle" fill="#34D399" font-size="12" font-weight="bold">✓ Fragment (#) never sent to server</text>
+
+  <!-- Footer Text -->
+  <text x="600" y="800" text-anchor="middle" font-size="13" fill="#64748B">"Read once, gone forever." — notefade.com</text>
+
+</svg>
