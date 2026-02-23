@@ -71,10 +71,11 @@
   <!-- ==================== BOXES ==================== -->
   
   <!-- SENDER: Box 1 -->
-  <rect x="70" y="160" width="260" height="70" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <rect x="70" y="160" width="260" height="85" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>
   <rect x="70" y="160" width="260" height="4" fill="#38BDF8" rx="2"/>
   <text x="200" y="185" text-anchor="middle" font-size="15" font-weight="bold" fill="#F8FAFC">1. Write Note</text>
   <text x="200" y="210" text-anchor="middle" font-size="13" fill="#CBD5E1">User types message in browser</text>
+  <text x="200" y="230" text-anchor="middle" font-size="13" fill="#CBD5E1">(max 1800 chars)</text>
 
   <!-- SENDER: Box 2 -->
   <rect x="70" y="260" width="260" height="90" rx="8" fill="#1E293B" stroke="#334155" stroke-width="2"/>

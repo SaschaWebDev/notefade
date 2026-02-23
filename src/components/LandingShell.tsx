@@ -74,7 +74,7 @@ const FAQ_ITEMS = [
   {
     question: 'What encryption do you use?',
     answer:
-      'AES-256-GCM via the Web Crypto API built into your browser. No external crypto libraries. AES-256 has so many possible keys that brute-forcing it would take longer than the remaining life of the universe — even with every computer on Earth working together. This encrypts your content and then embeds it directly into the shareable link. The key is generated fresh for each note, then split using XOR — a mathematically proven unbreakable split where with only one piece, every other possible key is equally likely. It\u2019s not just hard to crack, it\u2019s impossible regardless of computing power. The larger piece lives in your link, and the smallest possible ephemeral shard is stored on our server that self-destructs after one read. Both pieces must reunite to decrypt.',
+      'AES-256-GCM via the Web Crypto API built into your browser. No external crypto libraries. AES-256 has so many possible keys that brute-forcing it would take longer than the remaining life of the universe — even with every computer on Earth working together. This encrypts your content and then embeds it directly into the shareable link. The key is generated fresh for each note, then split using XOR — a mathematically proven unbreakable split where with only one piece, every other possible key is equally likely. It\u2019s not just hard to crack, it\u2019s impossible regardless of computing power. The larger piece lives in your link (FNV-1a integrity check), and the smallest possible ephemeral shard is stored on our server that self-destructs after one read. Both pieces must reunite to decrypt.',
   },
   {
     question: 'Do I need an account?',
@@ -146,8 +146,12 @@ function DomainIndicator() {
   const isOfficial = OFFICIAL_HOSTS.includes(window.location.hostname);
 
   return (
-    <div className={`${styles.domainIndicator} ${isOfficial ? styles.domainOfficial : styles.domainWarning}`}>
-      <span className={`${styles.domainDot} ${isOfficial ? styles.domainDotOfficial : styles.domainDotWarning}`} />
+    <div
+      className={`${styles.domainIndicator} ${isOfficial ? styles.domainOfficial : styles.domainWarning}`}
+    >
+      <span
+        className={`${styles.domainDot} ${isOfficial ? styles.domainDotOfficial : styles.domainDotWarning}`}
+      />
       <span className={styles.domainText}>
         {isOfficial
           ? 'you are visiting via notefade.com \u2014 the official website'

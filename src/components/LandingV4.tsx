@@ -46,7 +46,12 @@ const COMPARISON: readonly ComparisonRow[] = [
   {
     label: 'Accounts required',
     notefade: 'none',
-    typical: 'usually',
+    typical: 'some',
+  },
+  {
+    label: 'Both parties online at same time',
+    notefade: 'no',
+    typical: 'some',
   },
 ];
 
