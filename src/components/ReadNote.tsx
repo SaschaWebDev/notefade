@@ -93,19 +93,19 @@ export function ReadNote({ shardId, urlPayload, check }: ReadNoteProps) {
   } else if (validationError) {
     content = (
       <div className={styles.containerCentered}>
-        <div className={styles.errorIcon}>
+        <div className={styles.stateIcon}>
           <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
-            <circle cx='10' cy='10' r='10' fill='rgba(248,113,113,0.12)' />
+            <circle cx='10' cy='10' r='10' fill='rgba(255,255,255,0.05)' />
             <path
-              d='M10 6v5M10 13.5v.5'
-              stroke='#f87171'
+              d='M7 7l6 6M13 7l-6 6'
+              stroke='rgba(255,255,255,0.3)'
               strokeWidth='1.5'
               strokeLinecap='round'
             />
           </svg>
         </div>
-        <h2 className={styles.heading}>invalid link</h2>
-        <p className={styles.errorMessage}>{validationError}</p>
+        <h2 className={styles.stateHeading}>invalid link</h2>
+        <p className={styles.stateSubheading}>{validationError}</p>
         <a href={pathname} className={styles.newLink}>
           create note
         </a>
