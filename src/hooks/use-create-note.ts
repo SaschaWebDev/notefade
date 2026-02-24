@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createNote, computeCheck } from '@/crypto'
+import { createNote, computeCheck, protectFragment } from '@/crypto'
 import { storeShard, createAdapter, encodeProviderConfig } from '@/api'
 import type { ProviderConfig, ProviderType } from '@/api/provider-types'
 
@@ -44,6 +44,8 @@ interface UseCreateNoteReturn {
   ttl: number
   setTtl: (ttl: number) => void
   noteUrl: string | null
+  shardId: string | null
+  expiresAt: number
   loading: boolean
   error: string | null
   isOverLimit: boolean
@@ -56,6 +58,10 @@ interface UseCreateNoteReturn {
   isCustomServer: boolean
   providerType: ProviderType | null
   setProviderType: (type: ProviderType) => void
+  password: string
+  setPassword: (pw: string) => void
+  passwordEnabled: boolean
+  setPasswordEnabled: (enabled: boolean) => void
   handleCreate: () => Promise<void>
   resetNote: () => void
 }
@@ -64,11 +70,15 @@ export function useCreateNote(): UseCreateNoteReturn {
   const [message, setMessage] = useState('')
   const [ttl, setTtl] = useState(86400)
   const [noteUrl, setNoteUrl] = useState<string | null>(null)
+  const [shardId, setShardId] = useState<string | null>(null)
+  const [expiresAt, setExpiresAt] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [providerConfig, setProviderConfigState] = useState<ProviderConfig | null>(
     loadProviderConfig,
   )
+  const [password, setPasswordState] = useState('')
+  const [passwordEnabled, setPasswordEnabledState] = useState(false)
 
   const isOverLimit = message.length > MAX_CHARS
   const isEmpty = message.trim().length === 0
@@ -87,6 +97,17 @@ export function useCreateNote(): UseCreateNoteReturn {
   const resetProvider = () => {
     setProviderConfigState(null)
     localStorage.removeItem(PROVIDER_STORAGE_KEY)
+  }
+
+  const setPassword = (pw: string) => {
+    setPasswordState(pw)
+  }
+
+  const setPasswordEnabled = (enabled: boolean) => {
+    setPasswordEnabledState(enabled)
+    if (!enabled) {
+      setPasswordState('')
+    }
   }
 
   const setProviderType = (type: ProviderType) => {
@@ -164,11 +185,23 @@ export function useCreateNote(): UseCreateNoteReturn {
       } else {
         id = await storeShard(serverShard, ttl)
       }
+      setShardId(id)
 
       const pathname = window.location.pathname
       const check = computeCheck(urlPayload)
       const configSuffix = providerConfig ? `@${encodeProviderConfig(providerConfig)}` : ''
-      const url = `${window.location.origin}${pathname}#${id}:${check}:${urlPayload}${configSuffix}`
+      const innerFragment = `${id}:${check}:${urlPayload}${configSuffix}`
+
+      let finalFragment: string
+      if (passwordEnabled && password.length > 0) {
+        const protectedData = await protectFragment(innerFragment, password)
+        finalFragment = `protected:${protectedData}`
+      } else {
+        finalFragment = innerFragment
+      }
+
+      const url = `${window.location.origin}${pathname}#${finalFragment}`
+      setExpiresAt(Date.now() + ttl * 1000)
       setNoteUrl(url)
       setMessage('')
     } catch (err) {
@@ -184,7 +217,10 @@ export function useCreateNote(): UseCreateNoteReturn {
 
   const resetNote = () => {
     setNoteUrl(null)
+    setShardId(null)
     setError(null)
+    setPasswordState('')
+    setPasswordEnabledState(false)
   }
 
   return {
@@ -193,6 +229,8 @@ export function useCreateNote(): UseCreateNoteReturn {
     ttl,
     setTtl,
     noteUrl,
+    shardId,
+    expiresAt,
     loading,
     error,
     isOverLimit,
@@ -205,6 +243,10 @@ export function useCreateNote(): UseCreateNoteReturn {
     isCustomServer,
     providerType,
     setProviderType,
+    password,
+    setPassword,
+    passwordEnabled,
+    setPasswordEnabled,
     handleCreate,
     resetNote,
   }
