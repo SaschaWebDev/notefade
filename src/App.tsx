@@ -2,6 +2,7 @@ import { useHashRoute } from '@/hooks'
 import { Layout } from '@/components/Layout'
 import { Landing } from '@/components/Landing'
 import { ReadNote } from '@/components/ReadNote'
+import { PasswordGate } from '@/components/PasswordGate'
 import { Docs } from '@/components/Docs'
 
 export function App() {
@@ -17,6 +18,14 @@ export function App() {
 
   if (route.mode === 'create') {
     return <Landing />
+  }
+
+  if (route.mode === 'protected') {
+    return (
+      <Layout>
+        <PasswordGate protectedData={route.protectedData} />
+      </Layout>
+    )
   }
 
   return (
