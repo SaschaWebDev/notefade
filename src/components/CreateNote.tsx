@@ -324,7 +324,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                   <button
                     type='button'
                     className={`${styles.ttlOption} ${!passwordEnabled ? styles.ttlOptionActive : ''}`}
-                    onClick={() => setPasswordEnabled((prev) => !prev)}
+                    onClick={() => setPasswordEnabled(!passwordEnabled)}
                     disabled={loading}
                   >
                     off
@@ -332,7 +332,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                   <button
                     type='button'
                     className={`${styles.ttlOption} ${passwordEnabled ? styles.ttlOptionActive : ''}`}
-                    onClick={() => setPasswordEnabled((prev) => !prev)}
+                    onClick={() => setPasswordEnabled(!passwordEnabled)}
                     disabled={loading}
                   >
                     on
@@ -465,7 +465,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                         'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*_';
                       const lenByte = new Uint8Array(1);
                       crypto.getRandomValues(lenByte);
-                      const len = 16 + (lenByte[0] % 9);
+                      const len = 16 + ((lenByte[0] ?? 0) % 9);
                       const bytes = new Uint8Array(len);
                       crypto.getRandomValues(bytes);
                       const pw = Array.from(
