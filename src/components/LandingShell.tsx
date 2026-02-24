@@ -1,4 +1,10 @@
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type ReactNode,
+} from 'react';
 import { CreateNote } from './CreateNote';
 import styles from './LandingShell.module.css';
 
@@ -59,7 +65,7 @@ const FAQ_ITEMS = [
   {
     question: 'What happens after someone reads my note?',
     answer:
-      'The key fragment on our server is deleted immediately. The link stops working. There is no copy, backup, or undo. The information is gone.',
+      'The key fragment on our server is deleted immediately. The link stops working. There is no copy, backup, or undo. The part to assemble your note is gone.',
   },
   {
     question: 'What if nobody reads it?',
@@ -79,7 +85,7 @@ const FAQ_ITEMS = [
   {
     question: 'Do I need an account?',
     answer:
-      'No. No sign-up, no email, no cookies. You write a note, get a link, share it. We store 16 characters, to make your note mathematically unbreakable read once and would store nothing if math would allow for.',
+      'No. No sign-up, no email, no cookies. You write a note, get a link, share it. We store 16 characters, to make your note mathematically unbreakable read once and would store nothing if math would allow for that.',
   },
   {
     question: 'How can I trust your code?',
@@ -149,19 +155,36 @@ function DomainIndicator() {
     <div
       className={`${styles.domainIndicator} ${isOfficial ? styles.domainOfficial : styles.domainWarning}`}
     >
-      <span
-        className={`${styles.domainDot} ${isOfficial ? styles.domainDotOfficial : styles.domainDotWarning}`}
-      />
-      <span className={styles.domainText}>
-        {isOfficial
-          ? 'you are visiting via notefade.com \u2014 the official website'
-          : 'warning: you are not visiting via the official website notefade.com \u2014 either self-hosted or a phishing attempt'}
-      </span>
+      {isOfficial ? (
+        <>
+          <span className={`${styles.domainDot} ${styles.domainDotOfficial}`} />
+          <span className={styles.domainText}>
+            You are on the official notefade.com website
+          </span>
+        </>
+      ) : (
+        <div className={styles.domainText}>
+          <span className={styles.domainHeadline}>
+            <span
+              className={`${styles.domainDot} ${styles.domainDotWarning}`}
+            />
+            warning
+          </span>
+          <br />
+          This is not the official website notefade.com and either self-hosted
+          or a phishing attempt
+        </div>
+      )}
     </div>
   );
 }
 
 export function LandingShell({ children }: { children: ReactNode }) {
+  const [noteCreated, setNoteCreated] = useState(false);
+  const handleNoteCreated = useCallback(
+    (hasUrl: boolean) => setNoteCreated(hasUrl),
+    [],
+  );
   const [overlayOpen, setOverlayOpen] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const scaleRef = useRef(1);
@@ -268,78 +291,88 @@ export function LandingShell({ children }: { children: ReactNode }) {
         </header>
 
         <div className={styles.palette}>
-          <CreateNote />
+          <CreateNote onNoteCreated={handleNoteCreated} />
         </div>
 
-        <div className={styles.pills}>
-          {PILLS.map(({ label, href }) => (
-            <a key={href} href={href} className={styles.pill}>
-              {label}
-            </a>
-          ))}
-        </div>
-
-        <p className={styles.hint}>encrypted entirely in your browser</p>
-
-        <div className={styles.scrollCue}>
-          <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
-            <path
-              d='M4 6l4 4 4-4'
-              stroke='rgba(255,255,255,0.2)'
-              strokeWidth='1.5'
-              strokeLinecap='round'
-              strokeLinejoin='round'
-            />
-          </svg>
-        </div>
-      </section>
-
-      <div className={styles.divider} />
-
-      <section className={styles.architectureSection}>
-        <FadeSection>
-          <h2 className={styles.sectionLabel}>architecture</h2>
-        </FadeSection>
-        <FadeSection delay={100}>
-          <div className={styles.diagramTerminal}>
-            <div className={styles.diagramChrome}>
-              <span className={styles.chromeDotRed} />
-              <span className={styles.chromeDotYellow} />
-              <span className={styles.chromeDotGreen} />
+        {!noteCreated && (
+          <>
+            <div className={styles.pills}>
+              {PILLS.map(({ label, href }) => (
+                <a key={href} href={href} className={styles.pill}>
+                  {label}
+                </a>
+              ))}
             </div>
-            <img
-              src='/notefade-architecture.svg'
-              alt='Notefade security architecture diagram'
-              className={styles.architectureDiagram}
-              onClick={() => setOverlayOpen(true)}
-            />
+
+            <p className={styles.hint}>encrypted entirely in your browser</p>
+          </>
+        )}
+
+        {!noteCreated && (
+          <div className={styles.scrollCue}>
+            <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
+              <path
+                d='M4 6l4 4 4-4'
+                stroke='rgba(255,255,255,0.2)'
+                strokeWidth='1.5'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+              />
+            </svg>
           </div>
-          <p className={styles.diagramHint}>tap to expand</p>
-        </FadeSection>
+        )}
       </section>
 
-      {children}
+      {!noteCreated && (
+        <>
+          {children}
 
-      <div className={styles.divider} />
+          <div className={styles.divider} />
 
-      <section className={styles.faqSection}>
-        <FadeSection>
-          <h2 className={styles.sectionLabel}>frequently asked</h2>
-        </FadeSection>
-        <div className={styles.faqList}>
-          {FAQ_ITEMS.map((item, i) => (
-            <FadeSection key={item.question} delay={i * 50}>
-              <FaqItem question={item.question} answer={item.answer} />
+          <section className={styles.architectureSection}>
+            <FadeSection>
+              <h2 className={styles.sectionLabel}>architecture</h2>
             </FadeSection>
-          ))}
-        </div>
-      </section>
+            <FadeSection delay={100}>
+              <div className={styles.diagramTerminal}>
+                <div className={styles.diagramChrome}>
+                  <span className={styles.chromeDotRed} />
+                  <span className={styles.chromeDotYellow} />
+                  <span className={styles.chromeDotGreen} />
+                </div>
+                <img
+                  src='/notefade-architecture.svg'
+                  alt='Notefade security architecture diagram'
+                  className={styles.architectureDiagram}
+                  onClick={() => setOverlayOpen(true)}
+                />
+              </div>
+              <p className={styles.diagramHint}>tap to expand</p>
+            </FadeSection>
+          </section>
 
-      <footer className={styles.footer}>
-        <a href='/docs' className={styles.footerLink}>
-          how it works — full technical details
-        </a>
-      </footer>
+          <div className={styles.divider} />
+
+          <section className={styles.faqSection}>
+            <FadeSection>
+              <h2 className={styles.sectionLabel}>frequently asked</h2>
+            </FadeSection>
+            <div className={styles.faqList}>
+              {FAQ_ITEMS.map((item, i) => (
+                <FadeSection key={item.question} delay={i * 50}>
+                  <FaqItem question={item.question} answer={item.answer} />
+                </FadeSection>
+              ))}
+            </div>
+          </section>
+
+          <footer className={styles.footer}>
+            <a href='/docs' className={styles.footerLink}>
+              how it works — full technical details
+            </a>
+          </footer>
+        </>
+      )}
 
       {overlayOpen && (
         <div className={styles.overlay} onClick={closeOverlay}>

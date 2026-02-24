@@ -23,6 +23,23 @@
   letter-spacing: 0.02em;
 }
 
+.domainWarning .domainText {
+  text-align: center;
+}
+
+.domainHeadline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.domainHeadline .domainDot {
+  display: inline-block;
+}
+
 .domainOfficial {
   background: rgba(34, 197, 94, 0.08);
   border-bottom: 1px solid rgba(34, 197, 94, 0.15);
@@ -85,19 +102,19 @@
 
 .header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 52px;
 }
 
 .logo {
-  font-size: 32px;
+  font-size: 42px;
   font-weight: 300;
   letter-spacing: 0.08em;
   color: #f5f5f5;
-  margin: 0 0 8px;
+  margin: 0 0 10px;
 }
 
 .tagline {
-  font-size: 16px;
+  font-size: 21px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.4);
   margin: 0;
@@ -117,10 +134,10 @@
 
 .palette {
   width: 100%;
-  max-width: 840px;
+  max-width: 1092px;
   background: #1a1a1a;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
+  border-radius: 23px;
   box-shadow:
     0 0 60px rgba(79, 143, 247, 0.08),
     0 20px 40px rgba(0, 0, 0, 0.4);
@@ -142,19 +159,19 @@
 .pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 13px;
   justify-content: center;
-  margin-top: 32px;
+  margin-top: 42px;
 }
 
 .pill {
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 7px 16px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 26px;
+  padding: 9px 21px;
   letter-spacing: 0.01em;
   white-space: nowrap;
   text-decoration: none;
@@ -162,14 +179,14 @@
 }
 
 .pill:hover {
-  color: rgba(255, 255, 255, 0.65);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .hint {
-  margin-top: 24px;
-  font-size: 13px;
+  margin-top: 31px;
+  font-size: 17px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.25);
   letter-spacing: 0.02em;

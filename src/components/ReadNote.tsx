@@ -20,22 +20,22 @@ function validateFragment(
   check: string | null,
 ): string | null {
   if (!/^[a-f0-9]{4,32}$/i.test(shardId)) {
-    return 'This link has an invalid shard ID. It may be incomplete or corrupted.'
+    return 'This link has an invalid shard ID. It may be incomplete or corrupted.';
   }
   try {
-    const bytes = fromBase64Url(urlPayload)
+    const bytes = fromBase64Url(urlPayload);
     // Minimum: urlShare(48) + IV(12) + GCM tag(16) = 76 bytes
     if (bytes.length < 76) {
-      return 'This link is too short to contain an encrypted note. It may be truncated.'
+      return 'This link is too short to contain an encrypted note. It may be truncated.';
     }
   } catch {
-    return 'This link contains invalid data. It may be corrupted or incomplete.'
+    return 'This link contains invalid data. It may be corrupted or incomplete.';
   }
   // Verify integrity check if present (new-format URLs)
   if (check !== null && computeCheck(urlPayload) !== check) {
-    return 'This link appears to be corrupted. One or more characters may have been added, removed, or changed.'
+    return 'This link appears to be corrupted. One or more characters may have been added, removed, or changed.';
   }
-  return null
+  return null;
 }
 
 function getProviderDisplayName(provider: ProviderConfig): string {
@@ -49,7 +49,12 @@ function getProviderDisplayName(provider: ProviderConfig): string {
   return getProviderLabel(provider.t);
 }
 
-export function ReadNote({ shardId, urlPayload, check, provider }: ReadNoteProps) {
+export function ReadNote({
+  shardId,
+  urlPayload,
+  check,
+  provider,
+}: ReadNoteProps) {
   const [confirmed, setConfirmed] = useState(false);
   const [checked, setChecked] = useState(false);
   const validationError = useMemo(
@@ -131,26 +136,25 @@ export function ReadNote({ shardId, urlPayload, check, provider }: ReadNoteProps
   } else if (!confirmed) {
     content = (
       <div className={styles.disclaimer}>
-        <div className={styles.disclaimerIcon}>
-          <svg width='24' height='24' viewBox='0 0 24 24' fill='none'>
-            <path
-              d='M12 9v4M12 17h.01'
-              stroke='#f59e0b'
-              strokeWidth='1.5'
-              strokeLinecap='round'
-            />
-            <path
-              d='M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z'
-              stroke='#f59e0b'
-              strokeWidth='1.5'
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              fill='rgba(245,158,11,0.08)'
-            />
-          </svg>
-        </div>
-
         <h2 className={styles.disclaimerHeading}>
+          <span className={styles.disclaimerIcon}>
+            <svg width='20' height='20' viewBox='0 0 24 24' fill='none'>
+              <path
+                d='M12 9v4M12 17h.01'
+                stroke='#f59e0b'
+                strokeWidth='1.5'
+                strokeLinecap='round'
+              />
+              <path
+                d='M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z'
+                stroke='#f59e0b'
+                strokeWidth='1.5'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                fill='rgba(245,158,11,0.08)'
+              />
+            </svg>
+          </span>
           someone sent you a private note
         </h2>
 
@@ -163,9 +167,9 @@ export function ReadNote({ shardId, urlPayload, check, provider }: ReadNoteProps
           this note can only be read <strong>once</strong>
         </p>
         <p className={styles.disclaimerDetail}>
-          opening it will permanently destroy the key needed to decrypt it.
+          opening it will permanently destroy the key needed to decrypt it
           <br />
-          the content itself was never stored on any server.
+          the content itself was never stored on any server
         </p>
 
         <label className={styles.checkboxLabel}>
@@ -251,9 +255,6 @@ export function ReadNote({ shardId, urlPayload, check, provider }: ReadNoteProps
         <div className={styles.noteContent}>{state.plaintext}</div>
 
         <div className={styles.footer}>
-          <p className={styles.destroyNotice}>
-            this note has been read and permanently deleted from the server
-          </p>
           <a href={pathname} className={styles.newLink}>
             create another
           </a>
