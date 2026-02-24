@@ -1,17 +1,35 @@
 import { useState, useRef, useEffect } from 'react';
 import { useCreateNote } from '@/hooks/use-create-note';
 import { useTypewriter } from '@/hooks/use-typewriter';
+import { PROVIDERS, getProviderEntry } from '@/api/provider-registry';
+import type { ProviderConfig, ProviderType } from '@/api/provider-types';
 import { ContentFade } from './ContentFade';
 import { NoteLink } from './NoteLink';
 import styles from './CreateNote.module.css';
 
-function isValidApiUrl(url: string): boolean {
-  if (!url) return true;
-  return (
-    url.startsWith('https://') ||
-    url.startsWith('http://localhost') ||
-    url.startsWith('http://127.0.0.1')
-  );
+const BYOS_PROVIDER_TYPES = PROVIDERS.map((p) => p.type);
+
+function getConfigFieldValue(config: ProviderConfig, key: string): string {
+  // All provider config fields use single-char keys (t, u, k, a, n, d)
+  // Access them safely via the discriminated union
+  switch (key) {
+    case 'u': return 'u' in config ? config.u : '';
+    case 'k': return 'k' in config ? config.k : '';
+    case 'a': return 'a' in config ? config.a : '';
+    case 'n': return 'n' in config ? config.n : '';
+    case 'd': return 'd' in config ? config.d : '';
+    default: return '';
+  }
+}
+
+function isProviderConfigComplete(config: ProviderConfig | null): boolean {
+  if (!config) return false;
+  const entry = getProviderEntry(config.t);
+  if (!entry) return false;
+  return entry.fields.every((f) => {
+    const value = getConfigFieldValue(config, f.key);
+    return value.length > 0;
+  });
 }
 
 export function CreateNote() {
@@ -27,27 +45,56 @@ export function CreateNote() {
     isEmpty,
     maxChars,
     ttlOptions,
-    apiUrl,
-    setApiUrl,
-    resetApiUrl,
+    providerConfig,
+    setProviderConfig,
+    resetProvider,
     isCustomServer,
+    providerType,
+    setProviderType,
     handleCreate,
     resetNote,
   } = useCreateNote();
   const [focused, setFocused] = useState(false);
   const [byosOpen, setByosOpen] = useState(false);
+  const [byosMode, setByosMode] = useState<'default' | 'custom'>(
+    isCustomServer ? 'custom' : 'default',
+  );
   const showTypewriter = isEmpty && !focused;
   const placeholder = useTypewriter(showTypewriter);
-  const apiInputRef = useRef<HTMLInputElement>(null);
+  const firstFieldRef = useRef<HTMLInputElement>(null);
 
-  const isUnsafeApi = isCustomServer && !isValidApiUrl(apiUrl);
+  const currentProviderType = providerType ?? 'self';
+  const currentEntry = getProviderEntry(currentProviderType);
 
   useEffect(() => {
-    if (byosOpen) {
-      apiInputRef.current?.focus();
-      apiInputRef.current?.select();
+    if (byosOpen && byosMode === 'custom') {
+      firstFieldRef.current?.focus();
     }
-  }, [byosOpen]);
+  }, [byosOpen, byosMode, currentProviderType]);
+
+  const handleModeSwitch = (mode: 'default' | 'custom') => {
+    setByosMode(mode);
+    if (mode === 'default') {
+      resetProvider();
+      setByosOpen(false);
+    } else {
+      if (!providerConfig) {
+        setProviderType('self');
+      }
+    }
+  };
+
+  const handleFieldChange = (fieldKey: string, value: string) => {
+    if (!providerConfig) return;
+    const updated = { ...providerConfig, [fieldKey]: value } as ProviderConfig;
+    setProviderConfig(updated);
+  };
+
+  const handleReset = () => {
+    resetProvider();
+    setByosMode('default');
+    setByosOpen(false);
+  };
 
   const contentKey = noteUrl ? 'link' : 'form';
 
@@ -77,50 +124,104 @@ export function CreateNote() {
 
           {byosOpen && (
             <div className={styles.byosPanel}>
-              <label className={styles.byosLabel}>api server</label>
-              <div className={styles.byosInputRow}>
-                <input
-                  ref={apiInputRef}
-                  type='text'
-                  className={`${styles.byosInput} ${isUnsafeApi ? styles.byosInputUnsafe : ''}`}
-                  value={apiUrl}
-                  onChange={(e) => setApiUrl(e.target.value)}
-                  placeholder='https://your-worker.example.com'
-                  spellCheck={false}
-                />
-                {isCustomServer && (
-                  <button
-                    type='button'
-                    className={styles.byosReset}
-                    onClick={() => {
-                      resetApiUrl();
-                      setByosOpen(false);
-                    }}
-                    title='reset to default'
-                  >
-                    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                      <path
-                        d='M1.5 1.5v4h4'
-                        stroke='currentColor'
-                        strokeWidth='1.3'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                      />
-                      <path
-                        d='M2.1 8.5a5 5 0 108.4-4.6A5 5 0 002.1 5.5L1.5 5.5'
-                        stroke='currentColor'
-                        strokeWidth='1.3'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                      />
-                    </svg>
-                  </button>
-                )}
+              <div className={styles.byosHeader}>
+                <span className={styles.byosTitle}>select server</span>
+                <span className={styles.byosSubtitle}>meaningless 16 bytes stored</span>
               </div>
-              {isUnsafeApi && (
-                <p className={styles.byosWarning}>
-                  non-https API — shards may not be transmitted securely
-                </p>
+
+              <div className={styles.serverToggle}>
+                <div
+                  className={styles.serverToggleSlider}
+                  style={{
+                    transform: byosMode === 'custom' ? 'translateX(100%)' : 'translateX(0)',
+                  }}
+                />
+                <button
+                  type='button'
+                  className={`${styles.serverToggleOption} ${byosMode === 'default' ? styles.serverToggleOptionActive : ''}`}
+                  onClick={() => handleModeSwitch('default')}
+                >
+                  notefade server
+                </button>
+                <button
+                  type='button'
+                  className={`${styles.serverToggleOption} ${byosMode === 'custom' ? styles.serverToggleOptionActive : ''}`}
+                  onClick={() => handleModeSwitch('custom')}
+                >
+                  bring my own server
+                </button>
+              </div>
+
+              {byosMode === 'custom' && (
+                <div className={styles.byosConfig}>
+                  <label className={styles.byosLabel}>provider</label>
+                  <select
+                    className={styles.byosSelect}
+                    value={currentProviderType}
+                    onChange={(e) => setProviderType(e.target.value as ProviderType)}
+                  >
+                    {BYOS_PROVIDER_TYPES.map((type) => {
+                      const entry = getProviderEntry(type);
+                      return (
+                        <option key={type} value={type}>
+                          {entry?.label ?? type}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  {currentEntry?.showCredentialWarning && (
+                    <p className={styles.credentialWarning}>
+                      credentials are stored in the link and visible in browser devtools
+                    </p>
+                  )}
+
+                  {currentEntry?.fields.map((field, i) => (
+                    <div key={field.key} className={styles.byosFieldGroup}>
+                      <label className={styles.byosLabel}>{field.label}</label>
+                      <input
+                        ref={i === 0 ? firstFieldRef : undefined}
+                        type={field.secret ? 'password' : 'text'}
+                        className={styles.byosInput}
+                        value={
+                          providerConfig
+                            ? getConfigFieldValue(providerConfig, field.key)
+                            : ''
+                        }
+                        onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                        placeholder={field.placeholder}
+                        spellCheck={false}
+                        autoComplete='off'
+                      />
+                    </div>
+                  ))}
+
+                  {isCustomServer && (
+                    <button
+                      type='button'
+                      className={styles.byosResetButton}
+                      onClick={handleReset}
+                    >
+                      <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                        <path
+                          d='M1.5 1.5v4h4'
+                          stroke='currentColor'
+                          strokeWidth='1.3'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                        />
+                        <path
+                          d='M2.1 8.5a5 5 0 108.4-4.6A5 5 0 002.1 5.5L1.5 5.5'
+                          stroke='currentColor'
+                          strokeWidth='1.3'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                        />
+                      </svg>
+                      reset
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -185,7 +286,7 @@ export function CreateNote() {
                 type='button'
                 className={styles.encryptButton}
                 onClick={handleCreate}
-                disabled={isEmpty || isOverLimit || loading}
+                disabled={isEmpty || isOverLimit || loading || (isCustomServer && !isProviderConfigComplete(providerConfig))}
               >
                 {loading ? 'encrypting...' : 'encrypt'}
               </button>

@@ -301,12 +301,19 @@ export function LandingShell({ children }: { children: ReactNode }) {
           <h2 className={styles.sectionLabel}>architecture</h2>
         </FadeSection>
         <FadeSection delay={100}>
-          <img
-            src='/notefade-architecture.svg'
-            alt='Notefade security architecture diagram'
-            className={styles.architectureDiagram}
-            onClick={() => setOverlayOpen(true)}
-          />
+          <div className={styles.diagramTerminal}>
+            <div className={styles.diagramChrome}>
+              <span className={styles.chromeDotRed} />
+              <span className={styles.chromeDotYellow} />
+              <span className={styles.chromeDotGreen} />
+            </div>
+            <img
+              src='/notefade-architecture.svg'
+              alt='Notefade security architecture diagram'
+              className={styles.architectureDiagram}
+              onClick={() => setOverlayOpen(true)}
+            />
+          </div>
           <p className={styles.diagramHint}>tap to expand</p>
         </FadeSection>
       </section>

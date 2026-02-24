@@ -1,6 +1,8 @@
 import { useState, useMemo, type ReactNode } from 'react';
 import { useReadNote } from '@/hooks/use-read-note';
 import { fromBase64Url, computeCheck } from '@/crypto';
+import { getProviderLabel } from '@/api/provider-registry';
+import type { ProviderConfig } from '@/api/provider-types';
 import { ContentFade } from './ContentFade';
 import { NoteGone } from './NoteGone';
 import styles from './ReadNote.module.css';
@@ -9,7 +11,7 @@ interface ReadNoteProps {
   shardId: string;
   urlPayload: string;
   check: string | null;
-  apiUrl: string | null;
+  provider: ProviderConfig | null;
 }
 
 function validateFragment(
@@ -36,15 +38,18 @@ function validateFragment(
   return null
 }
 
-function extractHostname(url: string): string {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return url;
+function getProviderDisplayName(provider: ProviderConfig): string {
+  if (provider.t === 'self') {
+    try {
+      return new URL(provider.u).hostname;
+    } catch {
+      return provider.u;
+    }
   }
+  return getProviderLabel(provider.t);
 }
 
-export function ReadNote({ shardId, urlPayload, check, apiUrl }: ReadNoteProps) {
+export function ReadNote({ shardId, urlPayload, check, provider }: ReadNoteProps) {
   const [confirmed, setConfirmed] = useState(false);
   const [checked, setChecked] = useState(false);
   const validationError = useMemo(
@@ -55,7 +60,7 @@ export function ReadNote({ shardId, urlPayload, check, apiUrl }: ReadNoteProps) 
     validationError ? '' : shardId,
     urlPayload,
     confirmed && !validationError,
-    apiUrl,
+    provider,
   );
   const pathname = window.location.pathname;
 
@@ -149,9 +154,9 @@ export function ReadNote({ shardId, urlPayload, check, apiUrl }: ReadNoteProps) 
           someone sent you a private note
         </h2>
 
-        {apiUrl && (
+        {provider && (
           <div className={styles.customServerBanner}>
-            shard stored on: {extractHostname(apiUrl)}
+            shard stored on: {getProviderDisplayName(provider)}
           </div>
         )}
         <p className={styles.disclaimerText}>

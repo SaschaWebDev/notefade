@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { stringFromBase64Url } from '@/crypto'
+import { decodeProviderConfig } from '@/api/provider-config'
+import type { ProviderConfig } from '@/api/provider-types'
 
 interface CreateRoute {
   mode: 'create'
@@ -10,36 +12,42 @@ interface ReadRoute {
   shardId: string
   urlPayload: string
   check: string | null
-  apiUrl: string | null
+  provider: ProviderConfig | null
 }
 
 export type HashRoute = CreateRoute | ReadRoute
 
-/** Split urlPayload from an optional @<base64url(apiUrl)> suffix */
-function extractApiUrl(raw: string): { urlPayload: string; apiUrl: string | null } {
+/** Split urlPayload from an optional @<base64url(config)> suffix */
+function extractProvider(raw: string): { urlPayload: string; provider: ProviderConfig | null } {
   const atIndex = raw.lastIndexOf('@')
   if (atIndex === -1) {
-    return { urlPayload: raw, apiUrl: null }
+    return { urlPayload: raw, provider: null }
   }
 
   const maybePayload = raw.slice(0, atIndex)
   const maybeEncoded = raw.slice(atIndex + 1)
 
   if (!maybePayload || !maybeEncoded) {
-    return { urlPayload: raw, apiUrl: null }
+    return { urlPayload: raw, provider: null }
   }
 
   try {
-    const decoded = stringFromBase64Url(maybeEncoded)
-    // Basic sanity: must look like a URL
-    if (decoded.startsWith('http://') || decoded.startsWith('https://')) {
-      return { urlPayload: maybePayload, apiUrl: decoded }
-    }
+    // First try JSON-based decode (new format)
+    const config = decodeProviderConfig(maybeEncoded)
+    return { urlPayload: maybePayload, provider: config }
   } catch {
-    // Decode failure → treat the whole string as urlPayload (backward compat)
+    // Try legacy plain URL decode for backward compat
+    try {
+      const decoded = stringFromBase64Url(maybeEncoded)
+      if (decoded.startsWith('http://') || decoded.startsWith('https://')) {
+        return { urlPayload: maybePayload, provider: { t: 'self', u: decoded } }
+      }
+    } catch {
+      // Decode failure → treat the whole string as urlPayload
+    }
   }
 
-  return { urlPayload: raw, apiUrl: null }
+  return { urlPayload: raw, provider: null }
 }
 
 function parseHash(): HashRoute {
@@ -60,7 +68,7 @@ function parseHash(): HashRoute {
     return { mode: 'create' }
   }
 
-  // New format: shardId:check:urlPayload[@encodedApiUrl] (two colons)
+  // New format: shardId:check:urlPayload[@encodedConfig] (two colons)
   // Old format: shardId:urlPayload (one colon)
   const secondColon = rest.indexOf(':')
   if (secondColon !== -1) {
@@ -69,12 +77,12 @@ function parseHash(): HashRoute {
     if (!check || !rawPayload) {
       return { mode: 'create' }
     }
-    const { urlPayload, apiUrl } = extractApiUrl(rawPayload)
-    return { mode: 'read', shardId, check, urlPayload, apiUrl }
+    const { urlPayload, provider } = extractProvider(rawPayload)
+    return { mode: 'read', shardId, check, urlPayload, provider }
   }
 
-  const { urlPayload, apiUrl } = extractApiUrl(rest)
-  return { mode: 'read', shardId, check: null, urlPayload, apiUrl }
+  const { urlPayload, provider } = extractProvider(rest)
+  return { mode: 'read', shardId, check: null, urlPayload, provider }
 }
 
 export function useHashRoute(): HashRoute {

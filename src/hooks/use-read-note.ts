@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { openNote } from '@/crypto'
-import { checkShard, fetchShard } from '@/api'
+import { checkShard, fetchShard, createAdapter } from '@/api'
+import type { ProviderConfig } from '@/api/provider-types'
 
 const PLAINTEXT_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
@@ -22,7 +23,7 @@ export function useReadNote(
   shardId: string,
   urlPayload: string,
   confirmed: boolean,
-  apiUrl?: string | null,
+  provider?: ProviderConfig | null,
 ): UseReadNoteReturn {
   const [state, setState] = useState<ReadState>({ status: 'idle' })
 
@@ -31,7 +32,8 @@ export function useReadNote(
   const checkPromiseRef = useRef<Promise<boolean> | null>(null)
   const fetchPromiseRef = useRef<Promise<string | null> | null>(null)
 
-  const apiBase = apiUrl ?? undefined
+  // Stable serialized key for provider dependency
+  const providerKey = provider ? JSON.stringify(provider) : ''
 
   // Phase 1: Non-destructive existence check (HEAD)
   useEffect(() => {
@@ -40,7 +42,12 @@ export function useReadNote(
     let cancelled = false
 
     if (!checkPromiseRef.current) {
-      checkPromiseRef.current = checkShard(shardId, apiBase)
+      if (provider) {
+        const adapter = createAdapter(provider)
+        checkPromiseRef.current = adapter.check(shardId)
+      } else {
+        checkPromiseRef.current = checkShard(shardId)
+      }
     }
 
     async function probe() {
@@ -62,7 +69,7 @@ export function useReadNote(
     return () => {
       cancelled = true
     }
-  }, [shardId, apiBase])
+  }, [shardId, providerKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-clear plaintext after timeout
   useEffect(() => {
@@ -84,7 +91,12 @@ export function useReadNote(
     let cancelled = false
 
     if (!fetchPromiseRef.current) {
-      fetchPromiseRef.current = fetchShard(shardId, apiBase)
+      if (provider) {
+        const adapter = createAdapter(provider)
+        fetchPromiseRef.current = adapter.fetch(shardId)
+      } else {
+        fetchPromiseRef.current = fetchShard(shardId)
+      }
     }
 
     async function load() {
@@ -128,7 +140,7 @@ export function useReadNote(
     return () => {
       cancelled = true
     }
-  }, [shardId, urlPayload, confirmed, apiBase])
+  }, [shardId, urlPayload, confirmed, providerKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return { state }
 }
