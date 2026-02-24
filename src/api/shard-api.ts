@@ -43,6 +43,18 @@ export async function checkShard(id: string, apiBase?: string): Promise<boolean>
   return res.status === 200
 }
 
+export async function deleteShard(id: string, apiBase?: string): Promise<boolean> {
+  const base = resolveBase(apiBase)
+  const res = await fetch(`${base}/shard/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+  if (res.status === 404) return false
+  if (!res.ok) {
+    throw new Error(`Failed to delete shard: ${res.status}`)
+  }
+  return true
+}
+
 export async function fetchShard(id: string, apiBase?: string): Promise<string | null> {
   const base = resolveBase(apiBase)
   const res = await fetch(`${base}/shard/${encodeURIComponent(id)}`)

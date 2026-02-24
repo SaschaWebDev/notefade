@@ -72,4 +72,5 @@ export interface ProviderAdapter {
   store(shard: string, ttl: number): Promise<string>
   check(id: string): Promise<boolean>
   fetch(id: string): Promise<string | null>
+  delete(id: string): Promise<boolean>
 }
