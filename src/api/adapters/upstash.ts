@@ -56,5 +56,22 @@ export function createUpstashAdapter(config: UpstashLikeConfig): ProviderAdapter
 
       return result.result
     },
+
+    async delete(id) {
+      const checkRes = await fetch(`${baseUrl}/exists/${id}`, {
+        method: 'POST',
+        headers: headers(config),
+      })
+      if (!checkRes.ok) return false
+      const checkData: unknown = await checkRes.json()
+      const checkResult = checkData as { result?: number }
+      if (checkResult.result !== 1) return false
+
+      await fetch(`${baseUrl}/del/${id}`, {
+        method: 'POST',
+        headers: headers(config),
+      })
+      return true
+    },
   }
 }

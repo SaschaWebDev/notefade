@@ -57,5 +57,19 @@ export function createCloudflareKVAdapter(config: CloudflareKVConfig): ProviderA
 
       return text
     },
+
+    async delete(id) {
+      const checkRes = await fetch(kvUrl(config, id), {
+        method: 'GET',
+        headers: headers(config),
+      })
+      if (checkRes.status === 404) return false
+
+      await fetch(kvUrl(config, id), {
+        method: 'DELETE',
+        headers: headers(config),
+      })
+      return true
+    },
   }
 }

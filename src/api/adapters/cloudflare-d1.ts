@@ -81,5 +81,32 @@ export function createCloudflareD1Adapter(config: CloudflareD1Config): ProviderA
 
       return shard
     },
+
+    async delete(id) {
+      const now = new Date().toISOString()
+      const checkRes = await fetch(queryUrl(config), {
+        method: 'POST',
+        headers: headers(config),
+        body: JSON.stringify({
+          sql: 'SELECT 1 FROM shards WHERE id = ? AND expires_at > ?',
+          params: [id, now],
+        }),
+      })
+      if (!checkRes.ok) return false
+      const checkData: unknown = await checkRes.json()
+      const checkResult = checkData as { result?: Array<{ results?: unknown[] }> }
+      const rows = checkResult.result?.[0]?.results
+      if (!Array.isArray(rows) || rows.length === 0) return false
+
+      await fetch(queryUrl(config), {
+        method: 'POST',
+        headers: headers(config),
+        body: JSON.stringify({
+          sql: 'DELETE FROM shards WHERE id = ?',
+          params: [id],
+        }),
+      })
+      return true
+    },
   }
 }

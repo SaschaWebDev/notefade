@@ -62,5 +62,22 @@ export function createSupabaseAdapter(config: SupabaseConfig): ProviderAdapter {
 
       return row.shard
     },
+
+    async delete(id) {
+      const now = new Date().toISOString()
+      const checkRes = await fetch(
+        `${baseUrl}/rest/v1/shards?id=eq.${encodeURIComponent(id)}&expires_at=gt.${encodeURIComponent(now)}&select=id`,
+        { headers: headers(config) },
+      )
+      if (!checkRes.ok) return false
+      const checkData: unknown = await checkRes.json()
+      if (!Array.isArray(checkData) || checkData.length === 0) return false
+
+      await fetch(
+        `${baseUrl}/rest/v1/shards?id=eq.${encodeURIComponent(id)}`,
+        { method: 'DELETE', headers: headers(config) },
+      )
+      return true
+    },
   }
 }

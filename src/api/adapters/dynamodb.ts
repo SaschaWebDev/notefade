@@ -1,5 +1,5 @@
 import type { ProviderAdapter, DynamoDBConfig } from '../provider-types'
-import { storeShard, checkShard, fetchShard } from '../shard-api'
+import { storeShard, checkShard, fetchShard, deleteShard } from '../shard-api'
 
 /** DynamoDB adapter: same as self-hosted but with x-api-key header via API Gateway */
 export function createDynamoDBAdapter(config: DynamoDBConfig): ProviderAdapter {
@@ -46,6 +46,16 @@ export function createDynamoDBAdapter(config: DynamoDBConfig): ProviderAdapter {
       globalThis.fetch = wrappedFetch
       try {
         return await fetchShard(id, config.u)
+      } finally {
+        globalThis.fetch = saved
+      }
+    },
+
+    async delete(id) {
+      const saved = globalThis.fetch
+      globalThis.fetch = wrappedFetch
+      try {
+        return await deleteShard(id, config.u)
       } finally {
         globalThis.fetch = saved
       }

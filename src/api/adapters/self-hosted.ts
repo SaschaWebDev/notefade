@@ -1,5 +1,5 @@
 import type { ProviderAdapter, SelfHostedConfig } from '../provider-types'
-import { storeShard, checkShard, fetchShard } from '../shard-api'
+import { storeShard, checkShard, fetchShard, deleteShard } from '../shard-api'
 
 export function createSelfHostedAdapter(config: SelfHostedConfig): ProviderAdapter {
   return {
@@ -11,6 +11,9 @@ export function createSelfHostedAdapter(config: SelfHostedConfig): ProviderAdapt
     },
     fetch(id) {
       return fetchShard(id, config.u)
+    },
+    delete(id) {
+      return deleteShard(id, config.u)
     },
   }
 }
