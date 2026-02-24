@@ -182,6 +182,103 @@ export async function createNote(message: string): Promise<SplitResult> {
   }
 }
 
+// --- PASSWORD PROTECTION (PBKDF2 + AES-256-GCM) ---
+
+export const PBKDF2_ITERATIONS = 600_000
+const PROTECTION_SALT_BYTES = 16
+
+/** Wrap a fragment string in a second AES-256-GCM layer keyed by a password */
+export async function protectFragment(
+  fragment: string,
+  password: string,
+): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(PROTECTION_SALT_BYTES))
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveKey'],
+  )
+
+  const derivedKey = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: toArrayBuffer(salt),
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt'],
+  )
+
+  const plaintext = new TextEncoder().encode(fragment)
+  const ciphertext = new Uint8Array(
+    await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: toArrayBuffer(iv) },
+      derivedKey,
+      toArrayBuffer(plaintext),
+    ),
+  )
+
+  // Blob = IV (12) + ciphertext (variable, includes 16-byte GCM tag)
+  const blob = new Uint8Array(12 + ciphertext.length)
+  blob.set(iv, 0)
+  blob.set(ciphertext, 12)
+
+  return toBase64Url(salt) + ':' + toBase64Url(blob)
+}
+
+/** Unwrap a password-protected fragment; throws DOMException on wrong password */
+export async function unprotectFragment(
+  protectedData: string,
+  password: string,
+): Promise<string> {
+  const colonIndex = protectedData.indexOf(':')
+  if (colonIndex === -1) {
+    throw new Error('Invalid protected data format')
+  }
+
+  const salt = fromBase64Url(protectedData.slice(0, colonIndex))
+  const blob = fromBase64Url(protectedData.slice(colonIndex + 1))
+
+  const iv = blob.slice(0, 12)
+  const ciphertext = blob.slice(12)
+
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveKey'],
+  )
+
+  const derivedKey = await crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: toArrayBuffer(salt),
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt'],
+  )
+
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: toArrayBuffer(iv) },
+    derivedKey,
+    toArrayBuffer(ciphertext),
+  )
+
+  return new TextDecoder().decode(decrypted)
+}
+
 /** Recipient opens a note: fetches shard, reconstructs key, decrypts */
 export async function openNote(
   urlPayload: string,

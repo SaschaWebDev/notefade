@@ -10,5 +10,7 @@ export {
   stringToBase64Url,
   stringFromBase64Url,
   computeCheck,
+  protectFragment,
+  unprotectFragment,
 } from './crypto'
 export type { SplitResult } from './crypto'

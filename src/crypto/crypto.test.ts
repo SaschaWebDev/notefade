@@ -11,6 +11,8 @@ import {
   createNote,
   openNote,
   computeCheck,
+  protectFragment,
+  unprotectFragment,
 } from './crypto'
 
 describe('toBase64Url / fromBase64Url', () => {
@@ -557,5 +559,93 @@ describe('stress tests — character encoding edge cases', () => {
     // base64url strips trailing '=', so length <= ceil(n*4/3)
     expect(urlPayload.length).toBeLessThanOrEqual(expectedBase64Len)
     expect(urlPayload.length).toBeGreaterThanOrEqual(expectedBase64Len - 2)
+  })
+})
+
+describe('protectFragment / unprotectFragment', () => {
+  it('round-trips with correct password', async () => {
+    const fragment = 'abc123:ABCD:someUrlPayload'
+    const password = 'my-secret-password'
+    const protectedData = await protectFragment(fragment, password)
+    const decrypted = await unprotectFragment(protectedData, password)
+    expect(decrypted).toBe(fragment)
+  })
+
+  it('wrong password throws', async () => {
+    const fragment = 'abc123:ABCD:someUrlPayload'
+    const protectedData = await protectFragment(fragment, 'correct')
+    await expect(unprotectFragment(protectedData, 'wrong')).rejects.toThrow()
+  })
+
+  it('different passwords produce different outputs', async () => {
+    const fragment = 'abc123:ABCD:someUrlPayload'
+    const a = await protectFragment(fragment, 'password-a')
+    const b = await protectFragment(fragment, 'password-b')
+    expect(a).not.toBe(b)
+  })
+
+  it('same password produces different outputs (random salt/IV)', async () => {
+    const fragment = 'abc123:ABCD:someUrlPayload'
+    const password = 'same-password'
+    const a = await protectFragment(fragment, password)
+    const b = await protectFragment(fragment, password)
+    expect(a).not.toBe(b)
+    // Both should still decrypt correctly
+    expect(await unprotectFragment(a, password)).toBe(fragment)
+    expect(await unprotectFragment(b, password)).toBe(fragment)
+  })
+
+  it('preserves BYOS @ suffix in fragment', async () => {
+    const fragment = 'abc123:ABCD:someUrlPayload@eyJ0IjoiY2Ytay4ifQ'
+    const password = 'test'
+    const protectedData = await protectFragment(fragment, password)
+    const decrypted = await unprotectFragment(protectedData, password)
+    expect(decrypted).toBe(fragment)
+  })
+
+  it('salt is 16 bytes, blob is >= 28 bytes (12 IV + 16 GCM tag)', async () => {
+    const fragment = 'x'
+    const protectedData = await protectFragment(fragment, 'pw')
+    const [saltPart, blobPart] = protectedData.split(':')
+    const salt = fromBase64Url(saltPart!)
+    const blob = fromBase64Url(blobPart!)
+    expect(salt.length).toBe(16)
+    // Blob = 12 (IV) + plaintext + 16 (GCM tag), minimum 28 for 0-length plaintext
+    expect(blob.length).toBeGreaterThanOrEqual(28)
+  })
+
+  it('output uses URL-safe characters only', async () => {
+    const protectedData = await protectFragment('test-fragment', 'pw')
+    // Output format is base64url:base64url — both parts + colon are URL-safe
+    expect(protectedData).toMatch(/^[A-Za-z0-9_:-]+$/)
+  })
+
+  it('long password (1000 chars) works', async () => {
+    const fragment = 'abc123:ABCD:payload'
+    const password = 'p'.repeat(1000)
+    const protectedData = await protectFragment(fragment, password)
+    const decrypted = await unprotectFragment(protectedData, password)
+    expect(decrypted).toBe(fragment)
+  })
+
+  it('full end-to-end: createNote → build fragment → protectFragment → unprotectFragment → openNote', async () => {
+    const message = 'end-to-end password test'
+    const { urlPayload, serverShard } = await createNote(message)
+    const check = computeCheck(urlPayload)
+    const shardId = 'abcdef01'
+    const fragment = `${shardId}:${check}:${urlPayload}`
+
+    const password = 'e2e-password'
+    const protectedData = await protectFragment(fragment, password)
+    const decryptedFragment = await unprotectFragment(protectedData, password)
+    expect(decryptedFragment).toBe(fragment)
+
+    // Parse the fragment and open the note
+    const parts = decryptedFragment.split(':')
+    expect(parts[0]).toBe(shardId)
+    expect(parts[1]).toBe(check)
+    const recoveredPayload = parts.slice(2).join(':')
+    const plaintext = await openNote(recoveredPayload, serverShard)
+    expect(plaintext).toBe(message)
   })
 })
