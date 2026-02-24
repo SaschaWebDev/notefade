@@ -13,12 +13,18 @@ function getConfigFieldValue(config: ProviderConfig, key: string): string {
   // All provider config fields use single-char keys (t, u, k, a, n, d)
   // Access them safely via the discriminated union
   switch (key) {
-    case 'u': return 'u' in config ? config.u : '';
-    case 'k': return 'k' in config ? config.k : '';
-    case 'a': return 'a' in config ? config.a : '';
-    case 'n': return 'n' in config ? config.n : '';
-    case 'd': return 'd' in config ? config.d : '';
-    default: return '';
+    case 'u':
+      return 'u' in config ? config.u : '';
+    case 'k':
+      return 'k' in config ? config.k : '';
+    case 'a':
+      return 'a' in config ? config.a : '';
+    case 'n':
+      return 'n' in config ? config.n : '';
+    case 'd':
+      return 'd' in config ? config.d : '';
+    default:
+      return '';
   }
 }
 
@@ -32,13 +38,19 @@ function isProviderConfigComplete(config: ProviderConfig | null): boolean {
   });
 }
 
-export function CreateNote() {
+interface CreateNoteProps {
+  onNoteCreated?: (hasUrl: boolean) => void;
+}
+
+export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   const {
     message,
     setMessage,
     ttl,
     setTtl,
     noteUrl,
+    shardId,
+    expiresAt,
     loading,
     error,
     isOverLimit,
@@ -51,10 +63,16 @@ export function CreateNote() {
     isCustomServer,
     providerType,
     setProviderType,
+    password,
+    setPassword,
+    passwordEnabled,
+    setPasswordEnabled,
     handleCreate,
     resetNote,
   } = useCreateNote();
   const [focused, setFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [pwCopied, setPwCopied] = useState(false);
   const [byosOpen, setByosOpen] = useState(false);
   const [byosMode, setByosMode] = useState<'default' | 'custom'>(
     isCustomServer ? 'custom' : 'default',
@@ -65,6 +83,10 @@ export function CreateNote() {
 
   const currentProviderType = providerType ?? 'self';
   const currentEntry = getProviderEntry(currentProviderType);
+
+  useEffect(() => {
+    onNoteCreated?.(Boolean(noteUrl));
+  }, [noteUrl, onNoteCreated]);
 
   useEffect(() => {
     if (byosOpen && byosMode === 'custom') {
@@ -101,7 +123,14 @@ export function CreateNote() {
   return (
     <ContentFade contentKey={contentKey}>
       {noteUrl ? (
-        <NoteLink url={noteUrl} onCreateAnother={resetNote} />
+        <NoteLink
+          url={noteUrl}
+          expiresAt={expiresAt}
+          shardId={shardId ?? ''}
+          providerConfig={providerConfig}
+          password={password}
+          onCreateAnother={resetNote}
+        />
       ) : (
         <div className={styles.container}>
           <div className={styles.textareaWrap}>
@@ -120,20 +149,41 @@ export function CreateNote() {
                 <span className={styles.cursor} />
               </span>
             )}
+            <div className={styles.charCountRow}>
+              {isOverLimit ? (
+                <button
+                  type='button'
+                  className={styles.truncateButton}
+                  onClick={() => setMessage(message.slice(0, maxChars))}
+                >
+                  <span>{message.length} chars</span>
+                  <span>truncate to {maxChars}</span>
+                </button>
+              ) : (
+                <span className={styles.charCount}>
+                  {message.length}/{maxChars}
+                </span>
+              )}
+            </div>
           </div>
 
           {byosOpen && (
             <div className={styles.byosPanel}>
               <div className={styles.byosHeader}>
                 <span className={styles.byosTitle}>select server</span>
-                <span className={styles.byosSubtitle}>meaningless 16 bytes stored</span>
+                <span className={styles.byosSubtitle}>
+                  meaningless 16 bytes stored
+                </span>
               </div>
 
               <div className={styles.serverToggle}>
                 <div
                   className={styles.serverToggleSlider}
                   style={{
-                    transform: byosMode === 'custom' ? 'translateX(100%)' : 'translateX(0)',
+                    transform:
+                      byosMode === 'custom'
+                        ? 'translateX(100%)'
+                        : 'translateX(0)',
                   }}
                 />
                 <button
@@ -158,7 +208,9 @@ export function CreateNote() {
                   <select
                     className={styles.byosSelect}
                     value={currentProviderType}
-                    onChange={(e) => setProviderType(e.target.value as ProviderType)}
+                    onChange={(e) =>
+                      setProviderType(e.target.value as ProviderType)
+                    }
                   >
                     {BYOS_PROVIDER_TYPES.map((type) => {
                       const entry = getProviderEntry(type);
@@ -172,7 +224,8 @@ export function CreateNote() {
 
                   {currentEntry?.showCredentialWarning && (
                     <p className={styles.credentialWarning}>
-                      credentials are stored in the link and visible in browser devtools
+                      credentials are stored in the link and visible in browser
+                      devtools
                     </p>
                   )}
 
@@ -188,7 +241,9 @@ export function CreateNote() {
                             ? getConfigFieldValue(providerConfig, field.key)
                             : ''
                         }
-                        onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange(field.key, e.target.value)
+                        }
                         placeholder={field.placeholder}
                         spellCheck={false}
                         autoComplete='off'
@@ -202,7 +257,12 @@ export function CreateNote() {
                       className={styles.byosResetButton}
                       onClick={handleReset}
                     >
-                      <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                      <svg
+                        width='14'
+                        height='14'
+                        viewBox='0 0 14 14'
+                        fill='none'
+                      >
                         <path
                           d='M1.5 1.5v4h4'
                           stroke='currentColor'
@@ -227,34 +287,248 @@ export function CreateNote() {
           )}
 
           <div className={styles.footer}>
-            <div className={styles.footerLeft}>
-              <span className={styles.ttlLabel}>self-destruct</span>
-              <div className={styles.ttlToggle}>
-                <div
-                  className={styles.ttlSlider}
-                  style={{
-                    transform: `translateX(${ttlOptions.findIndex((o) => o.value === ttl) * 100}%)`,
-                  }}
-                />
-                {ttlOptions.map((opt) => (
+            <div className={styles.footerTop}>
+              <div className={styles.settingPair}>
+                <span className={styles.ttlLabel}>self-destruct in</span>
+                <div className={styles.ttlToggle}>
+                  <div
+                    className={styles.ttlSlider}
+                    style={{
+                      transform: `translateX(${ttlOptions.findIndex((o) => o.value === ttl) * 100}%)`,
+                    }}
+                  />
+                  {ttlOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type='button'
+                      className={`${styles.ttlOption} ${ttl === opt.value ? styles.ttlOptionActive : ''}`}
+                      onClick={() => setTtl(opt.value)}
+                      disabled={loading}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.settingPair}>
+                <span className={styles.ttlLabel}>password protect</span>
+                <div className={styles.ttlToggle}>
+                  <div
+                    className={styles.ttlSlider}
+                    style={{
+                      width: 'calc(100% / 2 - 2px)',
+                      transform: `translateX(${passwordEnabled ? '100%' : '0%'})`,
+                    }}
+                  />
                   <button
-                    key={opt.value}
                     type='button'
-                    className={`${styles.ttlOption} ${ttl === opt.value ? styles.ttlOptionActive : ''}`}
-                    onClick={() => setTtl(opt.value)}
+                    className={`${styles.ttlOption} ${!passwordEnabled ? styles.ttlOptionActive : ''}`}
+                    onClick={() => setPasswordEnabled((prev) => !prev)}
                     disabled={loading}
                   >
-                    {opt.label}
+                    off
                   </button>
-                ))}
+                  <button
+                    type='button'
+                    className={`${styles.ttlOption} ${passwordEnabled ? styles.ttlOptionActive : ''}`}
+                    onClick={() => setPasswordEnabled((prev) => !prev)}
+                    disabled={loading}
+                  >
+                    on
+                  </button>
+                </div>
               </div>
+              {passwordEnabled && (
+                <div className={styles.passwordInputWrapper}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    className={styles.passwordInlineInput}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value.slice(0, 24))}
+                    maxLength={24}
+                    placeholder='enter a password'
+                    spellCheck={false}
+                    autoComplete='off'
+                    disabled={loading}
+                  />
+                  <button
+                    type='button'
+                    className={`${styles.copyPasswordButton} ${pwCopied ? styles.copyPasswordButtonCopied : ''}`}
+                    onClick={() => {
+                      if (pwCopied) return;
+                      navigator.clipboard.writeText(password);
+                      setShowPassword(false);
+                      setPwCopied(true);
+                      setTimeout(() => setPwCopied(false), 1500);
+                    }}
+                    title={pwCopied ? 'copied' : 'copy password'}
+                    tabIndex={-1}
+                    disabled={loading || password.length === 0}
+                  >
+                    {pwCopied ? (
+                      <svg
+                        width='14'
+                        height='14'
+                        viewBox='0 0 14 14'
+                        fill='none'
+                      >
+                        <path
+                          d='M3 7.5L5.5 10L11 4.5'
+                          stroke='#22c55e'
+                          strokeWidth='1.5'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        width='14'
+                        height='14'
+                        viewBox='0 0 14 14'
+                        fill='none'
+                      >
+                        <rect
+                          x='4.5'
+                          y='4.5'
+                          width='7'
+                          height='7'
+                          rx='1.5'
+                          stroke='currentColor'
+                          strokeWidth='1.2'
+                        />
+                        <path
+                          d='M9.5 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v5A1.5 1.5 0 003 9.5h1.5'
+                          stroke='currentColor'
+                          strokeWidth='1.2'
+                        />
+                      </svg>
+                    )}
+                  </button>
+                  <button
+                    type='button'
+                    className={styles.showPasswordButton}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <svg
+                        width='14'
+                        height='14'
+                        viewBox='0 0 14 14'
+                        fill='none'
+                      >
+                        <path
+                          d='M1.5 7s2.2-3.5 5.5-3.5S12.5 7 12.5 7s-2.2 3.5-5.5 3.5S1.5 7 1.5 7z'
+                          stroke='currentColor'
+                          strokeWidth='1.2'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                        />
+                        <circle
+                          cx='7'
+                          cy='7'
+                          r='1.8'
+                          stroke='currentColor'
+                          strokeWidth='1.2'
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        width='14'
+                        height='14'
+                        viewBox='0 0 14 14'
+                        fill='none'
+                      >
+                        <path
+                          d='M2 2l10 10M5.6 5.7a1.8 1.8 0 002.7 2.6'
+                          stroke='currentColor'
+                          strokeWidth='1.2'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                        />
+                        <path
+                          d='M4 4.3C2.7 5.2 1.5 7 1.5 7s2.2 3.5 5.5 3.5c1 0 1.9-.3 2.7-.8M9.5 9.2c1.5-1 2.9-2.7 3-2.7s-2.2-3.5-5.5-3.5c-.6 0-1.2.1-1.7.3'
+                          stroke='currentColor'
+                          strokeWidth='1.2'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                        />
+                      </svg>
+                    )}
+                  </button>
+                  <button
+                    type='button'
+                    className={styles.generatePasswordButton}
+                    onClick={() => {
+                      const charset =
+                        'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*_';
+                      const lenByte = new Uint8Array(1);
+                      crypto.getRandomValues(lenByte);
+                      const len = 16 + (lenByte[0] % 9);
+                      const bytes = new Uint8Array(len);
+                      crypto.getRandomValues(bytes);
+                      const pw = Array.from(
+                        bytes,
+                        (b) => charset[b % charset.length],
+                      ).join('');
+                      setPassword(pw);
+                      setShowPassword(true);
+                    }}
+                    title='generate random password'
+                    tabIndex={-1}
+                    disabled={loading}
+                  >
+                    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                      <path
+                        d='M2.5 7a4.5 4.5 0 018.3-2.4'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                        strokeLinecap='round'
+                      />
+                      <path
+                        d='M11.5 7a4.5 4.5 0 01-8.3 2.4'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                        strokeLinecap='round'
+                      />
+                      <path
+                        d='M10.2 2.2l.6 2.4-2.4-.6'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                      <path
+                        d='M3.8 11.8l-.6-2.4 2.4.6'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className={styles.footerRight}>
               <button
                 type='button'
                 className={`${styles.gearButton} ${isCustomServer ? styles.gearButtonActive : ''}`}
-                onClick={() => setByosOpen((prev) => !prev)}
+                onClick={() =>
+                  setByosOpen((prev) => {
+                    if (
+                      prev &&
+                      isCustomServer &&
+                      !isProviderConfigComplete(providerConfig)
+                    ) {
+                      handleReset();
+                      return false;
+                    }
+                    return !prev;
+                  })
+                }
                 title='custom server'
               >
                 <svg width='15' height='15' viewBox='0 0 15 15' fill='none'>
@@ -267,33 +541,27 @@ export function CreateNote() {
                 </svg>
               </button>
 
-              {isOverLimit ? (
-                <button
-                  type='button'
-                  className={styles.truncateButton}
-                  onClick={() => setMessage(message.slice(0, maxChars))}
-                >
-                  <span>{message.length} chars</span>
-                  <span>truncate to {maxChars}</span>
-                </button>
-              ) : (
-                <span className={styles.charCount}>
-                  {message.length}/{maxChars}
-                </span>
-              )}
-
               <button
                 type='button'
                 className={styles.encryptButton}
                 onClick={handleCreate}
-                disabled={isEmpty || isOverLimit || loading || (isCustomServer && !isProviderConfigComplete(providerConfig))}
+                disabled={
+                  isEmpty ||
+                  isOverLimit ||
+                  loading ||
+                  (isCustomServer &&
+                    !isProviderConfigComplete(providerConfig)) ||
+                  (passwordEnabled && password.length === 0)
+                }
               >
                 {loading ? 'encrypting...' : 'encrypt'}
               </button>
             </div>
           </div>
 
-          {error && <div className={styles.error}>{error}</div>}
+          {error && (
+            <div className={styles.error}>{`server error: ${error}`}</div>
+          )}
         </div>
       )}
     </ContentFade>

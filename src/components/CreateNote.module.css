@@ -9,16 +9,16 @@
 
 .textarea {
   width: 100%;
-  min-height: 260px;
-  padding: 28px;
+  min-height: 338px;
+  padding: 36px;
   background: transparent;
   border: none;
   outline: none;
   resize: none;
-  max-height: 400px;
+  max-height: 520px;
   overflow-y: auto;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  font-size: 17px;
+  font-size: 22px;
   font-weight: 400;
   line-height: 1.6;
   color: #e0e0e0;
@@ -55,11 +55,11 @@
 
 .placeholder {
   position: absolute;
-  top: 28px;
-  left: 28px;
-  right: 28px;
+  top: 36px;
+  left: 36px;
+  right: 36px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  font-size: 17px;
+  font-size: 22px;
   font-weight: 400;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.25);
@@ -88,21 +88,133 @@
 
 .footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 28px;
+  flex-direction: column;
+  gap: 16px;
+  padding: 21px 36px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.footerLeft {
+.footerTop {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.passwordInputWrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  transition: border-color 0.15s ease;
+  animation: byos-in 0.3s ease;
+}
+
+.passwordInputWrapper:focus-within {
+  border-color: rgba(79, 143, 247, 0.4);
+}
+
+.passwordInlineInput {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 16px;
+  font-size: 17px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  background: transparent;
+  border: none;
+  color: #fff;
+  outline: none;
+}
+
+.passwordInlineInput::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.copyPasswordButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.copyPasswordButton svg {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.copyPasswordButtonCopied svg {
+  animation: pwCheckPop 0.25s ease-out;
+}
+
+@keyframes pwCheckPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.copyPasswordButton:hover {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.copyPasswordButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.showPasswordButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.showPasswordButton:hover {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.generatePasswordButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.generatePasswordButton:hover {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.generatePasswordButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.settingPair {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .ttlLabel {
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.3);
   letter-spacing: 0.02em;
@@ -115,6 +227,8 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   padding: 3px;
+  transform: scale(0.9);
+  transform-origin: center;
 }
 
 .ttlSlider {
@@ -133,8 +247,8 @@
 .ttlOption {
   position: relative;
   z-index: 1;
-  padding: 5px 14px;
-  font-size: 13px;
+  padding: 7px 18px;
+  font-size: 17px;
   font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   border-radius: 6px;
@@ -161,11 +275,18 @@
 .footerRight {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
 }
 
+.charCountRow {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 12px 0;
+}
+
 .charCount {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.2);
   font-variant-numeric: tabular-nums;
@@ -194,11 +315,11 @@
 }
 
 .encryptButton {
-  padding: 10px 28px;
-  font-size: 15px;
+  padding: 13px 36px;
+  font-size: 20px;
   font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  border-radius: 10px;
+  border-radius: 13px;
   border: none;
   background: #4f8ff7;
   color: #ffffff;
@@ -219,27 +340,45 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
-  background: none;
-  border: none;
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.25);
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 13px;
+  color: rgba(255, 255, 255, 0.3);
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.gearButton svg {
+  width: 18px;
+  height: 18px;
 }
 
 .gearButton:hover {
-  color: rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .gearButtonActive {
   color: #4f8ff7;
+  background: rgba(79, 143, 247, 0.06);
+  border-color: rgba(79, 143, 247, 0.2);
 }
 
 .gearButtonActive:hover {
   color: #4f8ff7;
   background: rgba(79, 143, 247, 0.1);
+  border-color: rgba(79, 143, 247, 0.3);
+}
+
+/* --- Password Panel --- */
+
+.passwordPanel {
+  padding: 16px 28px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  animation: byos-in 0.15s ease;
 }
 
 /* --- BYOS Panel --- */
@@ -247,11 +386,11 @@
 .byosPanel {
   padding: 16px 28px 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-  animation: byos-in 0.15s ease;
+  animation: byos-in 0.3s ease;
 }
 
 @keyframes byos-in {
-  from { opacity: 0; transform: translateY(-4px); }
+  from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -444,13 +583,16 @@
 
 @media (max-width: 480px) {
   .footer {
-    flex-direction: column;
     align-items: stretch;
     gap: 10px;
   }
 
-  .footerLeft {
+  .footerTop {
     justify-content: space-between;
+  }
+
+  .passwordInlineInput {
+    width: 100%;
   }
 
   .footerRight {
