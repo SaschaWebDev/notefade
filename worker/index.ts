@@ -13,9 +13,10 @@ const SHARD_ID_RE = /^[a-f0-9]{8,16}$/
 // --- In-memory rate limiting (per-isolate) ---
 
 const RATE_LIMITS: Record<string, number> = {
-  POST: 10,  // 10 creates/min
-  HEAD: 30,  // 30 probes/min
-  GET: 10,   // 10 reads/min
+  POST: 10,    // 10 creates/min
+  HEAD: 30,    // 30 probes/min
+  GET: 10,     // 10 reads/min
+  DELETE: 10,  // 10 deletes/min
 }
 const RATE_WINDOW_MS = 60_000
 
@@ -81,7 +82,7 @@ const StoreShardSchema = z.object({
 function corsHeaders(origin: string): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, HEAD, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age': '86400',
     'Cache-Control': 'no-store',
@@ -177,6 +178,27 @@ async function handleRequest(
     }
 
     return Response.json({ shard }, { headers })
+  }
+
+  // DELETE /shard/:id — destroy shard without reading
+  if (request.method === 'DELETE' && url.pathname.startsWith('/shard/')) {
+    const id = url.pathname.slice('/shard/'.length)
+    if (!id || !SHARD_ID_RE.test(id)) {
+      return Response.json(
+        { error: 'Invalid shard ID' },
+        { status: 400, headers },
+      )
+    }
+
+    const deleted = await store.delete(id)
+    if (!deleted) {
+      return Response.json(
+        { error: 'Not found' },
+        { status: 404, headers },
+      )
+    }
+
+    return Response.json({ deleted: true }, { headers })
   }
 
   return Response.json({ error: 'Not found' }, { status: 404, headers })
