@@ -15,7 +15,19 @@ interface ReadRoute {
   provider: ProviderConfig | null
 }
 
-export type HashRoute = CreateRoute | ReadRoute
+interface ProtectedRoute {
+  mode: 'protected'
+  protectedData: string
+}
+
+export type HashRoute = CreateRoute | ReadRoute | ProtectedRoute
+
+export interface ParsedFragment {
+  shardId: string
+  urlPayload: string
+  check: string | null
+  provider: ProviderConfig | null
+}
 
 /** Split urlPayload from an optional @<base64url(config)> suffix */
 function extractProvider(raw: string): { urlPayload: string; provider: ProviderConfig | null } {
@@ -50,22 +62,22 @@ function extractProvider(raw: string): { urlPayload: string; provider: ProviderC
   return { urlPayload: raw, provider: null }
 }
 
-function parseHash(): HashRoute {
-  const hash = window.location.hash.slice(1) // remove #
-  if (!hash) {
-    return { mode: 'create' }
+/** Parse a raw fragment string (without the # prefix) into its components */
+export function parseFragment(fragment: string): ParsedFragment | null {
+  if (!fragment) {
+    return null
   }
 
-  const colonIndex = hash.indexOf(':')
+  const colonIndex = fragment.indexOf(':')
   if (colonIndex === -1) {
-    return { mode: 'create' }
+    return null
   }
 
-  const shardId = hash.slice(0, colonIndex)
-  const rest = hash.slice(colonIndex + 1)
+  const shardId = fragment.slice(0, colonIndex)
+  const rest = fragment.slice(colonIndex + 1)
 
   if (!shardId || !rest) {
-    return { mode: 'create' }
+    return null
   }
 
   // New format: shardId:check:urlPayload[@encodedConfig] (two colons)
@@ -75,14 +87,37 @@ function parseHash(): HashRoute {
     const check = rest.slice(0, secondColon)
     const rawPayload = rest.slice(secondColon + 1)
     if (!check || !rawPayload) {
-      return { mode: 'create' }
+      return null
     }
     const { urlPayload, provider } = extractProvider(rawPayload)
-    return { mode: 'read', shardId, check, urlPayload, provider }
+    return { shardId, check, urlPayload, provider }
   }
 
   const { urlPayload, provider } = extractProvider(rest)
-  return { mode: 'read', shardId, check: null, urlPayload, provider }
+  return { shardId, check: null, urlPayload, provider }
+}
+
+function parseHash(): HashRoute {
+  const hash = window.location.hash.slice(1) // remove #
+  if (!hash) {
+    return { mode: 'create' }
+  }
+
+  // Check for password-protected fragment
+  if (hash.startsWith('protected:')) {
+    const protectedData = hash.slice('protected:'.length)
+    if (protectedData) {
+      return { mode: 'protected', protectedData }
+    }
+    return { mode: 'create' }
+  }
+
+  const parsed = parseFragment(hash)
+  if (!parsed) {
+    return { mode: 'create' }
+  }
+
+  return { mode: 'read', ...parsed }
 }
 
 export function useHashRoute(): HashRoute {
