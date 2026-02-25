@@ -5,6 +5,7 @@ import { getProviderLabel } from '@/api/provider-registry';
 import type { ProviderConfig } from '@/api/provider-types';
 import { ContentFade } from './ContentFade';
 import { NoteGone } from './NoteGone';
+import { NoteMarkdown, hasMarkdownPatterns } from './NoteMarkdown';
 import styles from './ReadNote.module.css';
 
 interface ReadNoteProps {
@@ -57,6 +58,7 @@ export function ReadNote({
 }: ReadNoteProps) {
   const [confirmed, setConfirmed] = useState(false);
   const [checked, setChecked] = useState(false);
+  const [viewMode, setViewMode] = useState<'raw' | 'formatted'>('raw');
   const validationError = useMemo(
     () => validateFragment(shardId, urlPayload, check),
     [shardId, urlPayload, check],
@@ -245,6 +247,8 @@ export function ReadNote({
       </div>
     );
   } else if (state.status === 'decrypted') {
+    const showToggle = hasMarkdownPatterns(state.plaintext);
+
     content = (
       <div className={styles.container}>
         <div className={styles.header}>
@@ -252,7 +256,46 @@ export function ReadNote({
           <span className={styles.badge}>this note has self-destructed</span>
         </div>
 
-        <div className={styles.noteContent}>{state.plaintext}</div>
+        {showToggle && (
+          <div className={styles.formatToggle}>
+            <button
+              type="button"
+              className={
+                viewMode === 'raw'
+                  ? `${styles.formatToggleBtn} ${styles.formatToggleActive}`
+                  : styles.formatToggleBtn
+              }
+              onClick={() => setViewMode('raw')}
+            >
+              raw
+            </button>
+            <button
+              type="button"
+              className={
+                viewMode === 'formatted'
+                  ? `${styles.formatToggleBtn} ${styles.formatToggleActive}`
+                  : styles.formatToggleBtn
+              }
+              onClick={() => setViewMode('formatted')}
+            >
+              rendered
+            </button>
+          </div>
+        )}
+
+        <div
+          className={
+            viewMode === 'formatted' && showToggle
+              ? `${styles.noteContent} ${styles.noteContentFormatted}`
+              : styles.noteContent
+          }
+        >
+          {viewMode === 'formatted' && showToggle ? (
+            <NoteMarkdown plaintext={state.plaintext} />
+          ) : (
+            state.plaintext
+          )}
+        </div>
 
         <div className={styles.footer}>
           <a href={pathname} className={styles.newLink}>
