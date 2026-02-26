@@ -158,13 +158,23 @@
 }
 
 .stateIcon {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 14px;
 }
 
 .stateHeading {
+  font-size: 20px;
+  font-weight: 600;
+  color: #f5f5f5;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.stateHeadingInline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 20px;
   font-weight: 600;
   color: #f5f5f5;
