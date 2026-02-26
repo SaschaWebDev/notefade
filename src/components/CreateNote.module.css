@@ -582,20 +582,61 @@
 }
 
 @media (max-width: 480px) {
+  .textarea {
+    min-height: 180px;
+    max-height: 300px;
+    padding: 20px;
+    font-size: 18px;
+  }
+
+  .placeholder {
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    font-size: 18px;
+  }
+
   .footer {
     align-items: stretch;
     gap: 10px;
+    padding: 16px 20px;
   }
 
   .footerTop {
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .passwordInputWrapper {
+    width: 100%;
+    flex: none;
   }
 
   .passwordInlineInput {
     width: 100%;
+    font-size: 15px;
+  }
+
+  .settingPair {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .ttlLabel,
+  .ttlOption {
+    font-size: 14px;
+  }
+
+  .ttlOption {
+    padding: 6px 14px;
   }
 
   .footerRight {
     justify-content: space-between;
+  }
+
+  .encryptButton {
+    font-size: 17px;
+    padding: 12px 28px;
   }
 }
