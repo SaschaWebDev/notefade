@@ -418,10 +418,95 @@
     font-size: 13px;
   }
 
+  .tableWrapper {
+    overflow-x: visible;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .comparisonTable {
+    min-width: 0;
+    display: block;
+  }
+
+  .comparisonTable thead {
+    display: none;
+  }
+
+  .comparisonTable tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .comparisonTable tr {
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+  }
+
   .comparisonTable th,
   .comparisonTable td {
-    padding: 12px 14px;
+    padding: 10px 14px;
     font-size: 13px;
+    display: block;
+    text-align: left;
+  }
+
+  .tdLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    background: #1a1a1a !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .tdNotefade {
+    border-left: none;
+    border-right: none;
+  }
+
+  .tdNotefade::before {
+    content: "notefade";
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(79, 143, 247, 0.5);
+    margin-bottom: 4px;
+  }
+
+  .tdTypical::before {
+    content: "others";
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.25);
+    margin-bottom: 4px;
+  }
+
+  .tdTypical {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .rowEven td,
+  .rowOdd td,
+  .rowEven:hover td,
+  .rowOdd:hover td {
+    background: #151515;
+  }
+
+  .rowEven .tdNotefade,
+  .rowOdd .tdNotefade,
+  .rowEven:hover .tdNotefade,
+  .rowOdd:hover .tdNotefade {
+    background: #151720;
   }
 
   .tableFootnote {
