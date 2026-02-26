@@ -5,17 +5,16 @@
   padding: 44px 32px;
 }
 
-.iconRow {
-  margin-bottom: 14px;
-}
-
 .goneIcon {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
 .heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 20px;
   font-weight: 600;
   color: #f5f5f5;

@@ -5,7 +5,7 @@ export function NoteGone() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.iconRow}>
+      <h2 className={styles.heading}>
         <span className={styles.goneIcon}>
           <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
             <circle cx='10' cy='10' r='10' fill='rgba(255,255,255,0.05)' />
@@ -17,9 +17,8 @@ export function NoteGone() {
             />
           </svg>
         </span>
-      </div>
-
-      <h2 className={styles.heading}>nothing here</h2>
+        nothing here
+      </h2>
       <p className={styles.subheading}>
         this note has been read & permanently deleted or never existed
       </p>
