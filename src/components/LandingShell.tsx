@@ -8,11 +8,21 @@ import {
 import { CreateNote } from './CreateNote';
 import styles from './LandingShell.module.css';
 
-const PILLS = [
-  { label: 'AES-256 encrypted', href: '/docs#encryption' },
-  { label: 'zero knowledge', href: '/docs#zero-knowledge' },
-  { label: 'one-time read', href: '/docs#one-time-read' },
-  { label: 'auto-expiring', href: '/docs#auto-expiring' },
+const PILL_ROWS = [
+  [
+    { label: 'AES-256 encrypted', href: '/docs#encryption' },
+    { label: 'zero knowledge', href: '/docs#zero-knowledge' },
+    { label: 'one-time read', href: '/docs#one-time-read' },
+  ],
+  [
+    { label: 'no tracking', href: '/docs#no-tracking' },
+    { label: 'open source', href: '/docs#open-source' },
+    { label: 'auto-expiring', href: '/docs#auto-expiring' },
+  ],
+  [
+    { label: 'nothing stored', href: '/docs#zero-knowledge' },
+    { label: 'no accounts', href: '/docs#no-accounts' },
+  ],
 ] as const;
 
 export function FadeSection({
@@ -97,6 +107,21 @@ const FAQ_ITEMS = [
     answer:
       'Yes. To maintain this level of security and guarantee your privacy, only text up to 1,800 characters can be sent \u2014 everything is embedded directly in the link itself, so nothing extra ever touches a server.',
   },
+  {
+    question: 'How do I send the note?',
+    answer:
+      'After creating your note, you get a unique link. Copy it and send it however you like \u2014 email, messaging app, carrier pigeon. The link is the note. Whoever opens it first reads the content, and then it\u2019s gone.',
+  },
+  {
+    question: 'What if I regret sending a note?',
+    answer:
+      'You can destroy it before anyone reads it. Use the \u201CDestroy now\u201D button on the note link page to immediately delete the server shard. Once destroyed, the link is dead \u2014 no one can open it, including you.',
+  },
+  {
+    question: 'Can someone recover a read note from browser history?',
+    answer:
+      'No. The encrypted payload lives in the URL fragment, which is cleared after decryption. Even if someone finds the link in their history, the server shard is already gone \u2014 the note cannot be reassembled.',
+  },
 ];
 
 function FaqItem({ question, answer }: { question: string; answer: string }) {
@@ -105,9 +130,15 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [height, setHeight] = useState(0);
 
   useEffect(() => {
-    if (innerRef.current) {
-      setHeight(innerRef.current.scrollHeight);
-    }
+    const el = innerRef.current;
+    if (!el) return;
+
+    const measure = () => setHeight(el.scrollHeight);
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
   }, [answer]);
 
   return (
@@ -284,7 +315,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
 
       <section className={styles.hero}>
         <header className={styles.header}>
-          <h1 className={styles.logo}>notefade</h1>
+          <a href="/" className={styles.logo}>notefade</a>
           <p className={styles.tagline}>
             private notes that <span className={styles.fade}>fade</span>
           </p>
@@ -297,10 +328,14 @@ export function LandingShell({ children }: { children: ReactNode }) {
         {!noteCreated && (
           <>
             <div className={styles.pills}>
-              {PILLS.map(({ label, href }) => (
-                <a key={href} href={href} className={styles.pill}>
-                  {label}
-                </a>
+              {PILL_ROWS.map((row, i) => (
+                <div key={i} className={styles.pillRow}>
+                  {row.map(({ label, href }) => (
+                    <a key={label} href={href} className={styles.pill}>
+                      {label}
+                    </a>
+                  ))}
+                </div>
               ))}
             </div>
 
@@ -368,8 +403,19 @@ export function LandingShell({ children }: { children: ReactNode }) {
 
           <footer className={styles.footer}>
             <a href='/docs' className={styles.footerLink}>
-              how it works — full technical details
+              documentation
             </a>
+            <p className={styles.footerCredit}>
+              Made with ❤️ by Sascha Majewsky ·{' '}
+              <a
+                href='https://github.com/saschawebdev/notefade'
+                className={styles.footerLink}
+                target='_blank'
+                rel='noopener noreferrer'
+              >
+                GitHub
+              </a>
+            </p>
           </footer>
         </>
       )}
