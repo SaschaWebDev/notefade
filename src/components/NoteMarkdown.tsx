@@ -15,10 +15,16 @@ export function hasMarkdownPatterns(text: string): boolean {
   if (/^#{1,3}\s+\S/m.test(text)) return true;
   // Bold
   if (/\*\*[^*]+\*\*/.test(text)) return true;
+  // Toggle / checkbox items
+  if (/^[-*]\s+\[[ xX]\]\s+\S/m.test(text)) return true;
   // Bullet lists
   if (/^[-*]\s+\S/m.test(text)) return true;
+  // Numbered lists
+  if (/^\d+\.\s+\S/m.test(text)) return true;
   // Blockquotes
   if (/^>\s+\S/m.test(text)) return true;
+  // Underline
+  if (/__[^_]+__/.test(text)) return true;
   // Links
   if (/\[[^\]]+\]\([^)]+\)/.test(text)) return true;
   return false;
@@ -27,8 +33,8 @@ export function hasMarkdownPatterns(text: string): boolean {
 /** Parse inline formatting: bold, italic, inline code, links */
 function parseInline(text: string): InlineNode[] {
   const nodes: InlineNode[] = [];
-  // Pattern matches inline code, bold, italic, or links
-  const pattern = /`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\(([^)]+)\)/g;
+  // Pattern matches inline code, underline, bold, italic, or links
+  const pattern = /`([^`]+)`|__([^_]+)__|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\(([^)]+)\)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -46,22 +52,29 @@ function parseInline(text: string): InlineNode[] {
         </code>,
       );
     } else if (match[2] !== undefined) {
+      // Underline
+      nodes.push(
+        <span key={match.index} className={styles.underline}>
+          {match[2]}
+        </span>,
+      );
+    } else if (match[3] !== undefined) {
       // Bold
       nodes.push(
         <strong key={match.index} className={styles.bold}>
-          {match[2]}
+          {match[3]}
         </strong>,
       );
-    } else if (match[3] !== undefined) {
+    } else if (match[4] !== undefined) {
       // Italic
       nodes.push(
         <em key={match.index} className={styles.italic}>
-          {match[3]}
+          {match[4]}
         </em>,
       );
-    } else if (match[4] !== undefined && match[5] !== undefined) {
+    } else if (match[5] !== undefined && match[6] !== undefined) {
       // Link — block javascript: URIs, allow http/https/mailto
-      const raw = match[5];
+      const raw = match[6];
       const href = /^https?:\/\/|^mailto:/i.test(raw)
         ? raw
         : /^[a-z]+:/i.test(raw)
@@ -76,7 +89,7 @@ function parseInline(text: string): InlineNode[] {
             target="_blank"
             rel="noopener noreferrer"
           >
-            {match[4]}
+            {match[5]}
           </a>,
         );
       } else {
@@ -181,6 +194,20 @@ function renderProse(content: string, blockIndex: number): ReactNode {
       continue;
     }
 
+    // Toggle / checkbox items (- [ ] or - [x])
+    const toggleMatch = /^[-*]\s+\[([ xX])\]\s+(.+)$/.exec(line);
+    if (toggleMatch) {
+      const checked = toggleMatch[1] !== ' ';
+      const text = toggleMatch[2] ?? '';
+      elements.push(
+        <div key={key} className={styles.toggleItem}>
+          <span className={checked ? styles.toggleChecked : styles.toggleUnchecked} />
+          <span className={checked ? styles.toggleTextChecked : ''}>{parseInline(text)}</span>
+        </div>,
+      );
+      continue;
+    }
+
     // Bullet list items (- or *)
     const bulletMatch = /^[-*]\s+(.+)$/.exec(line);
     if (bulletMatch) {
@@ -188,6 +215,20 @@ function renderProse(content: string, blockIndex: number): ReactNode {
       elements.push(
         <div key={key} className={styles.listItem}>
           <span className={styles.bullet} />
+          <span>{parseInline(text)}</span>
+        </div>,
+      );
+      continue;
+    }
+
+    // Numbered list items (1. 2. etc.)
+    const numberedMatch = /^(\d+)\.\s+(.+)$/.exec(line);
+    if (numberedMatch) {
+      const num = numberedMatch[1] ?? '1';
+      const text = numberedMatch[2] ?? '';
+      elements.push(
+        <div key={key} className={styles.listItem}>
+          <span className={styles.listNumber}>{num}.</span>
           <span>{parseInline(text)}</span>
         </div>,
       );

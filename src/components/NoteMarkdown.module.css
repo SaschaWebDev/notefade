@@ -81,6 +81,11 @@
   color: rgba(255, 255, 255, 0.75);
 }
 
+.underline {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* List items */
 
 .listItem {
@@ -99,6 +104,64 @@
   background: rgba(255, 255, 255, 0.4);
   position: relative;
   top: -1px;
+}
+
+.listNumber {
+  min-width: 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Toggle / checkbox items */
+
+.toggleItem {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-height: 1em;
+}
+
+.toggleUnchecked {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  position: relative;
+  top: 2px;
+}
+
+.toggleChecked {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  background: #4f8ff7;
+  border: 1.5px solid #4f8ff7;
+  border-radius: 3px;
+  position: relative;
+  top: 2px;
+}
+
+.toggleChecked::after {
+  content: '';
+  position: absolute;
+  left: 3.5px;
+  top: 0.5px;
+  width: 4px;
+  height: 7px;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+.toggleTextChecked {
+  text-decoration: line-through;
+  color: rgba(255, 255, 255, 0.35);
 }
 
 /* Divider */
