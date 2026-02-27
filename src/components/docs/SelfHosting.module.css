@@ -1,0 +1,117 @@
+.text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 14px;
+}
+
+.subheading {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 24px 0 10px;
+  letter-spacing: -0.01em;
+}
+
+.inlineCode {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.providerTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0 20px;
+}
+
+.providerTable th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.3);
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.providerTable td {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  vertical-align: top;
+}
+
+.providerTable tr:last-child td {
+  border-bottom: none;
+}
+
+.providerName {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.providerType {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.fieldList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.fieldCode {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.credYes {
+  font-size: 12px;
+  color: rgba(251, 191, 36, 0.7);
+}
+
+.credNo {
+  font-size: 12px;
+  color: rgba(52, 211, 153, 0.7);
+}
+
+.steps {
+  margin: 0 0 16px;
+  padding-left: 20px;
+}
+
+.steps li {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 4px;
+}
+
+@media (max-width: 600px) {
+  .providerTable th,
+  .providerTable td {
+    padding: 6px 6px;
+    font-size: 12px;
+  }
+
+  .providerTable th:nth-child(3),
+  .providerTable td:nth-child(3) {
+    display: none;
+  }
+}
