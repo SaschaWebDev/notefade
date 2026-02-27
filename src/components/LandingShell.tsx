@@ -202,8 +202,7 @@ function DomainIndicator() {
             warning
           </span>
           <br />
-          This is not the official website notefade.com and either self-hosted
-          or a phishing attempt
+          Not the official notefade.com either self-hosted or a phishing attempt
         </div>
       )}
     </div>
@@ -315,7 +314,9 @@ export function LandingShell({ children }: { children: ReactNode }) {
 
       <section className={styles.hero}>
         <header className={styles.header}>
-          <a href="/" className={styles.logo}>notefade</a>
+          <a href='/' className={styles.logo}>
+            notefade
+          </a>
           <p className={styles.tagline}>
             private notes that <span className={styles.fade}>fade</span>
           </p>
