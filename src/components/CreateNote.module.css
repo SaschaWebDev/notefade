@@ -5,6 +5,8 @@
 
 .textareaWrap {
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .textarea {
@@ -84,6 +86,162 @@
 
 .textareaOver {
   color: #f87171;
+}
+
+/* --- Formatting Toolbar --- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 36px 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.toolbarVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.toolbarBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  padding: 0;
+  line-height: 1;
+  user-select: none;
+}
+
+.toolbarBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.toolbarBtn:hover:not(:disabled) {
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.toolbarBtnHeading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  line-height: 1;
+  user-select: none;
+}
+
+.toolbarBtnHeading:hover {
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.toolbarBtnItalic {
+  font-style: italic;
+}
+
+.toolbarDivider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 2px;
+}
+
+.toolbarSpacer {
+  flex: 1;
+}
+
+.formatToggle {
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.formatToggleBtn {
+  font-size: 11px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: rgba(255, 255, 255, 0.3);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  letter-spacing: 0.02em;
+}
+
+.formatToggleBtn:hover {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.formatToggleActive {
+  color: #f5f5f5;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.formatTogglePulse {
+  animation: togglePulse 2s ease-in-out infinite;
+}
+
+@keyframes togglePulse {
+  0%, 100% { color: rgba(255, 255, 255, 0.3); }
+  50% { color: #4f8ff7; }
+}
+
+.previewArea {
+  min-height: 338px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding: 36px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.previewArea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.previewArea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.previewArea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.previewArea::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .footer {
@@ -282,7 +440,8 @@
 .charCountRow {
   display: flex;
   justify-content: flex-end;
-  padding: 6px 12px 0;
+  padding: 8px 36px;
+  user-select: none;
 }
 
 .charCount {
@@ -290,6 +449,7 @@
   font-weight: 400;
   color: rgba(255, 255, 255, 0.2);
   font-variant-numeric: tabular-nums;
+  user-select: none;
 }
 
 .truncateButton {
@@ -582,6 +742,16 @@
 }
 
 @media (max-width: 480px) {
+  .toolbar {
+    padding: 6px 20px 0;
+  }
+
+  .previewArea {
+    min-height: 180px;
+    max-height: 300px;
+    padding: 20px;
+  }
+
   .textarea {
     min-height: 180px;
     max-height: 300px;
@@ -594,6 +764,10 @@
     left: 20px;
     right: 20px;
     font-size: 18px;
+  }
+
+  .charCountRow {
+    padding: 8px 20px;
   }
 
   .footer {

@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useCreateNote } from '@/hooks/use-create-note';
 import { useTypewriter } from '@/hooks/use-typewriter';
 import { PROVIDERS, getProviderEntry } from '@/api/provider-registry';
 import type { ProviderConfig, ProviderType } from '@/api/provider-types';
 import { ContentFade } from './ContentFade';
 import { NoteLink } from './NoteLink';
+import { NoteMarkdown, hasMarkdownPatterns } from './NoteMarkdown';
 import styles from './CreateNote.module.css';
 
 const BYOS_PROVIDER_TYPES = PROVIDERS.map((p) => p.type);
@@ -77,9 +78,197 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   const [byosMode, setByosMode] = useState<'default' | 'custom'>(
     isCustomServer ? 'custom' : 'default',
   );
+  const [viewMode, setViewMode] = useState<'write' | 'preview'>('write');
+  const [hasSelection, setHasSelection] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const showTypewriter = isEmpty && !focused;
   const placeholder = useTypewriter(showTypewriter);
   const firstFieldRef = useRef<HTMLInputElement>(null);
+  const showFormatToggle = hasMarkdownPatterns(message);
+  const showToolbar = focused || !isEmpty;
+
+  const wrapSelection = useCallback(
+    (prefix: string, suffix: string) => {
+      const ta = textareaRef.current;
+      if (!ta) return;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const selected = message.slice(start, end);
+      const placeholder = selected || 'text';
+      const wrapped = prefix + placeholder + suffix;
+      const next = message.slice(0, start) + wrapped + message.slice(end);
+      setMessage(next);
+      // Restore focus and selection after React re-render
+      const selectStart = start + prefix.length;
+      const selectEnd = selectStart + placeholder.length;
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(selectStart, selectEnd);
+      });
+    },
+    [message, setMessage],
+  );
+
+  const insertBullet = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = message.slice(start, end);
+    if (selected.includes('\n')) {
+      // Wrap each line with bullet prefix
+      const bulleted = selected
+        .split('\n')
+        .map((line) => (line.trim() ? `- ${line}` : line))
+        .join('\n');
+      const next = message.slice(0, start) + bulleted + message.slice(end);
+      setMessage(next);
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(start, start + bulleted.length);
+      });
+    } else {
+      // Insert a new bullet at cursor
+      const needsNewline = start > 0 && message[start - 1] !== '\n';
+      const insert = (needsNewline ? '\n' : '') + '- ';
+      const next = message.slice(0, start) + insert + message.slice(end);
+      setMessage(next);
+      const cursor = start + insert.length;
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(cursor, cursor);
+      });
+    }
+  }, [message, setMessage]);
+
+  const insertNumberedList = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = message.slice(start, end);
+    if (selected.includes('\n')) {
+      const numbered = selected
+        .split('\n')
+        .map((line, i) => (line.trim() ? `${i + 1}. ${line}` : line))
+        .join('\n');
+      const next = message.slice(0, start) + numbered + message.slice(end);
+      setMessage(next);
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(start, start + numbered.length);
+      });
+    } else {
+      const needsNewline = start > 0 && message[start - 1] !== '\n';
+      const insert = (needsNewline ? '\n' : '') + '1. ';
+      const next = message.slice(0, start) + insert + message.slice(end);
+      setMessage(next);
+      const cursor = start + insert.length;
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(cursor, cursor);
+      });
+    }
+  }, [message, setMessage]);
+
+  const insertToggle = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = message.slice(start, end);
+    if (selected.includes('\n')) {
+      const toggled = selected
+        .split('\n')
+        .map((line) => (line.trim() ? `- [ ] ${line}` : line))
+        .join('\n');
+      const next = message.slice(0, start) + toggled + message.slice(end);
+      setMessage(next);
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(start, start + toggled.length);
+      });
+    } else {
+      const needsNewline = start > 0 && message[start - 1] !== '\n';
+      const insert = (needsNewline ? '\n' : '') + '- [ ] ';
+      const next = message.slice(0, start) + insert + message.slice(end);
+      setMessage(next);
+      const cursor = start + insert.length;
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(cursor, cursor);
+      });
+    }
+  }, [message, setMessage]);
+
+  const insertHeading = useCallback(
+    (level: 1 | 2 | 3) => {
+      const ta = textareaRef.current;
+      if (!ta) return;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const selected = message.slice(start, end);
+      const prefix = '#'.repeat(level) + ' ';
+      const needsNewline = start > 0 && message[start - 1] !== '\n';
+      const before = needsNewline ? '\n' : '';
+      const placeholder = selected || 'heading';
+      const insert = before + prefix + placeholder;
+      const next = message.slice(0, start) + insert + message.slice(end);
+      setMessage(next);
+      const selectStart = start + before.length + prefix.length;
+      const selectEnd = selectStart + placeholder.length;
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(selectStart, selectEnd);
+      });
+    },
+    [message, setMessage],
+  );
+
+  const insertQuote = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = message.slice(start, end);
+    if (selected.includes('\n')) {
+      const quoted = selected
+        .split('\n')
+        .map((line) => (line.trim() ? `> ${line}` : line))
+        .join('\n');
+      const next = message.slice(0, start) + quoted + message.slice(end);
+      setMessage(next);
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(start, start + quoted.length);
+      });
+    } else {
+      const needsNewline = start > 0 && message[start - 1] !== '\n';
+      const insert = (needsNewline ? '\n' : '') + '> ';
+      const next = message.slice(0, start) + insert + message.slice(end);
+      setMessage(next);
+      const cursor = start + insert.length;
+      requestAnimationFrame(() => {
+        ta.focus();
+        ta.setSelectionRange(cursor, cursor);
+      });
+    }
+  }, [message, setMessage]);
+
+  const insertDivider = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const needsNewlineBefore = start > 0 && message[start - 1] !== '\n';
+    const insert = (needsNewlineBefore ? '\n' : '') + '---\n';
+    const next = message.slice(0, start) + insert + message.slice(start);
+    setMessage(next);
+    const cursor = start + insert.length;
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(cursor, cursor);
+    });
+  }, [message, setMessage]);
 
   const currentProviderType = providerType ?? 'self';
   const currentEntry = getProviderEntry(currentProviderType);
@@ -134,20 +323,175 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
       ) : (
         <div className={styles.container}>
           <div className={styles.textareaWrap}>
-            <textarea
-              className={`${styles.textarea} ${isOverLimit ? styles.textareaOver : ''}`}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              rows={5}
-              disabled={loading}
-            />
-            {showTypewriter && (
-              <span className={styles.placeholder} aria-hidden>
-                {placeholder}
-                <span className={styles.cursor} />
-              </span>
+            <div className={`${styles.toolbar} ${showToolbar ? styles.toolbarVisible : ''}`}>
+              <button
+                type='button'
+                className={styles.toolbarBtn}
+                onClick={() => wrapSelection('**', '**')}
+                title='Bold'
+                tabIndex={-1}
+                disabled={!hasSelection}
+              >
+                B
+              </button>
+              <button
+                type='button'
+                className={`${styles.toolbarBtn} ${styles.toolbarBtnItalic}`}
+                onClick={() => wrapSelection('*', '*')}
+                title='Italic'
+                tabIndex={-1}
+                disabled={!hasSelection}
+              >
+                I
+              </button>
+              <span className={styles.toolbarDivider} />
+              <button
+                type='button'
+                className={styles.toolbarBtnHeading}
+                onClick={() => insertHeading(1)}
+                title='Heading 1'
+                tabIndex={-1}
+              >
+                H1
+              </button>
+              <button
+                type='button'
+                className={styles.toolbarBtnHeading}
+                onClick={() => insertHeading(2)}
+                title='Heading 2'
+                tabIndex={-1}
+              >
+                H2
+              </button>
+              <button
+                type='button'
+                className={styles.toolbarBtnHeading}
+                onClick={() => insertHeading(3)}
+                title='Heading 3'
+                tabIndex={-1}
+              >
+                H3
+              </button>
+              <span className={styles.toolbarDivider} />
+              <button
+                type='button'
+                className={styles.toolbarBtn}
+                onClick={insertBullet}
+                title='Bullet list'
+                tabIndex={-1}
+              >
+                <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                  <circle cx='2.5' cy='4' r='1.2' fill='currentColor' />
+                  <circle cx='2.5' cy='7' r='1.2' fill='currentColor' />
+                  <circle cx='2.5' cy='10' r='1.2' fill='currentColor' />
+                  <line x1='5.5' y1='4' x2='12' y2='4' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                  <line x1='5.5' y1='7' x2='12' y2='7' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                  <line x1='5.5' y1='10' x2='12' y2='10' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                </svg>
+              </button>
+              <button
+                type='button'
+                className={styles.toolbarBtn}
+                onClick={insertNumberedList}
+                title='Numbered list'
+                tabIndex={-1}
+              >
+                <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                  <text x='1' y='5.5' fill='currentColor' fontSize='5' fontWeight='600' fontFamily='system-ui'>1</text>
+                  <text x='1' y='8.5' fill='currentColor' fontSize='5' fontWeight='600' fontFamily='system-ui'>2</text>
+                  <text x='1' y='11.5' fill='currentColor' fontSize='5' fontWeight='600' fontFamily='system-ui'>3</text>
+                  <line x1='5.5' y1='4' x2='12' y2='4' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                  <line x1='5.5' y1='7' x2='12' y2='7' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                  <line x1='5.5' y1='10' x2='12' y2='10' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                </svg>
+              </button>
+              <button
+                type='button'
+                className={styles.toolbarBtn}
+                onClick={insertToggle}
+                title='Toggle item'
+                tabIndex={-1}
+              >
+                <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                  <rect x='1.5' y='3' width='4.5' height='4.5' rx='1' stroke='currentColor' strokeWidth='1.2' />
+                  <line x1='8' y1='5.25' x2='12.5' y2='5.25' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                  <rect x='1.5' y='9' width='4.5' height='4.5' rx='1' stroke='currentColor' strokeWidth='1.2' />
+                  <path d='M2.8 11.25L4 12.5L5.5 10' stroke='currentColor' strokeWidth='1.1' strokeLinecap='round' strokeLinejoin='round' />
+                  <line x1='8' y1='11.25' x2='12.5' y2='11.25' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                </svg>
+              </button>
+              <button
+                type='button'
+                className={styles.toolbarBtn}
+                onClick={insertQuote}
+                title='Quote'
+                tabIndex={-1}
+              >
+                <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                  <path d='M3 4.5C3 3.67 3.67 3 4.5 3H5.5C5.78 3 6 3.22 6 3.5V5.5C6 6.33 5.33 7 4.5 7H4C4 8 4.5 9 5.5 9.5C5.22 10 4.5 10.5 3.5 10C2.5 9.5 2 8 2 6.5V5C2 4.72 2 4.5 3 4.5Z' fill='currentColor' />
+                  <path d='M9 4.5C9 3.67 9.67 3 10.5 3H11.5C11.78 3 12 3.22 12 3.5V5.5C12 6.33 11.33 7 10.5 7H10C10 8 10.5 9 11.5 9.5C11.22 10 10.5 10.5 9.5 10C8.5 9.5 8 8 8 6.5V5C8 4.72 8 4.5 9 4.5Z' fill='currentColor' />
+                </svg>
+              </button>
+              <span className={styles.toolbarDivider} />
+              <button
+                type='button'
+                className={styles.toolbarBtn}
+                onClick={insertDivider}
+                title='Horizontal rule'
+                tabIndex={-1}
+              >
+                <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                  <line x1='1' y1='7' x2='13' y2='7' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+                </svg>
+              </button>
+              <div className={styles.toolbarSpacer} />
+              {showFormatToggle && (
+                <div className={styles.formatToggle}>
+                  <button
+                    type='button'
+                    className={`${styles.formatToggleBtn} ${viewMode === 'write' ? styles.formatToggleActive : ''}`}
+                    onClick={() => setViewMode('write')}
+                  >
+                    raw
+                  </button>
+                  <button
+                    type='button'
+                    className={`${styles.formatToggleBtn} ${viewMode === 'preview' ? styles.formatToggleActive : styles.formatTogglePulse}`}
+                    onClick={() => setViewMode('preview')}
+                  >
+                    rendered
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {viewMode === 'preview' && showFormatToggle ? (
+              <div className={styles.previewArea}>
+                <NoteMarkdown plaintext={message} />
+              </div>
+            ) : (
+              <>
+                <textarea
+                  ref={textareaRef}
+                  className={`${styles.textarea} ${isOverLimit ? styles.textareaOver : ''}`}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  onSelect={(e) => {
+                    const ta = e.currentTarget;
+                    setHasSelection(ta.selectionStart !== ta.selectionEnd);
+                  }}
+                  rows={5}
+                  disabled={loading}
+                />
+                {showTypewriter && (
+                  <span className={styles.placeholder} aria-hidden>
+                    {placeholder}
+                    <span className={styles.cursor} />
+                  </span>
+                )}
+              </>
             )}
             <div className={styles.charCountRow}>
               {isOverLimit ? (
@@ -161,7 +505,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 </button>
               ) : (
                 <span className={styles.charCount}>
-                  {message.length}/{maxChars}
+                  {message.length}/{maxChars} chars
                 </span>
               )}
             </div>
