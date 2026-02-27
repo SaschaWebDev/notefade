@@ -496,6 +496,78 @@
   padding-top: 8px;
 }
 
+/* ---- About ---- */
+
+.aboutSection {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 64px 24px;
+}
+
+.aboutBody {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 28px 28px;
+}
+
+.aboutTitle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.aboutTitleText {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.aboutTitleBrand {
+  color: rgba(79, 143, 247, 0.7);
+}
+
+.aboutTitleLine {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(79, 143, 247, 0.25),
+    rgba(255, 255, 255, 0.04)
+  );
+}
+
+.aboutTitleLine:first-child {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(79, 143, 247, 0.25)
+  );
+}
+
+.aboutParagraph {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.aboutParagraph strong {
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 500;
+}
+
 /* ---- Footer ---- */
 
 .footer {
