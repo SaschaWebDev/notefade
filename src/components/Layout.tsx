@@ -35,7 +35,7 @@ export function Layout({ children, isDocs }: LayoutProps) {
   )
 
   return (
-    <div className={styles.backdrop}>
+    <div className={`${styles.backdrop} ${isDocs ? styles.backdropDocs : ''}`}>
       <div className={styles.dotGrid} />
 
       <div className={`${styles.center} ${isDocs ? styles.centerDocs : ''}`}>
@@ -50,20 +50,24 @@ export function Layout({ children, isDocs }: LayoutProps) {
           {children}
         </div>
 
-        <div className={styles.pills}>
-          {PILLS.map(({ label, sectionId }) => (
-            <a
-              key={sectionId}
-              href={`/docs#${sectionId}`}
-              className={styles.pill}
-              onClick={(e) => handlePillClick(e, sectionId)}
-            >
-              {label}
-            </a>
-          ))}
-        </div>
+        {!isDocs && (
+          <>
+            <div className={styles.pills}>
+              {PILLS.map(({ label, sectionId }) => (
+                <a
+                  key={sectionId}
+                  href={`/docs#${sectionId}`}
+                  className={styles.pill}
+                  onClick={(e) => handlePillClick(e, sectionId)}
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
 
-        <p className={styles.hint}>encrypted entirely in your browser</p>
+            <p className={styles.hint}>encrypted entirely in your browser</p>
+          </>
+        )}
       </div>
     </div>
   )
