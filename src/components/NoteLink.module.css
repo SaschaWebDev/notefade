@@ -219,22 +219,31 @@
 }
 
 .linkBox {
-  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 12px;
   width: 100%;
+  margin-bottom: 40px;
+}
+
+.linkBoxInner {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
   padding: 14px 16px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
-  margin-bottom: 16px;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
   text-align: left;
+  box-sizing: border-box;
 }
 
-.linkBox:hover {
+.linkBoxInner:hover {
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.05);
 }
@@ -476,5 +485,76 @@
   font-weight: 400;
   color: rgba(245, 158, 11, 0.85);
   margin: 8px 0 0;
+}
+
+.qrSection {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.qrSvg {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.qrFooter {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  white-space: nowrap;
+}
+
+.qrLabel {
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.02em;
+}
+
+.qrDownload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qrDownload:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+@media (max-width: 600px) {
+  .linkBox {
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+  }
+
+  .linkBoxInner {
+    width: 100%;
+  }
+
+  .qrSection {
+    width: 140px;
+  }
+
+  .qrSvg {
+    height: auto;
+    width: 100%;
+  }
 }
 
