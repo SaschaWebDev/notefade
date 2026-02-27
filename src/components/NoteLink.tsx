@@ -242,7 +242,10 @@ export function NoteLink({
         {destroyState === 'destroyed'
           ? 'note securely destroyed'
           : fragment.startsWith('#protected:')
-            ? 'encrypted password protected note ready'
+            ? <>
+                <span className={styles.desktopOnly}>encrypted password protected note ready</span>
+                <span className={styles.mobileOnly}>encrypted password note ready</span>
+              </>
             : 'encrypted note ready'}
       </h2>
       <p className={styles.description}>

@@ -537,7 +537,37 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
+.mobileOnly {
+  display: none;
+}
+
 @media (max-width: 600px) {
+  .desktopOnly {
+    display: none;
+  }
+
+  .mobileOnly {
+    display: inline;
+  }
+  .metaRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .expiryBadge {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+  }
+
+  .passwordDisplay {
+    width: 100%;
+    box-sizing: border-box;
+    margin-left: 0;
+    justify-content: center;
+  }
+
   .linkBox {
     flex-direction: column;
     align-items: center;
