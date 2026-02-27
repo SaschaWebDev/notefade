@@ -5,7 +5,6 @@ export {
   reconstructKey,
   encrypt,
   decrypt,
-  toBase64Url,
   fromBase64Url,
   stringToBase64Url,
   stringFromBase64Url,

@@ -291,14 +291,6 @@
   text-align: center;
 }
 
-.destroyNotice {
-  font-size: 12px;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.25);
-  margin: 0 0 12px;
-  line-height: 1.5;
-}
-
 .newLink {
   display: inline-block;
   margin-top: 20px;
