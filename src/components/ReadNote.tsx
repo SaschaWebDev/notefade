@@ -58,7 +58,7 @@ export function ReadNote({
 }: ReadNoteProps) {
   const [confirmed, setConfirmed] = useState(false);
   const [checked, setChecked] = useState(false);
-  const [viewMode, setViewMode] = useState<'raw' | 'formatted'>('raw');
+  const [viewMode, setViewMode] = useState<'raw' | 'formatted'>('formatted');
   const validationError = useMemo(
     () => validateFragment(shardId, urlPayload, check),
     [shardId, urlPayload, check],
