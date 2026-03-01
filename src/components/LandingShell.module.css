@@ -624,9 +624,6 @@
   }
 
   .pills {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
     gap: 6px;
     margin-top: 20px;
   }
@@ -638,7 +635,7 @@
 
   .pill {
     font-size: 13px;
-    padding: 7px 14px;
+    padding: 7px 12px;
   }
 
   .palette {
