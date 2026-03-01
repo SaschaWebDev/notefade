@@ -90,7 +90,7 @@ const FAQ_ITEMS = [
   {
     question: 'What encryption do you use?',
     answer:
-      'AES-256-GCM via the Web Crypto API built into your browser. No external crypto libraries. AES-256 has so many possible keys that brute-forcing it would take longer than the remaining life of the universe — even with every computer on Earth working together. This encrypts your content and then embeds it directly into the shareable link. The key is generated fresh for each note, then split using XOR — a mathematically proven unbreakable split where with only one piece, every other possible key is equally likely. It\u2019s not just hard to crack, it\u2019s impossible regardless of computing power. The larger piece lives in your link (FNV-1a integrity check), and the smallest possible ephemeral shard is stored on our server that self-destructs after one read. Both pieces must reunite to decrypt.',
+      'AES-256-GCM via the Web Crypto API built into your browser. No external crypto libraries. AES-256 has so many possible keys that brute-forcing it would take longer than the remaining life of the universe — even with every computer on Earth working together. This encrypts your content and then embeds it directly into the shareable link. The key is generated fresh for each note, then split using XOR — a mathematically proven unbreakable split where with only one piece, every other possible key is equally likely. It\u2019s not just hard to crack, it\u2019s impossible regardless of computing power. The larger piece lives in your link (FNV-1a integrity check), and the smallest possible ephemeral shard is stored on our server that self-destructs after one read. Both pieces must reunite to decrypt. Every link is also padded to a uniform length with random fill, so even the URL size reveals nothing about the message.',
   },
   {
     question: 'Do I need an account?',
@@ -110,7 +110,7 @@ const FAQ_ITEMS = [
   {
     question: 'How do I send the note?',
     answer:
-      'After creating your note, you get a unique link. Copy it and send it however you like \u2014 email, messaging app, carrier pigeon. The link is the note. Whoever opens it first reads the content, and then it\u2019s gone.',
+      'After creating your note, you get a unique link. Copy it and send it however you like \u2014 email, messaging app, carrier pigeon. You can also scan or export a QR code directly from the link page. The link is the note. Whoever opens it first reads the content, and then it\u2019s gone.',
   },
   {
     question: 'What if I regret sending a note?',

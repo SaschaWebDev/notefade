@@ -99,6 +99,15 @@ key = urlShare XOR shard (first 16 bytes padded)`}
 payload = urlShare (32B) + IV (12B) + ciphertext (variable)
 total overhead ≈ 44 bytes + ciphertext + base64 expansion`}
         />
+        <h3 className={styles.h3}>URL-level padding</h3>
+        <p className={styles.p}>
+          All shared links are padded to a fixed length (7,307 characters) using
+          random fill, regardless of message size. This prevents length-based
+          traffic analysis — an observer seeing a notefade link cannot infer
+          whether the message is one word or 1,800 characters. The compact
+          (unpadded) URL is used only for QR codes, where size constraints
+          apply.
+        </p>
       </DocsSection>
 
       <DocsSection id="zero-knowledge" title="zero knowledge">
@@ -120,7 +129,9 @@ total overhead ≈ 44 bytes + ciphertext + base64 expansion`}
             RFC 3986 §3.5
           </a>{' '}
           and enforced by every browser. The server literally cannot see the
-          note's ciphertext, IV, or URL share — only the shard ID.
+          note's ciphertext, IV, or URL share — only the shard ID. URL padding
+          further ensures that even the length of the link reveals nothing about
+          the message size.
         </p>
         <h3 className={styles.h3}>What the server stores</h3>
         <DocsCodeBlock

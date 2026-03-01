@@ -18,7 +18,7 @@ const CARDS: readonly BentoCard[] = [
   {
     key: 'read-once',
     title: 'Read once, then gone',
-    body: 'The server shard deletes the moment it\u2019s read. The link goes dark. No archive, no retrieval, no second chance. One read, then it fades.',
+    body: 'The server shard deletes the moment it\u2019s read. The link goes dark. No archive, no retrieval, no second chance. Share the link or scan a QR code \u2014 one read, then it fades.',
     iconClass: styles.iconReadOnce,
   },
   {
@@ -30,7 +30,7 @@ const CARDS: readonly BentoCard[] = [
   {
     key: 'server-blind',
     title: 'We can\u2019t read your notes',
-    body: 'Not \u201Cwe choose not to.\u201D We literally cannot. Your content never reaches our server. The encrypted payload lives in the URL fragment \u2014 browsers never send that part.',
+    body: 'Not \u201Cwe choose not to.\u201D We literally cannot. Your content never reaches our server. The encrypted payload lives in the URL fragment \u2014 browsers never send that part. Every link is padded to a uniform length, so even URL size reveals nothing about the message.',
     iconClass: styles.iconBlind,
   },
   {

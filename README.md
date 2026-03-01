@@ -41,7 +41,7 @@ URL fragment (#) — never sent to server:
   ├─ integrity check    → FNV-1a hash for tamper detection
   ├─ XOR share (48 B)   → meaningless without the server shard
   ├─ IV (12 B)          → safe to be public
-  └─ ciphertext         → the encrypted note
+  └─ ciphertext         → the encrypted note (padded to fixed length)
 
 Server KV:
   └─ 16 bytes           → deleted after first read or TTL expiry
@@ -59,6 +59,7 @@ Notefade is designed so the server is never trusted with secrets.
 - Data breaches — no content is ever stored server-side
 - Subpoenas / legal requests — there's nothing meaningful to produce
 - Network surveillance — the URL fragment never leaves the browser
+- URL length analysis — all links are padded to a fixed length regardless of message size
 - Link reuse — the shard is deleted after a single read
 
 **What it does not protect against:**
