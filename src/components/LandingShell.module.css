@@ -615,7 +615,8 @@
 
 @media (max-width: 600px) {
   .hero {
-    padding: 24px 16px 40px;
+    padding: 0 16px 40px;
+    justify-content: flex-start;
   }
 
   .header {
@@ -623,14 +624,15 @@
   }
 
   .pills {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 6px;
     margin-top: 20px;
   }
 
   .pillRow {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px;
+    display: contents;
   }
 
   .pill {
