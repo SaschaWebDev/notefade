@@ -50,6 +50,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
     ttl,
     setTtl,
     noteUrl,
+    compactUrl,
     shardId,
     expiresAt,
     loading,
@@ -314,6 +315,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
       {noteUrl ? (
         <NoteLink
           url={noteUrl}
+          compactUrl={compactUrl ?? undefined}
           expiresAt={expiresAt}
           shardId={shardId ?? ''}
           providerConfig={providerConfig}
@@ -446,7 +448,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
               </button>
               <div className={styles.toolbarSpacer} />
               {showFormatToggle && (
-                <div className={styles.formatToggle}>
+                <div className={`${styles.formatToggle} ${styles.formatToggleDesktop}`}>
                   <button
                     type='button'
                     className={`${styles.formatToggleBtn} ${viewMode === 'write' ? styles.formatToggleActive : ''}`}
@@ -494,6 +496,24 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
               </>
             )}
             <div className={styles.charCountRow}>
+              {showFormatToggle && (
+                <div className={`${styles.formatToggle} ${styles.formatToggleMobile}`}>
+                  <button
+                    type='button'
+                    className={`${styles.formatToggleBtn} ${viewMode === 'write' ? styles.formatToggleActive : ''}`}
+                    onClick={() => setViewMode('write')}
+                  >
+                    raw
+                  </button>
+                  <button
+                    type='button'
+                    className={`${styles.formatToggleBtn} ${viewMode === 'preview' ? styles.formatToggleActive : styles.formatTogglePulse}`}
+                    onClick={() => setViewMode('preview')}
+                  >
+                    rendered
+                  </button>
+                </div>
+              )}
               {isOverLimit ? (
                 <button
                   type='button'

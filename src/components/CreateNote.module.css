@@ -217,6 +217,11 @@
   50% { color: #4f8ff7; }
 }
 
+.formatToggleMobile {
+  display: none;
+  margin-right: auto;
+}
+
 .previewArea {
   min-height: 338px;
   max-height: 520px;
@@ -744,6 +749,31 @@
 @media (max-width: 480px) {
   .toolbar {
     padding: 6px 20px 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toolbarBtn,
+  .toolbarBtnHeading,
+  .toolbarDivider,
+  .formatToggle {
+    flex-shrink: 0;
+  }
+
+  .toolbarSpacer {
+    display: none;
+  }
+
+  .formatToggleDesktop {
+    display: none;
+  }
+
+  .formatToggleMobile {
+    display: flex;
   }
 
   .previewArea {
@@ -768,6 +798,11 @@
 
   .charCountRow {
     padding: 8px 20px;
+  }
+
+  .charCount {
+    display: flex;
+    align-items: end;
   }
 
   .footer {
