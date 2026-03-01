@@ -192,13 +192,11 @@ export function NoteLink({
   const handleDownloadQr = useCallback(() => {
     const svg = qrRef.current;
     if (!svg) return;
-    // Ensure xmlns and explicit dimensions for cross-browser compatibility
     const clone = svg.cloneNode(true) as SVGSVGElement;
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     clone.setAttribute('width', String(QR_EXPORT_SIZE));
     clone.setAttribute('height', String(QR_EXPORT_SIZE));
     const svgData = new XMLSerializer().serializeToString(clone);
-    // Use data URI instead of blob URL to avoid security restrictions
     const dataUri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
     const img = new Image();
     img.onload = () => {
@@ -208,10 +206,19 @@ export function NoteLink({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       ctx.drawImage(img, 0, 0, QR_EXPORT_SIZE, QR_EXPORT_SIZE);
-      const a = document.createElement('a');
-      a.href = canvas.toDataURL('image/png');
-      a.download = 'notefade-qr.png';
-      a.click();
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const file = new File([blob], 'notefade-qr.png', { type: 'image/png' });
+        if (navigator.canShare?.({ files: [file] })) {
+          navigator.share({ files: [file] }).catch(() => {});
+        } else {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'notefade-qr.png';
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }
+      }, 'image/png');
     };
     img.src = dataUri;
   }, []);
