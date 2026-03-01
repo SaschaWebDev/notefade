@@ -197,9 +197,11 @@ export function NoteLink({
     clone.setAttribute('width', String(QR_EXPORT_SIZE));
     clone.setAttribute('height', String(QR_EXPORT_SIZE));
     const svgData = new XMLSerializer().serializeToString(clone);
-    const dataUri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
     const img = new Image();
     img.onload = () => {
+      URL.revokeObjectURL(svgUrl);
       const canvas = document.createElement('canvas');
       canvas.width = QR_EXPORT_SIZE;
       canvas.height = QR_EXPORT_SIZE;
@@ -220,7 +222,7 @@ export function NoteLink({
         }
       }, 'image/png');
     };
-    img.src = dataUri;
+    img.src = svgUrl;
   }, []);
 
   useEffect(() => {
