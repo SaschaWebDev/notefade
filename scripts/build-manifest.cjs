@@ -35,9 +35,15 @@ const commit = execSync('git rev-parse HEAD', { cwd: root, encoding: 'utf-8' }).
 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
 const nodeVersion = process.version.replace(/^v/, '')
 
+// Files consumed by Cloudflare Pages platform — not fetchable as static assets.
+// _headers / _redirects: CF intercepts these, requests return SPA fallback HTML.
+// robots.txt: CF prepends managed bot rules, so hash will never match.
+const PLATFORM_FILES = ['_headers', '_redirects', 'robots.txt']
+
 const allFiles = walkDir(distDir)
   .map((f) => path.relative(distDir, f).replace(/\\/g, '/'))
   .filter((f) => f !== 'build-manifest.json')
+  .filter((f) => !PLATFORM_FILES.includes(f))
   .sort()
 
 const files = {}
