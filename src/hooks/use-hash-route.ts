@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { stringFromBase64Url } from '@/crypto'
+import { stringFromBase64Url, unpadPayload } from '@/crypto'
 import { decodeProviderConfig } from '@/api/provider-config'
 import type { ProviderConfig } from '@/api/provider-types'
 
@@ -89,12 +89,12 @@ export function parseFragment(fragment: string): ParsedFragment | null {
     if (!check || !rawPayload) {
       return null
     }
-    const { urlPayload, provider } = extractProvider(rawPayload)
-    return { shardId, check, urlPayload, provider }
+    const { urlPayload: rawUrlPayload, provider } = extractProvider(rawPayload)
+    return { shardId, check, urlPayload: unpadPayload(rawUrlPayload), provider }
   }
 
-  const { urlPayload, provider } = extractProvider(rest)
-  return { shardId, check: null, urlPayload, provider }
+  const { urlPayload: rawUrlPayload, provider } = extractProvider(rest)
+  return { shardId, check: null, urlPayload: unpadPayload(rawUrlPayload), provider }
 }
 
 function parseHash(): HashRoute {

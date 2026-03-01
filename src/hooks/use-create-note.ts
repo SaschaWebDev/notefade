@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createNote, computeCheck, protectFragment } from '@/crypto'
+import { createNote, computeCheck, protectFragment, padPayload } from '@/crypto'
 import { storeShard, createAdapter, encodeProviderConfig } from '@/api'
 import type { ProviderConfig, ProviderType } from '@/api/provider-types'
 
@@ -44,6 +44,7 @@ interface UseCreateNoteReturn {
   ttl: number
   setTtl: (ttl: number) => void
   noteUrl: string | null
+  compactUrl: string | null
   shardId: string | null
   expiresAt: number
   loading: boolean
@@ -70,6 +71,7 @@ export function useCreateNote(): UseCreateNoteReturn {
   const [message, setMessage] = useState('')
   const [ttl, setTtl] = useState(86400)
   const [noteUrl, setNoteUrl] = useState<string | null>(null)
+  const [compactUrl, setCompactUrl] = useState<string | null>(null)
   const [shardId, setShardId] = useState<string | null>(null)
   const [expiresAt, setExpiresAt] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -190,14 +192,22 @@ export function useCreateNote(): UseCreateNoteReturn {
       const pathname = window.location.pathname
       const check = computeCheck(urlPayload)
       const configSuffix = providerConfig ? `@${encodeProviderConfig(providerConfig)}` : ''
-      const innerFragment = `${id}:${check}:${urlPayload}${configSuffix}`
+
+      // Build compact fragment (variable-length, for QR codes)
+      const compactFragment = `${id}:${check}:${urlPayload}${configSuffix}`
+      // Build padded fragment (fixed-length, for copy/share)
+      const paddedFragment = `${id}:${check}:${padPayload(urlPayload)}${configSuffix}`
 
       let finalFragment: string
       if (passwordEnabled && password.length > 0) {
-        const protectedData = await protectFragment(innerFragment, password)
+        const protectedData = await protectFragment(paddedFragment, password)
         finalFragment = `protected:${protectedData}`
+        // No compact URL for password-protected notes (skip QR)
+        setCompactUrl(null)
       } else {
-        finalFragment = innerFragment
+        finalFragment = paddedFragment
+        const compact = `${window.location.origin}${pathname}#${compactFragment}`
+        setCompactUrl(compact)
       }
 
       const url = `${window.location.origin}${pathname}#${finalFragment}`
@@ -217,6 +227,7 @@ export function useCreateNote(): UseCreateNoteReturn {
 
   const resetNote = () => {
     setNoteUrl(null)
+    setCompactUrl(null)
     setShardId(null)
     setError(null)
     setPasswordState('')
@@ -229,6 +240,7 @@ export function useCreateNote(): UseCreateNoteReturn {
     ttl,
     setTtl,
     noteUrl,
+    compactUrl,
     shardId,
     expiresAt,
     loading,
