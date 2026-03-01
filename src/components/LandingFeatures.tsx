@@ -36,7 +36,7 @@ const CARDS: readonly BentoCard[] = [
   {
     key: 'open-source',
     title: 'Don\u2019t trust us. Verify.',
-    body: 'Fully open source. Zero third-party scripts. Zero crypto dependencies \u2014 just the Web Crypto API built into your browser. Read every line. Run your own instance.',
+    body: 'Fully open source. Zero third-party scripts. Zero crypto dependencies \u2014 just the Web Crypto API built into your browser. Read every line. Run your own instance. Verify our production builds match the source with reproducible builds and subresource integrity.',
     iconClass: styles.iconSource,
   },
   {

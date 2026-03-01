@@ -2,6 +2,7 @@
   "name": "notefade",
   "version": "0.1.0",
   "private": true,
+  "engines": { "node": "22.14.0" },
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +13,9 @@
     "worker:config": "node scripts/gen-wrangler-config.cjs",
     "worker:dev": "node scripts/gen-wrangler-config.cjs && wrangler dev worker/index.ts --port 8787",
     "worker:deploy": "node scripts/gen-wrangler-config.cjs && wrangler deploy worker/index.ts",
+    "build:manifest": "node scripts/build-manifest.cjs",
+    "build:prod": "tsc --noEmit && vite build && node scripts/inject-sri.cjs && node scripts/build-manifest.cjs",
+    "build:docker": "docker build -f Dockerfile.build --output type=local,dest=./dist-verify .",
     "deploy": "yarn build && wrangler pages deploy dist/"
   },
   "dependencies": {

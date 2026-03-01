@@ -2,8 +2,8 @@
   display: flex;
   gap: 32px;
   padding: 20px 24px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--fg), 0.02);
+  border: 1px solid rgba(var(--fg), 0.05);
   border-radius: 10px;
   margin-bottom: 28px;
   flex-wrap: wrap;
@@ -19,7 +19,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--fg), 0.3);
   margin-bottom: 8px;
 }
 
@@ -35,13 +35,13 @@
 .link {
   font-size: 13px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--fg), 0.5);
   text-decoration: none;
   transition: color 0.15s ease;
 }
 
 .link:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(var(--fg), 0.8);
 }
 
 @media (max-width: 480px) {

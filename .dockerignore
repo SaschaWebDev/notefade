@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-verify/
+.wrangler/
+.git/
+.env
+.env.*
+.dev.vars
+*.tsbuildinfo
+.claude/

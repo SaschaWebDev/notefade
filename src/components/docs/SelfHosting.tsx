@@ -5,92 +5,194 @@ import { SHARD_STORE_INTERFACE } from './docs-data'
 import { PROVIDERS } from '../../api/provider-registry'
 import styles from './SelfHosting.module.css'
 
+const VERIFY_DOCKER = `git clone https://github.com/user/notefade.git
+cd notefade
+git checkout v0.1.0
+yarn build:docker
+# Compare dist-verify/build-manifest.json against the live site`
+
+const VERIFY_CLI = `git checkout v0.1.0
+yarn install --frozen-lockfile
+yarn build:prod
+node scripts/verify-build.cjs`
+
 export function SelfHosting() {
   return (
-    <DocsSection id="self-hosting" title="self-hosting">
-      <p className={styles.text}>
-        notefade is designed to be self-hostable. The frontend is a static SPA
-        you can serve from anywhere. The backend is a thin shard API that
-        implements a single interface.
-      </p>
+    <>
+      <DocsSection id="self-hosting" title="self-hosting">
+        <p className={styles.text}>
+          notefade is designed to be self-hostable. The frontend is a static SPA
+          you can serve from anywhere. The backend is a thin shard API that
+          implements a single interface.
+        </p>
 
-      <h3 className={styles.subheading}>ShardStore interface</h3>
-      <p className={styles.text}>
-        Any backend that implements these four methods is a valid notefade shard
-        store. The official Cloudflare Worker uses Cloudflare KV, but you can
-        swap in any storage layer.
-      </p>
-      <DocsCodeBlock code={SHARD_STORE_INTERFACE} language="typescript" />
+        <h3 className={styles.subheading}>ShardStore interface</h3>
+        <p className={styles.text}>
+          Any backend that implements these four methods is a valid notefade shard
+          store. The official Cloudflare Worker uses Cloudflare KV, but you can
+          swap in any storage layer.
+        </p>
+        <DocsCodeBlock code={SHARD_STORE_INTERFACE} language="typescript" />
 
-      <DocsCallout variant="note">
-        The <code className={styles.inlineCode}>get()</code> method must delete
-        the shard after reading — this is the one-time read guarantee. If your
-        storage layer doesn't support atomic get-and-delete, read then delete in
-        sequence and accept the small race window.
-      </DocsCallout>
+        <DocsCallout variant="note">
+          The <code className={styles.inlineCode}>get()</code> method must delete
+          the shard after reading — this is the one-time read guarantee. If your
+          storage layer doesn't support atomic get-and-delete, read then delete in
+          sequence and accept the small race window.
+        </DocsCallout>
 
-      <h3 className={styles.subheading}>Supported providers</h3>
-      <p className={styles.text}>
-        The notefade frontend includes built-in adapters for {PROVIDERS.length}{' '}
-        backend providers. Users can connect their own storage via the
-        configuration panel.
-      </p>
+        <h3 className={styles.subheading}>Supported providers</h3>
+        <p className={styles.text}>
+          The notefade frontend includes built-in adapters for {PROVIDERS.length}{' '}
+          backend providers. Users can connect their own storage via the
+          configuration panel.
+        </p>
 
-      <table className={styles.providerTable}>
-        <thead>
-          <tr>
-            <th>Provider</th>
-            <th>Type</th>
-            <th>Fields</th>
-            <th>Credentials</th>
-          </tr>
-        </thead>
-        <tbody>
-          {PROVIDERS.map((p) => (
-            <tr key={p.type}>
-              <td className={styles.providerName}>{p.label}</td>
-              <td>
-                <code className={styles.providerType}>{p.type}</code>
-              </td>
-              <td className={styles.fieldList}>
-                {p.fields.map((f) => (
-                  <code key={f.key} className={styles.fieldCode}>
-                    {f.label}
-                  </code>
-                ))}
-              </td>
-              <td>
-                {p.showCredentialWarning ? (
-                  <span className={styles.credYes}>required</span>
-                ) : (
-                  <span className={styles.credNo}>none</span>
-                )}
-              </td>
+        <table className={styles.providerTable}>
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Type</th>
+              <th>Fields</th>
+              <th>Credentials</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {PROVIDERS.map((p) => (
+              <tr key={p.type}>
+                <td className={styles.providerName}>{p.label}</td>
+                <td>
+                  <code className={styles.providerType}>{p.type}</code>
+                </td>
+                <td className={styles.fieldList}>
+                  {p.fields.map((f) => (
+                    <code key={f.key} className={styles.fieldCode}>
+                      {f.label}
+                    </code>
+                  ))}
+                </td>
+                <td>
+                  {p.showCredentialWarning ? (
+                    <span className={styles.credYes}>required</span>
+                  ) : (
+                    <span className={styles.credNo}>none</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-      <DocsCallout variant="warning">
-        When using a third-party provider, your API credentials are stored in
-        your browser's localStorage. They are never sent to notefade's servers.
-        Use providers you trust, and prefer the Self-Hosted API option if you
-        want full control.
-      </DocsCallout>
+        <DocsCallout variant="warning">
+          When using a third-party provider, your API credentials are stored in
+          your browser's localStorage. They are never sent to notefade's servers.
+          Use providers you trust, and prefer the Self-Hosted API option if you
+          want full control.
+        </DocsCallout>
 
-      <h3 className={styles.subheading}>How to connect</h3>
-      <ol className={styles.steps}>
-        <li>Open the configuration panel (gear icon on the create note page)</li>
-        <li>Select your provider from the dropdown</li>
-        <li>Enter the required fields (URL, credentials)</li>
-        <li>Save — all subsequent notes will use your backend</li>
-      </ol>
-      <p className={styles.text}>
-        To deploy the frontend, build the static SPA with{' '}
-        <code className={styles.inlineCode}>yarn build</code> and serve the{' '}
-        <code className={styles.inlineCode}>dist/</code> directory from any
-        static host (Cloudflare Pages, Vercel, Netlify, or your own Nginx).
-      </p>
-    </DocsSection>
+        <h3 className={styles.subheading}>How to connect</h3>
+        <ol className={styles.steps}>
+          <li>Open the configuration panel (gear icon on the create note page)</li>
+          <li>Select your provider from the dropdown</li>
+          <li>Enter the required fields (URL, credentials)</li>
+          <li>Save — all subsequent notes will use your backend</li>
+        </ol>
+        <p className={styles.text}>
+          To deploy the frontend, build the static SPA with{' '}
+          <code className={styles.inlineCode}>yarn build</code> and serve the{' '}
+          <code className={styles.inlineCode}>dist/</code> directory from any
+          static host (Cloudflare Pages, Vercel, Netlify, or your own Nginx).
+        </p>
+
+        <h3 className={styles.subheading}>Deploying the Cloudflare Worker</h3>
+        <p className={styles.text}>
+          If you're using the default Cloudflare Worker as your shard backend,
+          deploy it in two steps. First, generate the wrangler config from the
+          template (this substitutes your KV namespace IDs from environment
+          variables):
+        </p>
+        <DocsCodeBlock code="node scripts/gen-wrangler-config.cjs" language="bash" />
+        <p className={styles.text}>
+          Then deploy the worker:
+        </p>
+        <DocsCodeBlock code="npx wrangler deploy worker/index.ts" language="bash" />
+        <DocsCallout variant="note">
+          Run both commands in sequence whenever you update the worker code.
+          The first command generates{' '}
+          <code className={styles.inlineCode}>wrangler.toml</code> from{' '}
+          <code className={styles.inlineCode}>wrangler.template.toml</code> — make
+          sure your <code className={styles.inlineCode}>CF_KV_SHARDS_ID</code> and{' '}
+          <code className={styles.inlineCode}>CF_KV_SHARDS_PREVIEW_ID</code>{' '}
+          environment variables are set.
+        </DocsCallout>
+      </DocsSection>
+
+      <DocsSection id="verifying-builds" title="verifying builds">
+        <p className={styles.text}>
+          notefade supports reproducible builds. You can verify that the code
+          running on notefade.com matches the open-source repository — don't
+          trust, verify.
+        </p>
+
+        <h3 className={styles.subheading}>What's included</h3>
+        <p className={styles.text}>
+          Every production build generates a{' '}
+          <code className={styles.inlineCode}>build-manifest.json</code> containing
+          SHA-256 hashes of every file in the build output. Tagged releases on
+          GitHub include this manifest as an artifact.
+        </p>
+        <p className={styles.text}>
+          Additionally, all <code className={styles.inlineCode}>{'<script>'}</code>{' '}
+          and <code className={styles.inlineCode}>{'<link>'}</code> tags in{' '}
+          <code className={styles.inlineCode}>index.html</code> include{' '}
+          <code className={styles.inlineCode}>integrity</code> attributes
+          (Subresource Integrity). Your browser will refuse to load any asset
+          whose content doesn't match its declared hash.
+        </p>
+
+        <h3 className={styles.subheading}>Verify with Docker</h3>
+        <p className={styles.text}>
+          The most reliable way to reproduce the build. Docker pins the exact
+          Node.js version and installs dependencies from the lockfile:
+        </p>
+        <DocsCodeBlock code={VERIFY_DOCKER} language="bash" />
+        <p className={styles.text}>
+          The <code className={styles.inlineCode}>dist-verify/</code> directory
+          will contain the full build output including{' '}
+          <code className={styles.inlineCode}>build-manifest.json</code>. Compare
+          it against the manifest from the GitHub release or the live site.
+        </p>
+
+        <h3 className={styles.subheading}>Verify with the CLI script</h3>
+        <p className={styles.text}>
+          If you have Node.js 22.14.0 installed locally, you can build and verify
+          directly:
+        </p>
+        <DocsCodeBlock code={VERIFY_CLI} language="bash" />
+        <p className={styles.text}>
+          The script fetches each asset from notefade.com, computes its SHA-256,
+          and compares against your local build manifest. It reports MATCH or
+          MISMATCH for every file.
+        </p>
+
+        <h3 className={styles.subheading}>GitHub release manifests</h3>
+        <p className={styles.text}>
+          Each tagged release (<code className={styles.inlineCode}>v*</code>)
+          automatically attaches{' '}
+          <code className={styles.inlineCode}>build-manifest.json</code> via
+          GitHub Actions. You can download it from the Releases page and diff
+          against your local build.
+        </p>
+
+        <DocsCallout variant="caveat">
+          Reproducibility depends on using the same Node.js version and lockfile.
+          The <code className={styles.inlineCode}>.nvmrc</code> file pins Node to
+          22.14.0, and{' '}
+          <code className={styles.inlineCode}>yarn.lock</code> pins all
+          dependencies. Docker is the most reliable method since it controls the
+          full environment.
+        </DocsCallout>
+      </DocsSection>
+    </>
   )
 }

@@ -6,20 +6,20 @@
   display: inline-block;
   font-size: 13px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   text-decoration: none;
   transition: color 0.15s ease;
   margin-bottom: 24px;
 }
 
 .backLink:hover {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(var(--fg), 0.6);
 }
 
 .title {
   font-size: 18px;
   font-weight: 600;
-  color: #f5f5f5;
+  color: var(--text-primary);
   margin: 0 0 8px;
   letter-spacing: -0.01em;
 }
@@ -27,21 +27,21 @@
 .intro {
   font-size: 14px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(var(--fg), 0.4);
   margin: 0 0 24px;
   line-height: 1.6;
 }
 
 .introLink {
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(var(--fg), 0.55);
   text-decoration: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid rgba(var(--fg), 0.15);
   transition: all 0.15s ease;
 }
 
 .introLink:hover {
-  color: rgba(255, 255, 255, 0.8);
-  border-bottom-color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--fg), 0.8);
+  border-bottom-color: rgba(var(--fg), 0.3);
 }
 
 /* ---- Content typography ---- */
@@ -49,7 +49,7 @@
 .p {
   font-size: 14px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(var(--fg), 0.55);
   margin: 0 0 12px;
   line-height: 1.7;
 }
@@ -61,7 +61,7 @@
 .h3 {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(var(--fg), 0.65);
   margin: 20px 0 8px;
   letter-spacing: 0;
 }
@@ -69,22 +69,22 @@
 .code {
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.05);
+  color: rgba(var(--fg), 0.55);
+  background: rgba(var(--fg), 0.05);
   padding: 1px 5px;
   border-radius: 3px;
 }
 
 .link {
-  color: rgba(96, 165, 250, 0.7);
+  color: rgba(var(--link-alt-rgb), 0.7);
   text-decoration: none;
-  border-bottom: 1px solid rgba(96, 165, 250, 0.2);
+  border-bottom: 1px solid rgba(var(--link-alt-rgb), 0.2);
   transition: all 0.15s ease;
 }
 
 .link:hover {
-  color: rgba(96, 165, 250, 0.9);
-  border-bottom-color: rgba(96, 165, 250, 0.4);
+  color: rgba(var(--link-alt-rgb), 0.9);
+  border-bottom-color: rgba(var(--link-alt-rgb), 0.4);
 }
 
 .list {
@@ -95,7 +95,7 @@
 .list li {
   font-size: 14px;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--fg), 0.5);
   margin-bottom: 2px;
 }
 
@@ -104,24 +104,24 @@
 .footer {
   margin-top: 32px;
   padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(var(--fg), 0.06);
   text-align: center;
 }
 
 .footerCredit {
   margin: 0;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--fg), 0.3);
 }
 
 .footerLink {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(var(--fg), 0.45);
   text-decoration: none;
   transition: color 0.15s ease;
 }
 
 .footerLink:hover {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--fg), 0.7);
 }
 
 @media (max-width: 480px) {

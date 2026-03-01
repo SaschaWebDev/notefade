@@ -1,19 +1,44 @@
 .backdrop {
   position: relative;
   min-height: 100vh;
-  background: #111111;
+  background: var(--bg-page);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  color: #e0e0e0;
+  color: var(--text-secondary);
   overflow: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.themeToggle {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 51;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(var(--fg), 0.04);
+  border: 1px solid rgba(var(--fg), 0.08);
+  color: rgba(var(--fg), 0.4);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.themeToggle:hover {
+  background: rgba(var(--fg), 0.08);
+  color: rgba(var(--fg), 0.7);
+  border-color: rgba(var(--fg), 0.15);
 }
 
 .dotGrid {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(var(--fg), 0.08) 1px, transparent 1px);
   background-size: 24px 24px;
   pointer-events: none;
 }
@@ -39,10 +64,10 @@
   font-size: 32px;
   font-weight: 300;
   letter-spacing: 0.08em;
-  color: #f5f5f5;
+  color: var(--text-primary);
   text-decoration: none;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, #f5f5f5 0%, rgba(79, 143, 247, 0.7) 100%);
+  background: linear-gradient(135deg, var(--text-primary) 0%, rgba(var(--accent-rgb), 0.7) 100%);
   background-size: 200% 200%;
   background-position: 0% 50%;
   -webkit-background-clip: text;
@@ -53,13 +78,13 @@
 
 .logo:hover {
   background-position: 100% 50%;
-  filter: drop-shadow(0 0 14px rgba(79, 143, 247, 0.3));
+  filter: drop-shadow(0 0 14px rgba(var(--accent-rgb), 0.3));
 }
 
 .tagline {
   font-size: 16px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(var(--fg), 0.4);
   margin: 0;
   letter-spacing: 0.02em;
 }
@@ -80,11 +105,11 @@
   width: 100%;
   max-width: 840px;
   min-height: 342px;
-  background: #1a1a1a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-elevated);
+  border: 1px solid rgba(var(--fg), 0.08);
   border-radius: 18px;
   box-shadow:
-    0 0 60px rgba(79, 143, 247, 0.08),
+    0 0 60px rgba(var(--accent-rgb), 0.08),
     0 20px 40px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   animation: paletteEnter 0.35s ease-out both;
@@ -112,9 +137,9 @@
 .pill {
   font-size: 13px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(var(--fg), 0.45);
+  background: rgba(var(--fg), 0.05);
+  border: 1px solid rgba(var(--fg), 0.08);
   border-radius: 20px;
   padding: 7px 16px;
   letter-spacing: 0.01em;
@@ -125,9 +150,9 @@
 }
 
 .pill:hover {
-  color: rgba(255, 255, 255, 0.65);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(var(--fg), 0.65);
+  background: rgba(var(--fg), 0.08);
+  border-color: rgba(var(--fg), 0.12);
 }
 
 .paletteDocs {
@@ -146,7 +171,7 @@
   margin-top: 24px;
   font-size: 13px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(var(--fg), 0.25);
   letter-spacing: 0.02em;
   text-align: center;
 }

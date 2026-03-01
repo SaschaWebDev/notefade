@@ -1,8 +1,8 @@
 .wrapper {
   border-radius: 10px;
   overflow: hidden;
-  background: #0d0d0d;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-terminal);
+  border: 1px solid rgba(var(--fg), 0.06);
   margin: 12px 0;
 }
 
@@ -11,15 +11,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--fg), 0.03);
+  border-bottom: 1px solid rgba(var(--fg), 0.05);
   min-height: 32px;
 }
 
 .language {
   font-size: 11px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--fg), 0.3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -27,9 +27,9 @@
 .copyBtn {
   font-size: 11px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   background: none;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--fg), 0.08);
   border-radius: 6px;
   padding: 3px 10px;
   cursor: pointer;
@@ -38,8 +38,8 @@
 }
 
 .copyBtn:hover {
-  color: rgba(255, 255, 255, 0.6);
-  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(var(--fg), 0.6);
+  border-color: rgba(var(--fg), 0.15);
 }
 
 .pre {
@@ -53,7 +53,7 @@
   font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', 'Consolas', monospace;
   font-size: 13px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(var(--fg), 0.65);
   white-space: pre;
   tab-size: 2;
 }

@@ -10,8 +10,8 @@
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.08);
-  border-top-color: #4f8ff7;
+  border: 2px solid rgba(var(--fg), 0.08);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -25,7 +25,7 @@
 .loadingText {
   font-size: 14px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
 }
 
 .disclaimer {
@@ -49,7 +49,7 @@
   gap: 8px;
   font-size: 18px;
   font-weight: 600;
-  color: #f5f5f5;
+  color: var(--text-primary);
   margin: 0 0 10px;
   letter-spacing: -0.01em;
 }
@@ -57,20 +57,20 @@
 .disclaimerText {
   font-size: 15px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(var(--fg), 0.55);
   line-height: 1.5;
   margin: 0 0 8px;
 }
 
 .disclaimerText strong {
-  color: #f5f5f5;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
 .disclaimerDetail {
   font-size: 13px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--fg), 0.3);
   line-height: 1.6;
   margin: 0 0 28px;
 }
@@ -89,7 +89,7 @@
   width: 18px;
   height: 18px;
   min-width: 18px;
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border: 1.5px solid rgba(var(--fg), 0.2);
   border-radius: 4px;
   background: transparent;
   cursor: pointer;
@@ -99,8 +99,8 @@
 }
 
 .checkbox:checked {
-  background: #4f8ff7;
-  border-color: #4f8ff7;
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .checkbox:checked::after {
@@ -118,7 +118,7 @@
 .checkboxText {
   font-size: 13px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--fg), 0.5);
   line-height: 1.4;
 }
 
@@ -131,14 +131,14 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   border-radius: 10px;
   border: none;
-  background: #4f8ff7;
+  background: var(--accent);
   color: #ffffff;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .revealButton:hover:not(:disabled) {
-  background: #3b7ee6;
+  background: var(--accent-hover);
 }
 
 .revealButton:disabled {
@@ -166,7 +166,7 @@
 .stateHeading {
   font-size: 20px;
   font-weight: 600;
-  color: #f5f5f5;
+  color: var(--text-primary);
   margin: 0 0 8px;
   letter-spacing: -0.01em;
 }
@@ -177,7 +177,7 @@
   gap: 8px;
   font-size: 20px;
   font-weight: 600;
-  color: #f5f5f5;
+  color: var(--text-primary);
   margin: 0 0 8px;
   letter-spacing: -0.01em;
 }
@@ -185,7 +185,7 @@
 .stateSubheading {
   font-size: 14px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   margin: 0;
   text-align: center;
   line-height: 1.5;
@@ -201,7 +201,7 @@
 .errorMessage {
   font-size: 14px;
   font-weight: 400;
-  color: #f87171;
+  color: var(--error-text);
   text-align: center;
   margin: 0 0 18px;
   line-height: 1.5;
@@ -217,7 +217,7 @@
 .heading {
   font-size: 16px;
   font-weight: 600;
-  color: #f5f5f5;
+  color: var(--text-primary);
   margin: 0;
   letter-spacing: -0.01em;
 }
@@ -225,9 +225,9 @@
 .badge {
   font-size: 11px;
   font-weight: 500;
-  color: #f87171;
-  background: rgba(248, 113, 113, 0.08);
-  border: 1px solid rgba(248, 113, 113, 0.25);
+  color: var(--error-text);
+  background: rgba(var(--error-light-rgb), 0.08);
+  border: 1px solid rgba(var(--error-light-rgb), 0.25);
   border-radius: 4px;
   padding: 4px 10px;
   letter-spacing: 0.02em;
@@ -237,8 +237,8 @@
   display: flex;
   gap: 2px;
   margin-bottom: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(var(--fg), 0.04);
+  border: 1px solid rgba(var(--fg), 0.06);
   border-radius: 8px;
   padding: 3px;
   width: fit-content;
@@ -248,7 +248,7 @@
   font-size: 12px;
   font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   background: transparent;
   border: none;
   border-radius: 6px;
@@ -259,24 +259,24 @@
 }
 
 .formatToggleBtn:hover {
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(var(--fg), 0.55);
 }
 
 .formatToggleActive {
-  color: #f5f5f5;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  background: rgba(var(--fg), 0.08);
 }
 
 .noteContent {
   font-size: 15px;
   font-weight: 400;
   line-height: 1.7;
-  color: #e0e0e0;
+  color: var(--text-secondary);
   white-space: pre-wrap;
   word-break: break-word;
   padding: 20px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--fg), 0.02);
+  border: 1px solid rgba(var(--fg), 0.05);
   border-radius: 10px;
 }
 
@@ -287,7 +287,7 @@
 .footer {
   margin-top: 18px;
   padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(var(--fg), 0.06);
   text-align: center;
 }
 
@@ -302,21 +302,21 @@
   padding: 10px 28px;
   border: none;
   border-radius: 10px;
-  background: #4f8ff7;
+  background: var(--accent);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .newLink:hover {
-  background: #3b7ee6;
+  background: var(--accent-hover);
 }
 
 .customServerBanner {
   font-size: 12px;
   font-weight: 500;
-  color: rgba(245, 158, 11, 0.85);
-  background: rgba(245, 158, 11, 0.06);
-  border: 1px solid rgba(245, 158, 11, 0.15);
+  color: rgba(var(--warning-rgb), 0.85);
+  background: rgba(var(--warning-rgb), 0.06);
+  border: 1px solid rgba(var(--warning-rgb), 0.15);
   border-radius: 6px;
   padding: 6px 14px;
   margin-bottom: 10px;

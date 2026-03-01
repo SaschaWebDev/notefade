@@ -42,7 +42,7 @@ export const QrCode = forwardRef<SVGSVGElement, QrCodeProps>(
         role="img"
         aria-label="QR code"
       >
-        <rect width={total} height={total} fill="#0d0d0d" rx="0.5" />
+        <rect width={total} height={total} style={{ fill: 'var(--qr-bg)' }} rx="0.5" />
         {modules.grid.map((row, r) =>
           row.map(
             (dark, c) =>
@@ -54,7 +54,7 @@ export const QrCode = forwardRef<SVGSVGElement, QrCodeProps>(
                   width={1}
                   height={1}
                   rx={radius}
-                  fill="#ffffff"
+                  style={{ fill: 'var(--qr-module)' }}
                 />
               ),
           ),

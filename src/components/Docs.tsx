@@ -267,6 +267,18 @@ No metadata. No timestamps. No IP logs. No content.`}
           </a>{' '}
           section below.
         </p>
+        <h3 className={styles.h3}>Verifiable builds</h3>
+        <p className={styles.p}>
+          Every production build includes Subresource Integrity attributes on all
+          scripts and stylesheets — your browser verifies each asset's hash
+          before executing it. A build manifest with SHA-256 checksums is
+          published with each release. You can reproduce the exact build locally
+          or in Docker and compare. See the{' '}
+          <a href="#verifying-builds" className={styles.link}>
+            verifying builds
+          </a>{' '}
+          section for step-by-step instructions.
+        </p>
       </DocsSection>
 
       <DocsSection id="no-accounts" title="no accounts">

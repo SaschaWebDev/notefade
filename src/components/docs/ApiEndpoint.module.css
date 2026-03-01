@@ -1,13 +1,13 @@
 .card {
   border-radius: 10px;
   background: #161616;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(var(--fg), 0.06);
   margin-bottom: 10px;
   transition: border-color 0.2s ease;
 }
 
 .card:hover {
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(var(--fg), 0.1);
 }
 
 .header {
@@ -51,13 +51,13 @@
 .path {
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--fg), 0.7);
   white-space: nowrap;
 }
 
 .summary {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -65,13 +65,13 @@
 
 .chevron {
   flex-shrink: 0;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(var(--fg), 0.25);
   transition: transform 0.3s ease, color 0.15s ease;
 }
 
 .chevronOpen {
   transform: rotate(180deg);
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(var(--fg), 0.45);
 }
 
 .body {
@@ -82,13 +82,13 @@
 
 .bodyInner {
   padding: 0 18px 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(var(--fg), 0.04);
 }
 
 .description {
   font-size: 13px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(var(--fg), 0.45);
   margin: 14px 0 0;
 }
 
@@ -101,7 +101,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   margin: 0 0 8px;
 }
 
@@ -117,15 +117,15 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--fg), 0.3);
   padding: 6px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(var(--fg), 0.06);
 }
 
 .table td {
   padding: 8px 10px;
-  color: rgba(255, 255, 255, 0.5);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: rgba(var(--fg), 0.5);
+  border-bottom: 1px solid rgba(var(--fg), 0.03);
   vertical-align: top;
 }
 
@@ -136,8 +136,8 @@
 .paramName {
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.65);
-  background: rgba(255, 255, 255, 0.05);
+  color: rgba(var(--fg), 0.65);
+  background: rgba(var(--fg), 0.05);
   padding: 1px 5px;
   border-radius: 3px;
 }
@@ -145,7 +145,7 @@
 .required {
   font-size: 10px;
   font-weight: 500;
-  color: rgba(248, 113, 113, 0.7);
+  color: rgba(var(--error-light-rgb), 0.7);
   margin-left: 6px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -153,32 +153,32 @@
 
 .paramLocation {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
 }
 
 .paramType {
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(var(--fg), 0.4);
 }
 
 .paramDesc {
   font-size: 13px;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(var(--fg), 0.45);
 }
 
 .pattern {
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--fg), 0.3);
 }
 
 .statusCode {
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.05);
+  color: rgba(var(--fg), 0.6);
+  background: rgba(var(--fg), 0.05);
   padding: 1px 5px;
   border-radius: 3px;
 }
@@ -186,12 +186,12 @@
 .responseBody {
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(var(--fg), 0.4);
   word-break: break-all;
 }
 
 .noBody {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(var(--fg), 0.2);
 }
 
 @media (max-width: 600px) {

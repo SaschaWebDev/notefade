@@ -1,10 +1,101 @@
 :root {
-  /* Colors */
-  --color-bg: #0a0a0a;
-  --color-text: #e0e0e0;
-  --color-accent: #8b8ba3;
+  /* ---- RGB channel values for rgba() usage ---- */
+  --fg: 255, 255, 255;
+  --accent-rgb: 79, 143, 247;
+  --success-rgb: 34, 197, 94;
+  --warning-rgb: 245, 158, 11;
+  --error-rgb: 239, 68, 68;
+  --error-light-rgb: 248, 113, 113;
+  --link-alt-rgb: 96, 165, 250;
 
-  /* Typography */
+  /* ---- Solid backgrounds ---- */
+  --bg-root: #0a0a0a;
+  --bg-page: #111111;
+  --bg-inset: #151515;
+  --bg-card: #181818;
+  --bg-elevated: #1a1a1a;
+  --bg-card-hover: #1c1c1c;
+  --bg-terminal: #0d0d0d;
+  --bg-overlay: rgba(0, 0, 0, 0.9);
+  --bg-code: rgba(0, 0, 0, 0.35);
+
+  /* Comparison table accent tints */
+  --bg-accent-tint: #151720;
+  --bg-accent-tint-hover: #181b25;
+  --bg-row-hover: #161a1f;
+
+  /* ---- Text ---- */
+  --text-primary: #f5f5f5;
+  --text-secondary: #e0e0e0;
+  --text-heading-2: #f0f0f0;
+  --text-heading-3: #e8e8e8;
+  --text-code: #d4d4d4;
+
+  /* ---- Accent ---- */
+  --accent: #4f8ff7;
+  --accent-hover: #3b7ee6;
+
+  /* ---- Status ---- */
+  --success: #22c55e;
+  --success-alt: #34d399;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --error-text: #f87171;
+
+  /* ---- Links ---- */
+  --link: #6aabf7;
+
+  /* ---- QR ---- */
+  --qr-bg: #0d0d0d;
+  --qr-module: #ffffff;
+
+  /* ---- Typography ---- */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+}
+
+/* ---- Light theme ---- */
+[data-theme="light"] {
+  --fg: 0, 0, 0;
+  --accent-rgb: 37, 99, 235;
+  --success-rgb: 22, 163, 74;
+  --warning-rgb: 180, 95, 6;
+  --error-rgb: 185, 28, 28;
+  --error-light-rgb: 185, 28, 28;
+  --link-alt-rgb: 37, 99, 235;
+
+  --bg-root: #f8f8f8;
+  --bg-page: #f2f2f2;
+  --bg-inset: #eaeaea;
+  --bg-card: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-card-hover: #f5f5f5;
+  --bg-terminal: #f9f9f9;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --bg-code: rgba(0, 0, 0, 0.04);
+
+  --bg-accent-tint: #eef2ff;
+  --bg-accent-tint-hover: #e0eaff;
+  --bg-row-hover: #f0f0f5;
+
+  --text-primary: #111111;
+  --text-secondary: #2a2a2a;
+  --text-heading-2: #1a1a1a;
+  --text-heading-3: #333333;
+  --text-code: #333333;
+
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+
+  --success: #16a34a;
+  --success-alt: #059669;
+  --warning: #d97706;
+  --error: #dc2626;
+  --error-text: #dc2626;
+
+  --link: #2563eb;
+
+  --qr-bg: #ffffff;
+  --qr-module: #1a1a1a;
 }

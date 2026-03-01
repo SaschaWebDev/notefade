@@ -15,7 +15,7 @@
   text-align: center;
   font-size: 15px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--fg), 0.7);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-bottom: 56px;
@@ -27,7 +27,7 @@
   width: 160px;
   height: 1px;
   margin: 0 auto;
-  background: linear-gradient(to right, transparent, rgba(79, 143, 247, 0.25), transparent);
+  background: linear-gradient(to right, transparent, rgba(var(--accent-rgb), 0.25), transparent);
 }
 
 /* ============================================================
@@ -52,22 +52,22 @@
 /* ---- Nodes ---- */
 
 .node {
-  fill: rgba(79, 143, 247, 0.05);
-  stroke: rgba(79, 143, 247, 0.18);
+  fill: rgba(var(--accent-rgb), 0.05);
+  stroke: rgba(var(--accent-rgb), 0.18);
   stroke-width: 1;
   transition: fill 0.3s ease;
 }
 
 .nodeSplit {
-  fill: rgba(79, 143, 247, 0.08);
-  stroke: rgba(79, 143, 247, 0.3);
+  fill: rgba(var(--accent-rgb), 0.08);
+  stroke: rgba(var(--accent-rgb), 0.3);
   stroke-width: 1.5;
   filter: url(#v4-glow);
 }
 
 .nodeRecipient {
-  fill: rgba(79, 143, 247, 0.06);
-  stroke: rgba(79, 143, 247, 0.22);
+  fill: rgba(var(--accent-rgb), 0.06);
+  stroke: rgba(var(--accent-rgb), 0.22);
   stroke-width: 1;
 }
 
@@ -80,7 +80,7 @@
 }
 
 .nodeLabel {
-  fill: #e0e0e0;
+  fill: var(--text-secondary);
   font-size: 13px;
   font-weight: 600;
   text-anchor: middle;
@@ -89,7 +89,7 @@
 }
 
 .nodeSubLabel {
-  fill: rgba(255, 255, 255, 0.35);
+  fill: rgba(var(--fg), 0.35);
   font-size: 10px;
   font-weight: 400;
   text-anchor: middle;
@@ -98,7 +98,7 @@
 }
 
 .branchLabel {
-  fill: rgba(79, 143, 247, 0.4);
+  fill: rgba(var(--accent-rgb), 0.4);
   font-size: 10px;
   font-weight: 400;
   text-anchor: middle;
@@ -107,13 +107,13 @@
 }
 
 .arrowHead {
-  fill: rgba(79, 143, 247, 0.4);
+  fill: rgba(var(--accent-rgb), 0.4);
 }
 
 /* ---- Connector lines (static base) ---- */
 
 .connector {
-  stroke: rgba(79, 143, 247, 0.12);
+  stroke: rgba(var(--accent-rgb), 0.12);
   stroke-width: 1.5;
   stroke-linecap: round;
 }
@@ -170,22 +170,22 @@
 .explanationCard {
   padding: 28px 24px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(var(--fg), 0.025);
+  border: 1px solid rgba(var(--fg), 0.07);
   transition:
     border-color 0.3s ease,
     background 0.3s ease;
 }
 
 .explanationCard:hover {
-  border-color: rgba(79, 143, 247, 0.2);
-  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(var(--accent-rgb), 0.2);
+  background: rgba(var(--fg), 0.035);
 }
 
 .explanationTitle {
   font-size: 17px;
   font-weight: 600;
-  color: #f0f0f0;
+  color: var(--text-heading-2);
   margin: 0 0 12px;
   letter-spacing: 0.01em;
 }
@@ -193,7 +193,7 @@
 .explanationBody {
   font-size: 14px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--fg), 0.5);
   line-height: 1.7;
   margin: 0;
 }
@@ -206,8 +206,8 @@
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: #141414;
+  border: 1px solid rgba(var(--fg), 0.07);
+  background: var(--bg-inset);
 }
 
 .comparisonTable {
@@ -228,74 +228,74 @@
 /* ---- Table header ---- */
 
 .thLabel {
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   font-weight: 400;
   font-size: 13px;
-  background: #161616;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-inset);
+  border-bottom: 1px solid rgba(var(--fg), 0.06);
 }
 
 .thNotefade {
-  color: rgba(79, 143, 247, 0.85);
+  color: rgba(var(--accent-rgb), 0.85);
   font-weight: 600;
   font-size: 13px;
   letter-spacing: 0.04em;
-  background: #151720;
-  border-bottom: 1px solid rgba(79, 143, 247, 0.12);
+  background: var(--bg-accent-tint);
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.12);
 }
 
 .thTypical {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(var(--fg), 0.4);
   font-weight: 500;
   font-size: 13px;
-  background: #161616;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-inset);
+  border-bottom: 1px solid rgba(var(--fg), 0.06);
 }
 
 /* ---- Table rows ---- */
 
 .rowEven td {
-  background: #151515;
+  background: var(--bg-inset);
 }
 
 .rowOdd td {
-  background: #181818;
+  background: var(--bg-card);
 }
 
 .rowEven:hover td,
 .rowOdd:hover td {
-  background: #161a1f;
+  background: var(--bg-row-hover);
 }
 
 .tdLabel {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--fg), 0.7);
   font-weight: 500;
 }
 
 .tdNotefade {
-  color: rgba(79, 143, 247, 0.8);
+  color: rgba(var(--accent-rgb), 0.8);
   font-weight: 500;
-  border-left: 1px solid rgba(79, 143, 247, 0.08);
-  border-right: 1px solid rgba(79, 143, 247, 0.08);
+  border-left: 1px solid rgba(var(--accent-rgb), 0.08);
+  border-right: 1px solid rgba(var(--accent-rgb), 0.08);
 }
 
 .tdTypical {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(var(--fg), 0.4);
   font-weight: 400;
 }
 
 /* Notefade column highlight in even/odd rows */
 .rowEven .tdNotefade {
-  background: #151720;
+  background: var(--bg-accent-tint);
 }
 
 .rowOdd .tdNotefade {
-  background: #171923;
+  background: var(--bg-accent-tint);
 }
 
 .rowEven:hover .tdNotefade,
 .rowOdd:hover .tdNotefade {
-  background: #181b25;
+  background: var(--bg-accent-tint-hover);
 }
 
 /* ---- Green checkmark ---- */
@@ -312,31 +312,31 @@
 }
 
 .greenText {
-  color: #34d399;
+  color: var(--success-alt);
   font-weight: 500;
 }
 
 .dimDetail {
-  color: rgba(79, 143, 247, 0.6);
+  color: rgba(var(--accent-rgb), 0.6);
   font-weight: 400;
 }
 
 .dimLink {
-  color: rgba(79, 143, 247, 0.6);
+  color: rgba(var(--accent-rgb), 0.6);
   text-decoration: underline;
   text-underline-offset: 2px;
   transition: color 0.15s ease;
 }
 
 .dimLink:hover {
-  color: rgba(79, 143, 247, 0.9);
+  color: rgba(var(--accent-rgb), 0.9);
 }
 
 .checkYes {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #34d399;
+  color: var(--success-alt);
   font-weight: 500;
 }
 
@@ -344,7 +344,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #f59e0b;
+  color: var(--warning);
   font-weight: 500;
 }
 
@@ -352,7 +352,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #f87171;
+  color: var(--error-text);
   font-weight: 500;
 }
 
@@ -362,7 +362,7 @@
   text-align: center;
   font-size: 13px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--fg), 0.3);
   line-height: 1.6;
   margin-top: 32px;
   max-width: 560px;
@@ -444,7 +444,7 @@
     display: flex;
     flex-direction: column;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(var(--fg), 0.07);
     overflow: hidden;
   }
 
@@ -459,9 +459,9 @@
   .tdLabel {
     font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
-    background: #1a1a1a !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: rgba(var(--fg), 0.8);
+    background: var(--bg-elevated) !important;
+    border-bottom: 1px solid rgba(var(--fg), 0.05);
   }
 
   .tdNotefade {
@@ -476,7 +476,7 @@
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: rgba(79, 143, 247, 0.5);
+    color: rgba(var(--accent-rgb), 0.5);
     margin-bottom: 4px;
   }
 
@@ -487,26 +487,26 @@
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(var(--fg), 0.25);
     margin-bottom: 4px;
   }
 
   .tdTypical {
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    border-top: 1px solid rgba(var(--fg), 0.04);
   }
 
   .rowEven td,
   .rowOdd td,
   .rowEven:hover td,
   .rowOdd:hover td {
-    background: #151515;
+    background: var(--bg-inset);
   }
 
   .rowEven .tdNotefade,
   .rowOdd .tdNotefade,
   .rowEven:hover .tdNotefade,
   .rowOdd:hover .tdNotefade {
-    background: #151720;
+    background: var(--bg-accent-tint);
   }
 
   .tableFootnote {

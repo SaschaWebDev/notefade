@@ -58,6 +58,7 @@ export const TOC_GROUPS: TocGroup[] = [
     items: [
       { id: 'api', label: 'API Reference' },
       { id: 'self-hosting', label: 'Self-Hosting' },
+      { id: 'verifying-builds', label: 'Verifying Builds' },
     ],
   },
 ]

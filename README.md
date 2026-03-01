@@ -21,8 +21,12 @@ Notefade splits your encryption key so the server stores only 16 meaningless byt
 - **Auto-expiring links** — 1 hour, 24 hours, or 7 days
 - **Password protection** — optional PBKDF2 layer (600k iterations, SHA-256)
 - **QR code sharing** — generate and export as PNG
+- **Dark / light theme** — auto-detects system preference, manual toggle to override
+- **Markdown rendering** — notes render markdown content
 - **7 backend adapters** — Cloudflare KV, Cloudflare D1, Upstash Redis, Vercel KV, Supabase, AWS DynamoDB, or your own API
 - **Self-hostable** — frontend and backend, no vendor lock-in
+- **Reproducible builds** — deterministic Docker builds, SHA-256 build manifests on every release
+- **Subresource Integrity** — every script and stylesheet in production includes `integrity` attributes
 - **No accounts, no cookies, no tracking** — anonymous by default
 - **Open source** — MIT licensed
 
@@ -125,14 +129,14 @@ When someone opens a note stored on a non-default server, notefade displays whic
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22.14.0 (see `.nvmrc`)
 - Yarn
 
 ### Development
 
 ```bash
 # Clone the repo
-git clone https://github.com/notefade/notefade.git
+git clone https://github.com/SaschaWebDev/notefade.git
 cd notefade
 
 # Install dependencies
@@ -159,6 +163,37 @@ yarn test
 # Run tests in watch mode
 yarn test:watch
 ```
+
+### Production Build
+
+```bash
+yarn build:prod
+```
+
+Runs four steps: type-check → Vite build → SRI injection → build manifest generation. The output `dist/build-manifest.json` contains SHA-256 hashes of every file.
+
+### Verifying Builds
+
+You can verify that the code running on notefade.com matches this repository.
+
+**With Docker** (most reliable — pins exact Node version and lockfile):
+
+```bash
+git checkout v0.1.0
+yarn build:docker
+# Compare dist-verify/build-manifest.json against the GitHub release manifest
+```
+
+**With the CLI script** (requires Node 22.14.0):
+
+```bash
+git checkout v0.1.0
+yarn install --frozen-lockfile
+yarn build:prod
+node scripts/verify-build.cjs
+```
+
+The verify script fetches each asset from notefade.com, computes its SHA-256, and compares against your local build manifest. Tagged releases on GitHub include `build-manifest.json` as an artifact.
 
 ### Deploy
 

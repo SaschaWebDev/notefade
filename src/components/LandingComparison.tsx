@@ -312,6 +312,16 @@ const COMPARISON: readonly ComparisonRow[] = [
       </span>
     ),
   },
+  {
+    label: 'Reproducible, verifiable builds',
+    notefade: (
+      <Check>
+        <span className={styles.greenText}>Yes</span>{' '}
+        <span className={styles.dimDetail}>(SRI + manifests)</span>
+      </Check>
+    ),
+    typical: <No />,
+  },
   // --- Usability & access ---
   {
     label: 'Without accounts or sign-up',

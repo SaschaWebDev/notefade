@@ -18,7 +18,7 @@
   gap: 8px;
   font-size: 18px;
   font-weight: 600;
-  color: #f5f5f5;
+  color: var(--text-primary);
   margin: 0 0 6px;
   letter-spacing: -0.01em;
 }
@@ -29,7 +29,7 @@
   gap: 8px;
   font-size: 18px;
   font-weight: 600;
-  color: rgba(239, 68, 68, 0.85);
+  color: rgba(var(--error-rgb), 0.85);
   margin: 0 0 6px;
   letter-spacing: -0.01em;
 }
@@ -41,7 +41,7 @@
 .description {
   font-size: 14px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(var(--fg), 0.4);
   margin: 0 0 20px;
 }
 
@@ -61,8 +61,8 @@
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
   border-radius: 8px;
   animation: settings-in 0.15s ease;
   margin-left: auto;
@@ -71,7 +71,7 @@
 .passwordLabel {
   font-size: 12px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--fg), 0.3);
   letter-spacing: 0.02em;
   margin-right: 2px;
 }
@@ -79,7 +79,7 @@
 .passwordText {
   font-size: 13px;
   font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(var(--fg), 0.6);
   user-select: all;
   letter-spacing: 0.5px;
 }
@@ -91,16 +91,16 @@
   width: 26px;
   height: 26px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.4);
+  background: rgba(var(--fg), 0.06);
+  border: 1px solid rgba(var(--fg), 0.08);
+  color: rgba(var(--fg), 0.4);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .passwordAction:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.6);
+  background: rgba(var(--fg), 0.1);
+  color: rgba(var(--fg), 0.6);
 }
 
 .expiryBadge {
@@ -112,15 +112,15 @@
   font-size: 12px;
   font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(var(--fg), 0.4);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
   border-radius: 8px;
   line-height: 1.6;
 }
 
 .expiryIcon {
-  color: #4f8ff7;
+  color: var(--accent);
   flex-shrink: 0;
   align-self: center;
 }
@@ -131,7 +131,7 @@
 
 .countdown {
   display: inline;
-  color: rgba(79, 143, 247, 0.85);
+  color: rgba(var(--accent-rgb), 0.85);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   animation: countdownPulse 1s ease infinite;
@@ -152,7 +152,7 @@
   display: block;
   font-size: 12px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   margin-bottom: 6px;
   letter-spacing: 0.02em;
 }
@@ -169,30 +169,30 @@
   padding: 10px 12px;
   font-size: 13px;
   font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(var(--fg), 0.6);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
   border-radius: 10px;
   outline: none;
   transition: border-color 0.15s ease;
 }
 
 .baseUrlInput:focus {
-  border-color: rgba(79, 143, 247, 0.4);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .baseUrlInputUnsafe {
-  border-color: rgba(245, 158, 11, 0.4);
+  border-color: rgba(var(--warning-rgb), 0.4);
 }
 
 .baseUrlInputUnsafe:focus {
-  border-color: rgba(245, 158, 11, 0.6);
+  border-color: rgba(var(--warning-rgb), 0.6);
 }
 
 .unsafeWarning {
   font-size: 12px;
   font-weight: 400;
-  color: rgba(245, 158, 11, 0.85);
+  color: rgba(var(--warning-rgb), 0.85);
   margin: 6px 0 0;
 }
 
@@ -203,18 +203,18 @@
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-  color: rgba(239, 68, 68, 0.7);
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: rgba(var(--error-rgb), 0.7);
+  background: rgba(var(--error-rgb), 0.1);
+  border: 1px solid rgba(var(--error-rgb), 0.2);
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .resetLink:hover {
-  color: rgba(239, 68, 68, 0.95);
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.35);
+  color: rgba(var(--error-rgb), 0.95);
+  background: rgba(var(--error-rgb), 0.2);
+  border-color: rgba(var(--error-rgb), 0.35);
 }
 
 @keyframes settings-in {
@@ -227,7 +227,7 @@
   align-items: flex-start;
   gap: 12px;
   width: 100%;
-  margin-bottom: 40px;
+  margin-bottom: 16px;
 }
 
 .linkBoxInner {
@@ -238,8 +238,8 @@
   flex: 1;
   min-width: 0;
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
   border-radius: 10px;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -248,18 +248,18 @@
 }
 
 .linkBoxInner:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(var(--fg), 0.12);
+  background: rgba(var(--fg), 0.05);
 }
 
 .linkBoxCopied {
-  border-color: rgba(34, 197, 94, 0.3);
-  background: rgba(34, 197, 94, 0.04);
+  border-color: rgba(var(--success-rgb), 0.3);
+  background: rgba(var(--success-rgb), 0.04);
 }
 
 .linkBoxCopied:hover {
-  border-color: rgba(34, 197, 94, 0.3);
-  background: rgba(34, 197, 94, 0.04);
+  border-color: rgba(var(--success-rgb), 0.3);
+  background: rgba(var(--success-rgb), 0.04);
 }
 
 .linkText {
@@ -270,11 +270,11 @@
   padding-right: 10px;
   font-size: 13px;
   font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--fg), 0.5);
   word-break: break-all;
   line-height: 1.5;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.05);
+  scrollbar-color: rgba(var(--fg), 0.25) rgba(var(--fg), 0.05);
   /* Force persistent scrollbar on iOS/mobile WebKit */
   -webkit-overflow-scrolling: auto;
 }
@@ -285,23 +285,23 @@
 }
 
 .linkText::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--fg), 0.05);
   border-radius: 3px;
 }
 
 .linkText::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(var(--fg), 0.25);
   border-radius: 3px;
   min-height: 30px;
 }
 
 .linkText::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(var(--fg), 0.4);
 }
 
 .linkBase {
-  color: rgba(79, 143, 247, 0.85);
-  background: rgba(79, 143, 247, 0.08);
+  color: rgba(var(--accent-rgb), 0.85);
+  background: rgba(var(--accent-rgb), 0.08);
   border-radius: 3px;
   padding: 1px 3px;
   margin-right: 1px;
@@ -321,17 +321,17 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.4);
+  background: rgba(var(--fg), 0.06);
+  border: 1px solid rgba(var(--fg), 0.08);
+  color: rgba(var(--fg), 0.4);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .copyIcon:hover,
 .linkBox:hover .copyIcon {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.6);
+  background: rgba(var(--fg), 0.1);
+  color: rgba(var(--fg), 0.6);
 }
 
 .settingsIcon {
@@ -341,28 +341,28 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.25);
+  background: rgba(var(--fg), 0.06);
+  border: 1px solid rgba(var(--fg), 0.08);
+  color: rgba(var(--fg), 0.25);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .settingsIcon:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.5);
+  background: rgba(var(--fg), 0.1);
+  color: rgba(var(--fg), 0.5);
 }
 
 .settingsIconActive {
-  color: rgba(79, 143, 247, 0.85);
-  background: rgba(79, 143, 247, 0.08);
-  border-color: rgba(79, 143, 247, 0.2);
+  color: rgba(var(--accent-rgb), 0.85);
+  background: rgba(var(--accent-rgb), 0.08);
+  border-color: rgba(var(--accent-rgb), 0.2);
 }
 
 .settingsIconActive:hover {
-  color: rgba(79, 143, 247, 0.95);
-  background: rgba(79, 143, 247, 0.12);
-  border-color: rgba(79, 143, 247, 0.3);
+  color: rgba(var(--accent-rgb), 0.95);
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: rgba(var(--accent-rgb), 0.3);
 }
 
 .copiedHint {
@@ -371,7 +371,7 @@
   right: 0;
   font-size: 12px;
   font-weight: 500;
-  color: #22c55e;
+  color: var(--success);
   white-space: nowrap;
   pointer-events: none;
   animation: hint-in 0.2s ease;
@@ -397,21 +397,21 @@
   padding: 10px 28px;
   border: none;
   border-radius: 10px;
-  background: #4f8ff7;
+  background: var(--accent);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .anotherLink:hover {
-  background: #3b7ee6;
+  background: var(--accent-hover);
 }
 
 .confirmBanner {
   font-size: 13px;
   font-weight: 400;
-  color: rgba(245, 158, 11, 0.85);
-  background: rgba(245, 158, 11, 0.06);
-  border: 1px solid rgba(245, 158, 11, 0.15);
+  color: rgba(var(--warning-rgb), 0.85);
+  background: rgba(var(--warning-rgb), 0.06);
+  border: 1px solid rgba(var(--warning-rgb), 0.15);
   border-radius: 4px;
   padding: 8px 14px;
   margin-bottom: 12px;
@@ -423,19 +423,19 @@
   font-size: 15px;
   font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  color: #f5f5f5;
+  color: var(--text-primary);
   text-decoration: none;
   padding: 10px 28px;
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(var(--warning-rgb), 0.25);
   border-radius: 10px;
-  background: rgba(245, 158, 11, 0.15);
+  background: rgba(var(--warning-rgb), 0.15);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .anotherLinkDanger:hover {
-  background: rgba(245, 158, 11, 0.25);
-  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(var(--warning-rgb), 0.25);
+  border-color: rgba(var(--warning-rgb), 0.4);
 }
 
 .destroySection {
@@ -448,7 +448,7 @@
 .destroyButton {
   font-size: 13px;
   font-weight: 400;
-  color: rgba(239, 68, 68, 0.5);
+  color: rgba(var(--error-rgb), 0.5);
   background: none;
   border: none;
   cursor: pointer;
@@ -457,15 +457,15 @@
 }
 
 .destroyButton:hover {
-  color: rgba(239, 68, 68, 0.85);
+  color: rgba(var(--error-rgb), 0.85);
 }
 
 .destroyBanner {
   font-size: 13px;
   font-weight: 400;
-  color: rgba(239, 68, 68, 0.85);
-  background: rgba(239, 68, 68, 0.06);
-  border: 1px solid rgba(239, 68, 68, 0.15);
+  color: rgba(var(--error-rgb), 0.85);
+  background: rgba(var(--error-rgb), 0.06);
+  border: 1px solid rgba(var(--error-rgb), 0.15);
   border-radius: 4px;
   padding: 8px 14px;
   text-align: center;
@@ -482,9 +482,9 @@
 .destroyConfirmButton {
   font-size: 13px;
   font-weight: 500;
-  color: #f5f5f5;
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--text-primary);
+  background: rgba(var(--error-rgb), 0.2);
+  border: 1px solid rgba(var(--error-rgb), 0.3);
   border-radius: 6px;
   padding: 6px 14px;
   cursor: pointer;
@@ -492,14 +492,14 @@
 }
 
 .destroyConfirmButton:hover {
-  background: rgba(239, 68, 68, 0.35);
-  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(var(--error-rgb), 0.35);
+  border-color: rgba(var(--error-rgb), 0.5);
 }
 
 .destroyCancelButton {
   font-size: 13px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(var(--fg), 0.4);
   background: none;
   border: none;
   cursor: pointer;
@@ -508,13 +508,13 @@
 }
 
 .destroyCancelButton:hover {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--fg), 0.7);
 }
 
 .destroyError {
   font-size: 12px;
   font-weight: 400;
-  color: rgba(245, 158, 11, 0.85);
+  color: rgba(var(--warning-rgb), 0.85);
   margin: 8px 0 0;
 }
 
@@ -545,7 +545,7 @@
 .qrLabel {
   font-size: 11px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(var(--fg), 0.25);
   letter-spacing: 0.02em;
 }
 
@@ -556,16 +556,61 @@
   width: 22px;
   height: 22px;
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.3);
+  background: rgba(var(--fg), 0.06);
+  border: 1px solid rgba(var(--fg), 0.08);
+  color: rgba(var(--fg), 0.3);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .qrDownload:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.6);
+  background: rgba(var(--fg), 0.1);
+  color: rgba(var(--fg), 0.6);
+}
+
+/* ---- Share row ---- */
+
+.shareRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 28px;
+}
+
+.shareLabel {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(var(--fg), 0.25);
+  letter-spacing: 0.02em;
+}
+
+.shareIcons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shareIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(var(--fg), 0.04);
+  border: 1px solid rgba(var(--fg), 0.08);
+  color: rgba(var(--fg), 0.3);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.shareIcon:hover {
+  background: rgba(var(--fg), 0.08);
+  color: rgba(var(--fg), 0.6);
+  border-color: rgba(var(--fg), 0.15);
 }
 
 .mobileOnly {
@@ -606,7 +651,7 @@
   .linkBox {
     flex-direction: column;
     align-items: center;
-    margin-bottom: 40px;
+    margin-bottom: 16px;
   }
 
   .linkBoxInner {

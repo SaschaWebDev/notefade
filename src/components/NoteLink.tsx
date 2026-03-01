@@ -196,6 +196,15 @@ export function NoteLink({
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     clone.setAttribute('width', String(QR_EXPORT_SIZE));
     clone.setAttribute('height', String(QR_EXPORT_SIZE));
+    // Resolve CSS variables for standalone SVG rendering
+    const cs = getComputedStyle(document.documentElement);
+    const qrBg = cs.getPropertyValue('--qr-bg').trim();
+    const qrMod = cs.getPropertyValue('--qr-module').trim();
+    clone.querySelectorAll('rect').forEach((rect) => {
+      const fill = rect.style.fill;
+      if (fill.includes('--qr-bg')) rect.setAttribute('fill', qrBg);
+      else if (fill.includes('--qr-module')) rect.setAttribute('fill', qrMod);
+    });
     const svgData = new XMLSerializer().serializeToString(clone);
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl = URL.createObjectURL(svgBlob);
@@ -480,6 +489,27 @@ export function NoteLink({
                     </svg>
                   )}
                 </button>
+                {typeof navigator.share === 'function' && (
+                  <button
+                    type='button'
+                    className={styles.copyIcon}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigator.share({ title: 'notefade', url: displayUrl }).catch(() => {});
+                    }}
+                    title='share link'
+                  >
+                    <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
+                      <path
+                        d='M4 10V12a1 1 0 001 1h6a1 1 0 001-1V10M8 2v7.5M5.5 4.5L8 2l2.5 2.5'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                    </svg>
+                  </button>
+                )}
                 <button
                   type='button'
                   className={`${styles.settingsIcon} ${settingsOpen ? styles.settingsIconActive : ''}`}
@@ -543,6 +573,44 @@ export function NoteLink({
                 </div>
               </div>
             )}
+          </div>
+
+          <div className={styles.shareRow}>
+            <span className={styles.shareLabel}>share via</span>
+            <div className={styles.shareIcons}>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(displayUrl)}`}
+                target='_blank'
+                rel='noopener noreferrer'
+                className={styles.shareIcon}
+                title='share via WhatsApp'
+              >
+                <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
+                  <path d='M13.6 2.3A7.4 7.4 0 002.3 12.3L1 15l2.8-1.3a7.4 7.4 0 009.8-9.4zM8 14a6 6 0 01-3.2-.9l-.2-.1-2.2 1 1-2.1-.2-.3A6 6 0 118 14zm3.3-4.5c-.2-.1-1-.5-1.2-.6s-.3-.1-.4.1-.5.6-.6.7-.2.1-.4 0a5.4 5.4 0 01-2.5-2.2c-.2-.3.2-.3.5-1 0-.1 0-.2 0-.3l-.5-1c-.1-.3-.3-.2-.4-.2h-.3a.7.7 0 00-.5.2 1.9 1.9 0 00-.6 1.4c0 .9.6 1.7.7 1.8s1.2 1.9 3 2.6a9 9 0 001 .4 2.4 2.4 0 001.1.1c.3-.1 1-.4 1.2-.8s.1-.7.1-.8l-.4-.2z' fill='currentColor'/>
+                </svg>
+              </a>
+              <a
+                href={`https://t.me/share/url?url=${encodeURIComponent(displayUrl)}`}
+                target='_blank'
+                rel='noopener noreferrer'
+                className={styles.shareIcon}
+                title='share via Telegram'
+              >
+                <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
+                  <path d='M14.3 1.7L1.4 6.8c-.5.2-.5.6 0 .7l3.3 1 1.3 4c.1.4.2.5.5.5s.3-.1.4-.2l1.8-1.8 3.3 2.4c.4.2.7.1.8-.4L14.9 2.5c.1-.6-.2-.9-.6-.8zM5.3 8.2l6.3-3.9-4.8 4.4-.2 2.1-1.3-2.6z' fill='currentColor'/>
+                </svg>
+              </a>
+              <a
+                href={`mailto:?subject=${encodeURIComponent('Private note')}&body=${encodeURIComponent(displayUrl)}`}
+                className={styles.shareIcon}
+                title='share via email'
+              >
+                <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
+                  <rect x='2' y='3.5' width='12' height='9' rx='1.5' stroke='currentColor' strokeWidth='1.2' />
+                  <path d='M2.5 4L8 8.5 13.5 4' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round' />
+                </svg>
+              </a>
+            </div>
           </div>
 
           {settingsOpen && (

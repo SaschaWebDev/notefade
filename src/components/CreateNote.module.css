@@ -23,12 +23,12 @@
   font-size: 22px;
   font-weight: 400;
   line-height: 1.6;
-  color: #e0e0e0;
+  color: var(--text-secondary);
   box-sizing: border-box;
   position: relative;
   z-index: 1;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-color: rgba(var(--fg), 0.15) transparent;
 }
 
 .textarea:focus,
@@ -47,12 +47,12 @@
 }
 
 .textarea::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(var(--fg), 0.15);
   border-radius: 3px;
 }
 
 .textarea::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(var(--fg), 0.25);
 }
 
 .placeholder {
@@ -64,7 +64,7 @@
   font-size: 22px;
   font-weight: 400;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(var(--fg), 0.25);
   pointer-events: none;
   white-space: pre-wrap;
 }
@@ -73,7 +73,7 @@
   display: inline-block;
   width: 1.5px;
   height: 1.1em;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(var(--fg), 0.35);
   vertical-align: text-bottom;
   margin-left: 1px;
   animation: blink 0.6s step-end infinite;
@@ -85,7 +85,7 @@
 }
 
 .textareaOver {
-  color: #f87171;
+  color: var(--error-text);
 }
 
 /* --- Formatting Toolbar --- */
@@ -111,10 +111,10 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--fg), 0.04);
+  border: 1px solid rgba(var(--fg), 0.08);
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -131,9 +131,9 @@
 }
 
 .toolbarBtn:hover:not(:disabled) {
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(var(--fg), 0.6);
+  background: rgba(var(--fg), 0.07);
+  border-color: rgba(var(--fg), 0.12);
 }
 
 .toolbarBtnHeading {
@@ -142,10 +142,10 @@
   justify-content: center;
   height: 28px;
   padding: 0 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--fg), 0.04);
+  border: 1px solid rgba(var(--fg), 0.08);
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   cursor: pointer;
   font-size: 11px;
   font-weight: 700;
@@ -156,9 +156,9 @@
 }
 
 .toolbarBtnHeading:hover {
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(var(--fg), 0.6);
+  background: rgba(var(--fg), 0.07);
+  border-color: rgba(var(--fg), 0.12);
 }
 
 .toolbarBtnItalic {
@@ -168,7 +168,7 @@
 .toolbarDivider {
   width: 1px;
   height: 16px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--fg), 0.08);
   margin: 0 2px;
 }
 
@@ -179,8 +179,8 @@
 .formatToggle {
   display: flex;
   gap: 2px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(var(--fg), 0.04);
+  border: 1px solid rgba(var(--fg), 0.06);
   border-radius: 6px;
   padding: 2px;
 }
@@ -189,7 +189,7 @@
   font-size: 11px;
   font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--fg), 0.3);
   background: transparent;
   border: none;
   border-radius: 4px;
@@ -200,12 +200,12 @@
 }
 
 .formatToggleBtn:hover {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--fg), 0.5);
 }
 
 .formatToggleActive {
-  color: #f5f5f5;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  background: rgba(var(--fg), 0.08);
 }
 
 .formatTogglePulse {
@@ -213,8 +213,8 @@
 }
 
 @keyframes togglePulse {
-  0%, 100% { color: rgba(255, 255, 255, 0.3); }
-  50% { color: #4f8ff7; }
+  0%, 100% { color: rgba(var(--fg), 0.3); }
+  50% { color: var(--accent); }
 }
 
 .formatToggleMobile {
@@ -229,7 +229,7 @@
   padding: 36px;
   box-sizing: border-box;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-color: rgba(var(--fg), 0.15) transparent;
 }
 
 .previewArea::-webkit-scrollbar {
@@ -241,12 +241,12 @@
 }
 
 .previewArea::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(var(--fg), 0.15);
   border-radius: 3px;
 }
 
 .previewArea::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(var(--fg), 0.25);
 }
 
 .footer {
@@ -254,7 +254,7 @@
   flex-direction: column;
   gap: 16px;
   padding: 21px 36px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(var(--fg), 0.06);
 }
 
 .footerTop {
@@ -269,15 +269,15 @@
   align-items: center;
   flex: 1;
   min-width: 0;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--fg), 0.05);
+  border: 1px solid rgba(var(--fg), 0.08);
   border-radius: 8px;
   transition: border-color 0.15s ease;
   animation: byos-in 0.3s ease;
 }
 
 .passwordInputWrapper:focus-within {
-  border-color: rgba(79, 143, 247, 0.4);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .passwordInlineInput {
@@ -288,12 +288,12 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   background: transparent;
   border: none;
-  color: #fff;
+  color: var(--text-primary);
   outline: none;
 }
 
 .passwordInlineInput::placeholder {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(var(--fg), 0.2);
 }
 
 .copyPasswordButton {
@@ -303,8 +303,8 @@
   padding: 4px 8px;
   background: none;
   border: none;
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.25);
+  border-left: 1px solid rgba(var(--fg), 0.06);
+  color: rgba(var(--fg), 0.25);
   cursor: pointer;
   transition: color 0.2s ease;
 }
@@ -324,7 +324,7 @@
 }
 
 .copyPasswordButton:hover {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--fg), 0.5);
 }
 
 .copyPasswordButton:disabled {
@@ -339,13 +339,13 @@
   padding: 4px 8px;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(var(--fg), 0.25);
   cursor: pointer;
   transition: color 0.15s ease;
 }
 
 .showPasswordButton:hover {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--fg), 0.5);
 }
 
 .generatePasswordButton {
@@ -355,14 +355,14 @@
   padding: 4px 8px;
   background: none;
   border: none;
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.25);
+  border-left: 1px solid rgba(var(--fg), 0.06);
+  color: rgba(var(--fg), 0.25);
   cursor: pointer;
   transition: color 0.15s ease;
 }
 
 .generatePasswordButton:hover {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--fg), 0.5);
 }
 
 .generatePasswordButton:disabled {
@@ -379,15 +379,15 @@
 .ttlLabel {
   font-size: 17px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--fg), 0.3);
   letter-spacing: 0.02em;
 }
 
 .ttlToggle {
   position: relative;
   display: flex;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--fg), 0.05);
+  border: 1px solid rgba(var(--fg), 0.08);
   border-radius: 8px;
   padding: 3px;
   transform: scale(0.9);
@@ -400,8 +400,8 @@
   left: 3px;
   width: calc(100% / 3 - 2px);
   height: calc(100% - 6px);
-  background: rgba(79, 143, 247, 0.15);
-  border: 1px solid rgba(79, 143, 247, 0.3);
+  background: rgba(var(--accent-rgb), 0.15);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
   border-radius: 6px;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
@@ -417,17 +417,17 @@
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   cursor: pointer;
   transition: color 0.2s ease;
 }
 
 .ttlOption:hover:not(:disabled) {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(var(--fg), 0.6);
 }
 
 .ttlOptionActive {
-  color: #4f8ff7;
+  color: var(--accent);
 }
 
 .ttlOption:disabled {
@@ -452,7 +452,7 @@
 .charCount {
   font-size: 12px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(var(--fg), 0.2);
   font-variant-numeric: tabular-nums;
   user-select: none;
 }
@@ -466,17 +466,17 @@
   font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   line-height: 1.4;
-  color: #f5f5f5;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: var(--text-primary);
+  background: rgba(var(--error-rgb), 0.15);
+  border: 1px solid rgba(var(--error-rgb), 0.25);
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .truncateButton:hover {
-  background: rgba(239, 68, 68, 0.25);
-  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(var(--error-rgb), 0.25);
+  border-color: rgba(var(--error-rgb), 0.4);
 }
 
 .encryptButton {
@@ -486,14 +486,14 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   border-radius: 13px;
   border: none;
-  background: #4f8ff7;
+  background: var(--accent);
   color: #ffffff;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .encryptButton:hover:not(:disabled) {
-  background: #3b7ee6;
+  background: var(--accent-hover);
 }
 
 .encryptButton:disabled {
@@ -507,10 +507,10 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--fg), 0.04);
+  border: 1px solid rgba(var(--fg), 0.08);
   border-radius: 13px;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--fg), 0.3);
   cursor: pointer;
   transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
@@ -521,28 +521,28 @@
 }
 
 .gearButton:hover {
-  color: rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(var(--fg), 0.55);
+  background: rgba(var(--fg), 0.07);
+  border-color: rgba(var(--fg), 0.12);
 }
 
 .gearButtonActive {
-  color: #4f8ff7;
-  background: rgba(79, 143, 247, 0.06);
-  border-color: rgba(79, 143, 247, 0.2);
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.06);
+  border-color: rgba(var(--accent-rgb), 0.2);
 }
 
 .gearButtonActive:hover {
-  color: #4f8ff7;
-  background: rgba(79, 143, 247, 0.1);
-  border-color: rgba(79, 143, 247, 0.3);
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.3);
 }
 
 /* --- Password Panel --- */
 
 .passwordPanel {
   padding: 16px 28px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(var(--fg), 0.06);
   animation: byos-in 0.15s ease;
 }
 
@@ -550,7 +550,7 @@
 
 .byosPanel {
   padding: 16px 28px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(var(--fg), 0.06);
   animation: byos-in 0.3s ease;
 }
 
@@ -569,14 +569,14 @@
 .byosTitle {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--fg), 0.5);
   letter-spacing: 0.02em;
 }
 
 .byosSubtitle {
   font-size: 11px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(var(--fg), 0.2);
 }
 
 /* Server toggle (2-pill segmented control) */
@@ -584,8 +584,8 @@
 .serverToggle {
   position: relative;
   display: flex;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--fg), 0.05);
+  border: 1px solid rgba(var(--fg), 0.08);
   border-radius: 8px;
   padding: 3px;
   margin-bottom: 14px;
@@ -597,8 +597,8 @@
   left: 3px;
   width: calc(50% - 3px);
   height: calc(100% - 6px);
-  background: rgba(79, 143, 247, 0.15);
-  border: 1px solid rgba(79, 143, 247, 0.3);
+  background: rgba(var(--accent-rgb), 0.15);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
   border-radius: 6px;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
@@ -615,18 +615,18 @@
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   cursor: pointer;
   transition: color 0.2s ease;
   text-align: center;
 }
 
 .serverToggleOption:hover {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(var(--fg), 0.6);
 }
 
 .serverToggleOptionActive {
-  color: #4f8ff7;
+  color: var(--accent);
 }
 
 /* Provider config section */
@@ -639,7 +639,7 @@
   display: block;
   font-size: 12px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--fg), 0.35);
   margin-bottom: 6px;
   letter-spacing: 0.02em;
 }
@@ -649,9 +649,9 @@
   padding: 10px 12px;
   font-size: 13px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(var(--fg), 0.6);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
   border-radius: 10px;
   outline: none;
   cursor: pointer;
@@ -665,12 +665,12 @@
 }
 
 .byosSelect:focus {
-  border-color: rgba(79, 143, 247, 0.4);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .byosSelect option {
-  background: #1a1a2e;
-  color: #e0e0e0;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
 }
 
 .credentialWarning {
@@ -679,9 +679,9 @@
   gap: 6px;
   font-size: 12px;
   font-weight: 400;
-  color: rgba(245, 158, 11, 0.85);
-  background: rgba(245, 158, 11, 0.06);
-  border: 1px solid rgba(245, 158, 11, 0.12);
+  color: rgba(var(--warning-rgb), 0.85);
+  background: rgba(var(--warning-rgb), 0.06);
+  border: 1px solid rgba(var(--warning-rgb), 0.12);
   border-radius: 8px;
   padding: 8px 12px;
   margin: 0 0 12px;
@@ -703,9 +703,9 @@
   padding: 10px 12px;
   font-size: 13px;
   font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(var(--fg), 0.6);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
   border-radius: 10px;
   outline: none;
   transition: border-color 0.15s ease;
@@ -713,7 +713,7 @@
 }
 
 .byosInput:focus {
-  border-color: rgba(79, 143, 247, 0.4);
+  border-color: rgba(var(--accent-rgb), 0.4);
 }
 
 .byosResetButton {
@@ -724,9 +724,9 @@
   font-size: 12px;
   font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  color: rgba(239, 68, 68, 0.7);
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.15);
+  color: rgba(var(--error-rgb), 0.7);
+  background: rgba(var(--error-rgb), 0.08);
+  border: 1px solid rgba(var(--error-rgb), 0.15);
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
@@ -734,15 +734,15 @@
 }
 
 .byosResetButton:hover {
-  color: rgba(239, 68, 68, 0.95);
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.3);
+  color: rgba(var(--error-rgb), 0.95);
+  background: rgba(var(--error-rgb), 0.15);
+  border-color: rgba(var(--error-rgb), 0.3);
 }
 
 .error {
   padding: 14px 28px;
   font-size: 14px;
-  color: #f87171;
+  color: var(--error-text);
   border-top: 1px solid rgba(248, 113, 113, 0.1);
 }
 
@@ -848,4 +848,8 @@
     font-size: 17px;
     padding: 12px 28px;
   }
+}
+
+:global([data-theme="light"]) .byosSelect {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='rgba(0,0,0,0.3)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
