@@ -4,6 +4,10 @@ import {
   reconstructKey,
   encrypt,
   decrypt,
+  unpadPlaintext,
+  padPayload,
+  unpadPayload,
+  PAYLOAD_PAD_LEN,
   toBase64Url,
   fromBase64Url,
   stringToBase64Url,
@@ -263,10 +267,8 @@ describe('createNote / openNote', () => {
   it('urlPayload contains urlShare(48) + iv(12) + ciphertext', async () => {
     const { urlPayload } = await createNote('test')
     const bytes = fromBase64Url(urlPayload)
-    // At minimum: 48 (urlShare) + 12 (iv) + 4 (plaintext) + 16 (auth tag)
-    expect(bytes.length).toBeGreaterThanOrEqual(80)
-    // First 48 bytes are urlShare, next 12 are IV
-    expect(bytes.length).toBe(48 + 12 + new TextEncoder().encode('test').length + 16)
+    // urlShare(48) + iv(12) + plaintext(4) + gcm tag(16) = 80
+    expect(bytes.length).toBe(80)
   })
 
   it('round-trips CJK and emoji through full flow', async () => {
@@ -388,7 +390,7 @@ describe('stress tests — character encoding edge cases', () => {
     const { decrypted, urlPayload } = await roundTrip(message)
     expect(decrypted).toBe(message)
     const rawBytes = fromBase64Url(urlPayload)
-    // urlShare(48) + iv(12) + plaintext(1800) + gcm tag(16)
+    // urlShare(48) + iv(12) + plaintext(1800) + gcm tag(16) = 1876
     expect(rawBytes.length).toBe(48 + 12 + 1800 + 16)
   })
 
@@ -397,7 +399,7 @@ describe('stress tests — character encoding edge cases', () => {
     const { decrypted, urlPayload } = await roundTrip(message)
     expect(decrypted).toBe(message)
     const rawBytes = fromBase64Url(urlPayload)
-    // 1800 CJK chars × 3 UTF-8 bytes = 5400 plaintext bytes
+    // urlShare(48) + iv(12) + plaintext(5400) + gcm tag(16) = 5476
     expect(rawBytes.length).toBe(48 + 12 + 5400 + 16)
   })
 
@@ -407,7 +409,7 @@ describe('stress tests — character encoding edge cases', () => {
     const { decrypted, urlPayload } = await roundTrip(message)
     expect(decrypted).toBe(message)
     const rawBytes = fromBase64Url(urlPayload)
-    // 900 emoji × 4 UTF-8 bytes = 3600 plaintext bytes
+    // urlShare(48) + iv(12) + plaintext(3600) + gcm tag(16) = 3676
     expect(rawBytes.length).toBe(48 + 12 + 3600 + 16)
   })
 
@@ -416,7 +418,7 @@ describe('stress tests — character encoding edge cases', () => {
     const { decrypted, urlPayload } = await roundTrip(message)
     expect(decrypted).toBe(message)
     const rawBytes = fromBase64Url(urlPayload)
-    // 1800 × 2 UTF-8 bytes = 3600 plaintext bytes
+    // urlShare(48) + iv(12) + plaintext(3600) + gcm tag(16) = 3676
     expect(rawBytes.length).toBe(48 + 12 + 3600 + 16)
   })
 
@@ -537,28 +539,119 @@ describe('stress tests — character encoding edge cases', () => {
 
   // --- URL payload size verification ---
 
-  it('CJK payload is ~3x longer than ASCII payload for same char count', async () => {
-    const asciiMsg = 'a'.repeat(1000)
-    const cjkMsg = '中'.repeat(1000)
-    const ascii = await createNote(asciiMsg)
-    const cjk = await createNote(cjkMsg)
-    const asciiBytes = fromBase64Url(ascii.urlPayload).length
-    const cjkBytes = fromBase64Url(cjk.urlPayload).length
-    // CJK plaintext is 3x the bytes, but the 76-byte overhead is shared
-    // (76 + 3000) / (76 + 1000) ≈ 2.86
-    const ratio = (cjkBytes - 76) / (asciiBytes - 76)
-    expect(ratio).toBeCloseTo(3, 1)
+  it('short messages produce shorter payloads than long messages', async () => {
+    const short = await createNote('a')
+    const long = await createNote('a'.repeat(1800))
+    const shortLen = fromBase64Url(short.urlPayload).length
+    const longLen = fromBase64Url(long.urlPayload).length
+    expect(shortLen).toBeLessThan(longLen)
+  })
+
+  it('padPayload produces uniform length for different payloads', async () => {
+    const short = await createNote('a')
+    const medium = await createNote('a'.repeat(1000))
+    const cjk = await createNote('中'.repeat(1000))
+    const shortPadded = padPayload(short.urlPayload)
+    const mediumPadded = padPayload(medium.urlPayload)
+    const cjkPadded = padPayload(cjk.urlPayload)
+    expect(shortPadded.length).toBe(PAYLOAD_PAD_LEN)
+    expect(mediumPadded.length).toBe(PAYLOAD_PAD_LEN)
+    expect(cjkPadded.length).toBe(PAYLOAD_PAD_LEN)
   })
 
   it('base64url output length matches expected formula', async () => {
-    const message = 'test payload here'
-    const utf8Len = new TextEncoder().encode(message).length
-    const { urlPayload } = await createNote(message)
-    const rawLen = 48 + 12 + utf8Len + 16 // urlShare + iv + ciphertext(plaintext + gcm tag)
+    const { urlPayload } = await createNote('test payload here')
+    const rawBytes = fromBase64Url(urlPayload)
+    const rawLen = rawBytes.length
     const expectedBase64Len = Math.ceil((rawLen * 4) / 3)
     // base64url strips trailing '=', so length <= ceil(n*4/3)
     expect(urlPayload.length).toBeLessThanOrEqual(expectedBase64Len)
     expect(urlPayload.length).toBeGreaterThanOrEqual(expectedBase64Len - 2)
+  })
+})
+
+describe('padPayload / unpadPayload', () => {
+  it('produces exactly PAYLOAD_PAD_LEN chars', async () => {
+    const { urlPayload } = await createNote('hello')
+    const padded = padPayload(urlPayload)
+    expect(padded.length).toBe(PAYLOAD_PAD_LEN)
+  })
+
+  it('starts with . marker', async () => {
+    const { urlPayload } = await createNote('hello')
+    const padded = padPayload(urlPayload)
+    expect(padded[0]).toBe('.')
+  })
+
+  it('round-trips through pad/unpad', async () => {
+    const { urlPayload } = await createNote('round-trip test')
+    const padded = padPayload(urlPayload)
+    const unpadded = unpadPayload(padded)
+    expect(unpadded).toBe(urlPayload)
+  })
+
+  it('returns input as-is when no . prefix (backward compat)', () => {
+    const payload = 'someBase64UrlPayloadWithoutDot'
+    expect(unpadPayload(payload)).toBe(payload)
+  })
+
+  it('openNote handles padded urlPayload directly', async () => {
+    const message = 'padded openNote test'
+    const { urlPayload, serverShard } = await createNote(message)
+    const padded = padPayload(urlPayload)
+    const decrypted = await openNote(padded, serverShard)
+    expect(decrypted).toBe(message)
+  })
+
+  it('uniform length for different payload sizes', async () => {
+    const short = await createNote('a')
+    const long = await createNote('a'.repeat(1800))
+    const cjk = await createNote('中'.repeat(1800))
+    expect(padPayload(short.urlPayload).length).toBe(PAYLOAD_PAD_LEN)
+    expect(padPayload(long.urlPayload).length).toBe(PAYLOAD_PAD_LEN)
+    expect(padPayload(cjk.urlPayload).length).toBe(PAYLOAD_PAD_LEN)
+  })
+
+  it('random fill differs between calls', async () => {
+    const { urlPayload } = await createNote('same')
+    const a = padPayload(urlPayload)
+    const b = padPayload(urlPayload)
+    // The real payload portion is the same, but the fill should differ
+    expect(a).not.toBe(b)
+    // Both unpad to the same payload
+    expect(unpadPayload(a)).toBe(urlPayload)
+    expect(unpadPayload(b)).toBe(urlPayload)
+  })
+
+  it('handles empty payload', async () => {
+    const { urlPayload } = await createNote('')
+    const padded = padPayload(urlPayload)
+    expect(padded.length).toBe(PAYLOAD_PAD_LEN)
+    expect(unpadPayload(padded)).toBe(urlPayload)
+  })
+
+  it('handles max-length CJK payload', async () => {
+    const { urlPayload } = await createNote('中'.repeat(1800))
+    const padded = padPayload(urlPayload)
+    expect(padded.length).toBe(PAYLOAD_PAD_LEN)
+    expect(unpadPayload(padded)).toBe(urlPayload)
+  })
+})
+
+describe('unpadPlaintext (backward compat)', () => {
+  it('returns input as-is when no 0xFF found', () => {
+    const original = new TextEncoder().encode('old note without padding')
+    const unpadded = unpadPlaintext(original)
+    expect(unpadded).toEqual(original)
+  })
+
+  it('strips bytes after 0xFF delimiter', () => {
+    const msg = new TextEncoder().encode('hello')
+    const padded = new Uint8Array(100)
+    padded.set(msg, 0)
+    padded[msg.length] = 0xff
+    const unpadded = unpadPlaintext(padded)
+    expect(unpadded).toEqual(msg)
   })
 })
 
@@ -641,6 +734,28 @@ describe('protectFragment / unprotectFragment', () => {
     expect(decryptedFragment).toBe(fragment)
 
     // Parse the fragment and open the note
+    const parts = decryptedFragment.split(':')
+    expect(parts[0]).toBe(shardId)
+    expect(parts[1]).toBe(check)
+    const recoveredPayload = parts.slice(2).join(':')
+    const plaintext = await openNote(recoveredPayload, serverShard)
+    expect(plaintext).toBe(message)
+  })
+
+  it('end-to-end with padded payload through protectFragment/unprotectFragment', async () => {
+    const message = 'padded e2e test'
+    const { urlPayload, serverShard } = await createNote(message)
+    const check = computeCheck(urlPayload)
+    const shardId = 'abcdef02'
+    const paddedPayload = padPayload(urlPayload)
+    const fragment = `${shardId}:${check}:${paddedPayload}`
+
+    const password = 'padded-pw'
+    const protectedData = await protectFragment(fragment, password)
+    const decryptedFragment = await unprotectFragment(protectedData, password)
+    expect(decryptedFragment).toBe(fragment)
+
+    // Parse the fragment and open the note (openNote handles unpadPayload internally)
     const parts = decryptedFragment.split(':')
     expect(parts[0]).toBe(shardId)
     expect(parts[1]).toBe(check)

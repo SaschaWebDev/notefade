@@ -54,6 +54,20 @@ export function reconstructKey(
   return mask.map((b, i) => b ^ (xorShare[i] ?? 0))
 }
 
+// --- PLAINTEXT PADDING (backward compat) ---
+
+/**
+ * Remove padding by finding the first 0xFF delimiter.
+ * Returns input as-is if no delimiter found (backward compat with pre-padding notes).
+ */
+export function unpadPlaintext(decrypted: Uint8Array): Uint8Array {
+  const delimiterIndex = decrypted.indexOf(0xff)
+  if (delimiterIndex === -1) {
+    return decrypted
+  }
+  return decrypted.slice(0, delimiterIndex)
+}
+
 // --- ENCRYPT & DECRYPT ---
 
 /** Copy a Uint8Array into a fresh ArrayBuffer (satisfies TS strict BufferSource) */
@@ -85,11 +99,11 @@ export async function encrypt(message: string): Promise<EncryptedNote> {
   return { ciphertext, iv, key }
 }
 
-export async function decrypt(
+export async function decryptToBytes(
   ciphertext: Uint8Array,
   iv: Uint8Array,
   key: Uint8Array,
-): Promise<string> {
+): Promise<Uint8Array> {
   const cryptoKey = await crypto.subtle.importKey(
     'raw',
     toArrayBuffer(key),
@@ -104,6 +118,15 @@ export async function decrypt(
     toArrayBuffer(ciphertext),
   )
 
+  return new Uint8Array(decrypted)
+}
+
+export async function decrypt(
+  ciphertext: Uint8Array,
+  iv: Uint8Array,
+  key: Uint8Array,
+): Promise<string> {
+  const decrypted = await decryptToBytes(ciphertext, iv, key)
   return new TextDecoder().decode(decrypted)
 }
 
@@ -160,14 +183,55 @@ export function computeCheck(payload: string): string {
   return toBase64Url(bytes)
 }
 
+// --- URL-LEVEL PAYLOAD PADDING ---
+
+/** Padded payload length: 1 (marker) + 4 (length prefix) + 7302 (max CJK payload) = 7307 */
+export const PAYLOAD_PAD_LEN = 7307
+
+const BASE64URL_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+
+/** Pad a URL payload to a fixed length with `.` marker and length prefix */
+export function padPayload(urlPayload: string): string {
+  // 4-char base64url prefix encodes real payload length as 3 bytes (max 16M)
+  const len = urlPayload.length
+  const lenBytes = new Uint8Array(3)
+  lenBytes[0] = (len >>> 16) & 0xff
+  lenBytes[1] = (len >>> 8) & 0xff
+  lenBytes[2] = len & 0xff
+  const lenPrefix = toBase64Url(lenBytes)
+
+  const fillNeeded = PAYLOAD_PAD_LEN - 1 - 4 - len
+  let fill = ''
+  if (fillNeeded > 0) {
+    const randomBytes = crypto.getRandomValues(new Uint8Array(fillNeeded))
+    const chars: string[] = []
+    for (let i = 0; i < fillNeeded; i++) {
+      chars.push(BASE64URL_CHARS[(randomBytes[i] ?? 0) % 64]!)
+    }
+    fill = chars.join('')
+  }
+
+  return '.' + lenPrefix + urlPayload + fill
+}
+
+/** Unpad a URL payload; returns as-is if no `.` marker (backward compat) */
+export function unpadPayload(payload: string): string {
+  if (!payload.startsWith('.')) {
+    return payload
+  }
+  const lenBytes = fromBase64Url(payload.slice(1, 5))
+  const len = ((lenBytes[0] ?? 0) << 16) | ((lenBytes[1] ?? 0) << 8) | (lenBytes[2] ?? 0)
+  return payload.slice(5, 5 + len)
+}
+
 // --- FULL FLOW ---
 
-/** Sender creates a note: encrypts and splits key */
+/** Sender creates a note: encrypts message and splits key */
 export async function createNote(message: string): Promise<SplitResult> {
   const { ciphertext, iv, key } = await encrypt(message)
   const { urlShare, serverShard } = splitKey(key)
 
-  // URL payload: urlShare (48) + iv (12) + ciphertext (variable)
+  // URL payload: urlShare (48) + iv (12) + ciphertext (variable + 16 GCM tag)
   const urlBytes = new Uint8Array(48 + 12 + ciphertext.length)
   urlBytes.set(urlShare, 0)
   urlBytes.set(iv, 48)
@@ -284,7 +348,9 @@ export async function openNote(
   urlPayload: string,
   serverShard: string,
 ): Promise<string> {
-  const urlBytes = fromBase64Url(urlPayload)
+  // Strip URL-level padding if present
+  const realPayload = unpadPayload(urlPayload)
+  const urlBytes = fromBase64Url(realPayload)
   const shard = fromBase64Url(serverShard)
 
   const urlShare = urlBytes.slice(0, 48)
@@ -292,7 +358,9 @@ export async function openNote(
   const ciphertext = urlBytes.slice(60)
 
   const key = reconstructKey(urlShare, shard)
-  const plaintext = await decrypt(ciphertext, iv, key)
+  const decryptedBytes = await decryptToBytes(ciphertext, iv, key)
+  const unpadded = unpadPlaintext(decryptedBytes)
+  const plaintext = new TextDecoder().decode(unpadded)
 
   // Zero out sensitive data (best-effort)
   key.fill(0)
