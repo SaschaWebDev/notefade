@@ -125,6 +125,10 @@
   align-self: center;
 }
 
+.expiryText {
+  text-align: center;
+}
+
 .countdown {
   display: inline;
   color: rgba(79, 143, 247, 0.85);
@@ -261,11 +265,38 @@
 .linkText {
   flex: 1;
   min-width: 0;
+  max-height: 9em;
+  overflow-y: scroll;
+  padding-right: 10px;
   font-size: 13px;
   font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
   color: rgba(255, 255, 255, 0.5);
   word-break: break-all;
   line-height: 1.5;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.05);
+  /* Force persistent scrollbar on iOS/mobile WebKit */
+  -webkit-overflow-scrolling: auto;
+}
+
+.linkText::-webkit-scrollbar {
+  width: 6px;
+  -webkit-appearance: none;
+}
+
+.linkText::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.linkText::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  min-height: 30px;
+}
+
+.linkText::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .linkBase {
@@ -568,6 +599,10 @@
     justify-content: center;
   }
 
+  .linkText {
+    max-height: 18em;
+  }
+
   .linkBox {
     flex-direction: column;
     align-items: center;
@@ -579,7 +614,8 @@
   }
 
   .qrSection {
-    width: 140px;
+    width: 100px !important;
+    height: 100px !important;
   }
 
   .qrSvg {

@@ -12,6 +12,7 @@ type DestroyState = 'idle' | 'confirming' | 'destroying' | 'destroyed';
 
 interface NoteLinkProps {
   url: string;
+  compactUrl?: string;
   expiresAt: number;
   shardId: string;
   providerConfig: ProviderConfig | null;
@@ -60,6 +61,7 @@ function useCountdown(expiresAt: number): number {
 
 export function NoteLink({
   url,
+  compactUrl,
   expiresAt,
   shardId,
   providerConfig,
@@ -143,6 +145,17 @@ export function NoteLink({
   const isCustom = Boolean(customBase) && customBase !== defaultBase;
   const isUnsafeBase = isCustom && !isValidBaseUrl(customBase);
 
+  // For QR codes, use the compact (unpadded) URL when available
+  const qrValue = (() => {
+    if (!compactUrl) return displayUrl;
+    // Apply custom base URL to the compact URL's fragment
+    const compactFragment = compactUrl.includes('#') ? compactUrl.slice(compactUrl.indexOf('#')) : '';
+    if (customBase) {
+      return customBase.replace(/\/+$/, '') + '/' + compactFragment;
+    }
+    return compactUrl;
+  })();
+
   const handleBaseChange = (value: string) => {
     setCustomBase(value);
     if (value) {
@@ -179,9 +192,14 @@ export function NoteLink({
   const handleDownloadQr = useCallback(() => {
     const svg = qrRef.current;
     if (!svg) return;
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const blobUrl = URL.createObjectURL(svgBlob);
+    // Ensure xmlns and explicit dimensions for cross-browser compatibility
+    const clone = svg.cloneNode(true) as SVGSVGElement;
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', String(QR_EXPORT_SIZE));
+    clone.setAttribute('height', String(QR_EXPORT_SIZE));
+    const svgData = new XMLSerializer().serializeToString(clone);
+    // Use data URI instead of blob URL to avoid security restrictions
+    const dataUri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
@@ -190,13 +208,12 @@ export function NoteLink({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       ctx.drawImage(img, 0, 0, QR_EXPORT_SIZE, QR_EXPORT_SIZE);
-      URL.revokeObjectURL(blobUrl);
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
       a.download = 'notefade-qr.png';
       a.click();
     };
-    img.src = blobUrl;
+    img.src = dataUri;
   }, []);
 
   useEffect(() => {
@@ -293,13 +310,9 @@ export function NoteLink({
             {remaining <= 0 ? (
               'expired'
             ) : (
-              <>
-                self-destructs in (
-                <span className={styles.countdown}>
-                  {formatCountdown(remaining)}
-                </span>
-                ) at {formatDate(expiresAt)}
-              </>
+              <span className={styles.expiryText}>
+                self-destructs in (<span className={styles.countdown}>{formatCountdown(remaining)}</span>) at {formatDate(expiresAt)}
+              </span>
             )}
           </div>
 
@@ -491,34 +504,36 @@ export function NoteLink({
               )}
             </div>
 
-            <div className={styles.qrSection} style={qrSize ? { width: qrSize, height: qrSize } : undefined}>
-              <QrCode ref={qrRef} value={displayUrl} className={styles.qrSvg} />
-              <div className={styles.qrFooter}>
-                <span className={styles.qrLabel}>scan to open</span>
-                <button
-                  type='button'
-                  className={styles.qrDownload}
-                  onClick={handleDownloadQr}
-                  title='download QR as PNG'
-                >
-                  <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
-                    <path
-                      d='M6 1.5v6M3.5 5L6 7.5 8.5 5'
-                      stroke='currentColor'
-                      strokeWidth='1.2'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                    <path
-                      d='M2 9.5h8'
-                      stroke='currentColor'
-                      strokeWidth='1.2'
-                      strokeLinecap='round'
-                    />
-                  </svg>
-                </button>
+            {qrValue.length <= 2950 && (
+              <div className={styles.qrSection} style={qrSize ? { width: qrSize, height: qrSize } : undefined}>
+                <QrCode ref={qrRef} value={qrValue} className={styles.qrSvg} />
+                <div className={styles.qrFooter}>
+                  <span className={styles.qrLabel}>scan to open</span>
+                  <button
+                    type='button'
+                    className={styles.qrDownload}
+                    onClick={handleDownloadQr}
+                    title='download QR as PNG'
+                  >
+                    <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
+                      <path
+                        d='M6 1.5v6M3.5 5L6 7.5 8.5 5'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                      <path
+                        d='M2 9.5h8'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                        strokeLinecap='round'
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {settingsOpen && (
