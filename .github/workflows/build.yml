@@ -1,6 +1,7 @@
 name: Build & Verify
 on:
   push:
+    branches: [main]
     tags: ['v*']
   pull_request:
     branches: [main]
@@ -16,6 +17,22 @@ jobs:
           cache: 'yarn'
       - run: yarn install --frozen-lockfile
       - run: yarn build:prod
+      - name: Verify SRI integrity attributes
+        run: |
+          node -e "
+            const html = require('fs').readFileSync('dist/index.html', 'utf-8');
+            const scripts = html.match(/<script\b[^>]*\bsrc=\"[^\"]+\"[^>]*>/g) || [];
+            const styles = html.match(/<link\b[^>]*rel=\"stylesheet\"[^>]*>/g) || [];
+            const tags = [...scripts, ...styles];
+            if (tags.length === 0) { console.error('No script/style tags found'); process.exit(1); }
+            const missing = tags.filter(t => !t.includes('integrity='));
+            if (missing.length > 0) {
+              console.error('Tags missing SRI integrity:');
+              missing.forEach(t => console.error('  ' + t));
+              process.exit(1);
+            }
+            console.log('SRI verified: ' + tags.length + ' tags have integrity attributes');
+          "
       - uses: actions/upload-artifact@v4
         with:
           name: build-manifest

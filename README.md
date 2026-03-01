@@ -2,7 +2,7 @@
 
 **Private notes that fade.**
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](https://www.typescriptlang.org/) [![Zero Crypto Dependencies](https://img.shields.io/badge/crypto_deps-zero-green.svg)](#security-model) [![Cloudflare Workers](https://img.shields.io/badge/backend-Cloudflare_Workers-orange.svg)](https://workers.cloudflare.com/)
+[![Build & Verify](https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml/badge.svg)](https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](https://www.typescriptlang.org/) [![Zero Crypto Dependencies](https://img.shields.io/badge/crypto_deps-zero-green.svg)](#security-model) [![Cloudflare Workers](https://img.shields.io/badge/backend-Cloudflare_Workers-orange.svg)](https://workers.cloudflare.com/)
 
 <!-- Add a screenshot or animated gif here -->
 
@@ -193,7 +193,7 @@ yarn build:prod
 node scripts/verify-build.cjs
 ```
 
-The verify script fetches each asset from notefade.com, computes its SHA-256, and compares against your local build manifest. Tagged releases on GitHub include `build-manifest.json` as an artifact.
+The verify script fetches the build manifest from notefade.com, downloads every listed file, and compares SHA-256 hashes for self-consistency. It also verifies SRI integrity attributes on script and stylesheet tags. If a local build exists, it warns when Node versions or commits differ between local and remote. Tagged releases on GitHub include `build-manifest.json` as an artifact.
 
 ### Deploy
 
@@ -204,6 +204,8 @@ yarn deploy
 # Deploy worker
 yarn worker:deploy
 ```
+
+If using Cloudflare Pages automatic builds (connected to GitHub), set `NODE_VERSION` to `22.14.0` in your Pages project settings (Settings → Environment variables). This ensures Cloudflare builds with the same Node version pinned in `.nvmrc`, which is required for reproducible builds and matching SRI hashes.
 
 ## Tech Stack
 
