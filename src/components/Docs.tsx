@@ -9,9 +9,15 @@ import styles from './Docs.module.css'
 
 export function Docs() {
   useEffect(() => {
-    document.title = 'notefade — documentation'
+    document.title = 'notefade docs — Encryption, API Reference & Self-Hosting'
+    const meta = document.querySelector('meta[name="description"]')
+    const prev = meta?.getAttribute('content') ?? ''
+    if (meta) {
+      meta.setAttribute('content', 'Technical documentation for notefade: AES-256-GCM encryption details, zero-knowledge architecture, shard API reference, and self-hosting guide.')
+    }
     return () => {
-      document.title = 'notefade'
+      document.title = 'notefade — Self-Destructing Encrypted Notes'
+      if (meta) meta.setAttribute('content', prev)
     }
   }, [])
 

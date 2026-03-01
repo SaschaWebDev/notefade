@@ -3,28 +3,182 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Share secrets that self-destruct after one read. Zero-knowledge encryption — we never see your content." />
+    <meta name="description" content="Send private notes that self-destruct after one read. Zero-knowledge encryption, no accounts, nothing stored. Free, open-source secure note sharing." />
     <meta name="theme-color" content="#0a0a0a" />
     <meta name="referrer" content="no-referrer" />
 
+    <link rel="canonical" href="https://notefade.com/" />
+
     <!-- Open Graph -->
-    <meta property="og:title" content="notefade — read once, gone forever" />
-    <meta property="og:description" content="Share secrets that self-destruct after one read. Zero-knowledge encryption — we never see your content." />
+    <meta property="og:title" content="notefade — Self-Destructing Encrypted Notes" />
+    <meta property="og:description" content="Send private notes that self-destruct after one read. Zero-knowledge encryption, no accounts, nothing stored. Free, open-source secure note sharing." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://notefade.com" />
     <meta property="og:image" content="https://notefade.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="notefade — read once, gone forever" />
-    <meta name="twitter:description" content="Share secrets that self-destruct after one read. Zero-knowledge encryption — we never see your content." />
+    <meta name="twitter:title" content="notefade — Self-Destructing Encrypted Notes" />
+    <meta name="twitter:description" content="Send private notes that self-destruct after one read. Zero-knowledge encryption, no accounts, nothing stored. Free, open-source secure note sharing." />
     <meta name="twitter:image" content="https://notefade.com/og-image.png" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>notefade — read once, gone forever</title>
+    <title>notefade — Self-Destructing Encrypted Notes</title>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "notefade",
+      "url": "https://notefade.com",
+      "description": "Send private notes that self-destruct after one read. Zero-knowledge encryption, no accounts, nothing stored on the server.",
+      "applicationCategory": "SecurityApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "browserRequirements": "Requires a modern browser with Web Crypto API support",
+      "featureList": [
+        "AES-256-GCM encryption",
+        "Zero-knowledge architecture",
+        "One-time read links",
+        "Auto-expiring notes",
+        "No accounts required",
+        "No tracking or cookies",
+        "Open source",
+        "Self-hostable"
+      ]
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Can you read my notes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Your note is encrypted in your browser before anything leaves your device. We store a 16-byte key fragment that is meaningless on its own — it exists so your note can only be unlocked once, and even that is deleted forever."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens after someone reads my note?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The key fragment on our server is deleted immediately. The link stops working. There is no copy, backup, or undo."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What if nobody reads it?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It expires automatically. You choose the time window — 1 hour, 24 hours, or 7 days. After that, the server key fragment is gone and access is impossible."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can you prevent screenshots or copy-paste?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No, and we won't pretend otherwise. Once decrypted in the browser, the reader can capture the content. This is a limitation of all screen-based communication. notefade ensures only one chosen reader sees the information exactly once."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What encryption do you use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "AES-256-GCM via the Web Crypto API built into your browser. No external crypto libraries. The key is generated fresh for each note, then split using XOR — a mathematically proven unbreakable split. The larger piece lives in your link, and a small ephemeral shard stored on our server self-destructs after one read."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need an account?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. No sign-up, no email, no cookies. You write a note, get a link, share it."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How can I trust your code?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The code is fully open source on GitHub. Every production build includes subresource integrity checks and a build manifest with SHA-256 hashes. You can clone the repo, build it yourself, and verify the output matches what we serve."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can only messages be sent?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Only text up to 1,800 characters can be sent. Everything is embedded directly in the link itself, so nothing extra ever touches a server."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I send the note?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "After creating your note, you get a unique link. Copy it and send it however you like — email, messaging app, or scan a QR code directly from the link page. Whoever opens it first reads the content, and then it's gone."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What if I regret sending a note?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can destroy it before anyone reads it. Use the Destroy now button on the note link page to immediately delete the server shard. Once destroyed, the link is dead — no one can open it, including you."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can someone recover a read note from browser history?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The encrypted payload lives in the URL fragment, which is cleared after decryption. Even if someone finds the link in their history, the server shard is already gone — the note cannot be reassembled."
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <div style="max-width:600px;margin:40px auto;padding:0 20px;font-family:system-ui,sans-serif;color:#e0e0e0;background:#0a0a0a;">
+        <h1>notefade — Self-Destructing Encrypted Notes</h1>
+        <p>Send private notes that self-destruct after one read. Zero-knowledge encryption means we never see your content.</p>
+        <h2>How it works</h2>
+        <ol>
+          <li>Write your private note</li>
+          <li>It's encrypted in your browser with AES-256-GCM</li>
+          <li>Share the one-time link</li>
+          <li>Recipient reads it once, then it's gone forever</li>
+        </ol>
+        <h2>Features</h2>
+        <ul>
+          <li>AES-256-GCM encryption via Web Crypto API</li>
+          <li>Zero-knowledge architecture — nothing stored on server</li>
+          <li>One-time read links that self-destruct</li>
+          <li>Auto-expiring notes (1 hour, 24 hours, or 7 days)</li>
+          <li>No accounts, no tracking, no cookies</li>
+          <li>Open source and self-hostable</li>
+          <li>Free to use</li>
+        </ul>
+        <p>Please enable JavaScript to use notefade.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

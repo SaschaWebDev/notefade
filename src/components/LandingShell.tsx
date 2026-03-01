@@ -310,7 +310,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className={styles.page}>
+    <main className={styles.page}>
       <DomainIndicator />
       <button
         type='button'
@@ -337,9 +337,9 @@ export function LandingShell({ children }: { children: ReactNode }) {
           <a href='/' className={styles.logo}>
             notefade
           </a>
-          <p className={styles.tagline}>
+          <h1 className={styles.tagline}>
             private notes that <span className={styles.fade}>fade</span>
-          </p>
+          </h1>
         </header>
 
         <div className={styles.palette}>
@@ -471,7 +471,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }
 

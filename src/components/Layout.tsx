@@ -37,7 +37,7 @@ export function Layout({ children, isDocs }: LayoutProps) {
   )
 
   return (
-    <div className={`${styles.backdrop} ${isDocs ? styles.backdropDocs : ''}`}>
+    <main className={`${styles.backdrop} ${isDocs ? styles.backdropDocs : ''}`}>
       <button
         type="button"
         className={styles.themeToggle}
@@ -63,7 +63,11 @@ export function Layout({ children, isDocs }: LayoutProps) {
           <a href="/" onClick={handleLogoClick} className={styles.logo}>
             notefade
           </a>
-          <p className={styles.tagline}>private notes that <span className={styles.fade}>fade</span></p>
+          {isDocs ? (
+            <p className={styles.tagline}>private notes that <span className={styles.fade}>fade</span></p>
+          ) : (
+            <h1 className={styles.tagline}>private notes that <span className={styles.fade}>fade</span></h1>
+          )}
         </header>
 
         <div className={`${styles.palette} ${isDocs ? styles.paletteDocs : ''}`}>
@@ -89,6 +93,6 @@ export function Layout({ children, isDocs }: LayoutProps) {
           </>
         )}
       </div>
-    </div>
+    </main>
   )
 }
