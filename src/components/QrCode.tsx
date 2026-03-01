@@ -9,20 +9,26 @@ interface QrCodeProps {
 export const QrCode = forwardRef<SVGSVGElement, QrCodeProps>(
   function QrCode({ value, className }, ref) {
     const modules = useMemo(() => {
-      const qr = qrcode(0, 'M');
-      qr.addData(value);
-      qr.make();
-      const count = qr.getModuleCount();
-      const grid: boolean[][] = [];
-      for (let r = 0; r < count; r++) {
-        const row: boolean[] = [];
-        for (let c = 0; c < count; c++) {
-          row.push(qr.isDark(r, c));
+      try {
+        const qr = qrcode(0, 'L');
+        qr.addData(value);
+        qr.make();
+        const count = qr.getModuleCount();
+        const grid: boolean[][] = [];
+        for (let r = 0; r < count; r++) {
+          const row: boolean[] = [];
+          for (let c = 0; c < count; c++) {
+            row.push(qr.isDark(r, c));
+          }
+          grid.push(row);
         }
-        grid.push(row);
+        return { grid, count };
+      } catch {
+        return null;
       }
-      return { grid, count };
     }, [value]);
+
+    if (!modules) return null;
 
     const margin = 4;
     const total = modules.count + margin * 2;
