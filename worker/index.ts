@@ -1,9 +1,11 @@
 import { z } from 'zod'
 import { CloudflareKVShardStore } from './shard-store'
 import type { ShardStore } from './shard-store'
+import { createDeferToken, openDeferToken } from './defer-token'
 
 interface Env {
   SHARDS: KVNamespace
+  DEFER_SECRET?: string  // 64 hex chars (32 bytes), set via `wrangler secret put`
 }
 
 const VALID_TTLS = [3600, 86400, 604800] as const
@@ -77,7 +79,30 @@ const StoreShardSchema = z.object({
     (VALID_TTLS as readonly number[]).includes(v),
     { message: `ttl must be one of: ${VALID_TTLS.join(', ')}` },
   ),
+  /**
+   * Optional client-provided shard ID.
+   * TODO(cleanup): This field is no longer used by the deferred flow
+   * (which now uses POST /shard/defer). Remove this field and the
+   * corresponding `id` parameter in storeShard() once confirmed
+   * no other code paths depend on it.
+   */
+  id: z.string().regex(/^[a-f0-9]{8,16}$/, 'Invalid shard ID format').optional(),
 })
+
+const DeferShardSchema = z.object({
+  shard: z.string().regex(/^[A-Za-z0-9_-]{20,24}$/, 'Invalid shard format'),
+  ttl: z.number().refine((v): v is (typeof VALID_TTLS)[number] =>
+    (VALID_TTLS as readonly number[]).includes(v),
+    { message: `ttl must be one of: ${VALID_TTLS.join(', ')}` },
+  ),
+})
+
+const ActivateTokenSchema = z.object({
+  token: z.string().min(1, 'Token is required'),
+})
+
+/** Maximum token age: 30 days */
+const MAX_TOKEN_AGE_MS = 30 * 24 * 60 * 60 * 1000
 
 function corsHeaders(origin: string): Record<string, string> {
   return {
@@ -106,6 +131,7 @@ function getAllowedOrigin(request: Request): string {
 async function handleRequest(
   request: Request,
   store: ShardStore,
+  env: Env,
 ): Promise<Response> {
   const url = new URL(request.url)
   const origin = getAllowedOrigin(request)
@@ -143,7 +169,7 @@ async function handleRequest(
       )
     }
 
-    const id = crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+    const id = parsed.data.id ?? crypto.randomUUID().replace(/-/g, '').slice(0, 16)
     await store.put(id, parsed.data.shard, parsed.data.ttl)
     return Response.json({ id }, { status: 201, headers })
   }
@@ -201,6 +227,124 @@ async function handleRequest(
     return Response.json({ deleted: true }, { headers })
   }
 
+  // POST /shard/defer — create an encrypted defer token (does NOT store the shard)
+  if (request.method === 'POST' && url.pathname === '/shard/defer') {
+    if (!env.DEFER_SECRET) {
+      return Response.json(
+        { error: 'Deferred activation is not configured on this server' },
+        { status: 501, headers },
+      )
+    }
+
+    const rawBody = await request.text()
+    if (rawBody.length > MAX_BODY_SIZE) {
+      return Response.json(
+        { error: 'Body too large' },
+        { status: 413, headers },
+      )
+    }
+
+    let body: unknown
+    try {
+      body = JSON.parse(rawBody)
+    } catch {
+      return Response.json(
+        { error: 'Invalid JSON' },
+        { status: 400, headers },
+      )
+    }
+
+    const parsed = DeferShardSchema.safeParse(body)
+    if (!parsed.success) {
+      return Response.json(
+        { error: 'Invalid request', details: parsed.error.issues },
+        { status: 400, headers },
+      )
+    }
+
+    const id = crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+    const token = await createDeferToken(env.DEFER_SECRET, {
+      id,
+      shard: parsed.data.shard,
+      ttl: parsed.data.ttl,
+      ts: Date.now(),
+    })
+
+    return Response.json({ token, id }, { status: 201, headers })
+  }
+
+  // POST /shard/activate — decrypt a defer token and store the shard
+  if (request.method === 'POST' && url.pathname === '/shard/activate') {
+    if (!env.DEFER_SECRET) {
+      return Response.json(
+        { error: 'Deferred activation is not configured on this server' },
+        { status: 501, headers },
+      )
+    }
+
+    const rawBody = await request.text()
+    if (rawBody.length > MAX_BODY_SIZE) {
+      return Response.json(
+        { error: 'Body too large' },
+        { status: 413, headers },
+      )
+    }
+
+    let body: unknown
+    try {
+      body = JSON.parse(rawBody)
+    } catch {
+      return Response.json(
+        { error: 'Invalid JSON' },
+        { status: 400, headers },
+      )
+    }
+
+    const parsed = ActivateTokenSchema.safeParse(body)
+    if (!parsed.success) {
+      return Response.json(
+        { error: 'Invalid request', details: parsed.error.issues },
+        { status: 400, headers },
+      )
+    }
+
+    let payload
+    try {
+      payload = await openDeferToken(env.DEFER_SECRET, parsed.data.token)
+    } catch {
+      return Response.json(
+        { error: 'Invalid or tampered token' },
+        { status: 400, headers },
+      )
+    }
+
+    // Validate inner payload fields
+    if (!SHARD_ID_RE.test(payload.id)) {
+      return Response.json(
+        { error: 'Invalid token payload' },
+        { status: 400, headers },
+      )
+    }
+
+    if (!(VALID_TTLS as readonly number[]).includes(payload.ttl)) {
+      return Response.json(
+        { error: 'Invalid token payload' },
+        { status: 400, headers },
+      )
+    }
+
+    // Check token age
+    if (Date.now() - payload.ts > MAX_TOKEN_AGE_MS) {
+      return Response.json(
+        { error: 'Token expired' },
+        { status: 410, headers },
+      )
+    }
+
+    await store.put(payload.id, payload.shard, payload.ttl)
+    return Response.json({ id: payload.id }, { status: 201, headers })
+  }
+
   return Response.json({ error: 'Not found' }, { status: 404, headers })
 }
 
@@ -215,7 +359,7 @@ export default {
     }
 
     const store = new CloudflareKVShardStore(env.SHARDS)
-    return handleRequest(request, store)
+    return handleRequest(request, store, env)
   },
 }
 
