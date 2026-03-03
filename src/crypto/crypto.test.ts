@@ -713,7 +713,7 @@ describe('protectFragment / unprotectFragment', () => {
   it('output uses URL-safe characters only', async () => {
     const protectedData = await protectFragment('test-fragment', 'pw')
     // Output format is base64url:base64url — both parts + colon are URL-safe
-    expect(protectedData).toMatch(/^[A-Za-z0-9~:-]+$/)
+    expect(protectedData).toMatch(/^[A-Za-z0-9_~:-]+$/)
   })
 
   it('long password (1000 chars) works', async () => {
