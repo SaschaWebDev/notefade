@@ -23,27 +23,16 @@ function resolveBase(apiBase?: string): string {
   return apiBase ?? DEFAULT_API_BASE
 }
 
-/**
- * TODO(cleanup): The `id` parameter was used by the old deferred
- * activation flow (client-generated IDs). The new flow uses
- * POST /shard/defer instead. Remove this parameter once the old
- * flow is fully deprecated.
- */
 export async function storeShard(
   shard: string,
   ttl: number,
   apiBase?: string,
-  id?: string,
 ): Promise<string> {
   const base = resolveBase(apiBase)
-  const body: Record<string, unknown> = { shard, ttl }
-  if (id) {
-    body.id = id
-  }
   const res = await fetch(`${base}/shard`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ shard, ttl }),
   })
 
   if (!res.ok) {
@@ -124,7 +113,7 @@ export async function activateShard(
   })
 
   if (res.status === 410) {
-    throw new Error('Token expired')
+    throw new Error('This launch code is invalid or has expired')
   }
 
   if (!res.ok) {
