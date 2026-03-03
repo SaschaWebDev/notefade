@@ -16,21 +16,29 @@ beforeEach(() => {
 })
 
 describe('upstash adapter', () => {
-  it('store: sends POST to correct URL with shard and TTL', async () => {
+  it('store: sends POST with shard in body, not URL path', async () => {
     mockFetch.mockResolvedValueOnce({ ok: true })
     const adapter = createUpstashAdapter(config)
     const id = await adapter.store('shard-data', 3600)
 
     expect(id).toMatch(/^[a-f0-9]{16}$/)
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringMatching(/^https:\/\/test\.upstash\.io\/set\/[a-f0-9]{16}\/shard-data\/ex\/3600$/),
+      'https://test.upstash.io',
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({
           Authorization: 'Bearer test-token',
+          'Content-Type': 'application/json',
         }),
+        body: expect.stringContaining('"SET"'),
       }),
     )
+    // Verify shard is NOT in the URL
+    const calledUrl = mockFetch.mock.calls[0]?.[0] as string
+    expect(calledUrl).not.toContain('shard-data')
+    // Verify shard IS in the body
+    const calledBody = JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string) as string[]
+    expect(calledBody).toEqual(['SET', id, 'shard-data', 'EX', '3600'])
   })
 
   it('store: throws on non-ok response', async () => {
@@ -59,19 +67,17 @@ describe('upstash adapter', () => {
     expect(exists).toBe(false)
   })
 
-  it('fetch: gets value and deletes after', async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ result: 'shard-value' }),
-      })
-      .mockResolvedValueOnce({ ok: true }) // DEL
+  it('fetch: uses atomic GETDEL to read and delete in one call', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ result: 'shard-value' }),
+    })
     const adapter = createUpstashAdapter(config)
     const shard = await adapter.fetch('abc123')
 
     expect(shard).toBe('shard-value')
-    expect(mockFetch).toHaveBeenCalledTimes(2)
-    expect(mockFetch.mock.calls[1]?.[0]).toBe('https://test.upstash.io/del/abc123')
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(mockFetch.mock.calls[0]?.[0]).toBe('https://test.upstash.io/getdel/abc123')
   })
 
   it('fetch: returns null when key does not exist', async () => {

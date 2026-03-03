@@ -15,9 +15,10 @@ export function createUpstashAdapter(config: UpstashLikeConfig): ProviderAdapter
   return {
     async store(shard, ttl) {
       const id = generateShardId()
-      const res = await fetch(`${baseUrl}/set/${id}/${encodeURIComponent(shard)}/ex/${ttl}`, {
+      const res = await fetch(`${baseUrl}`, {
         method: 'POST',
-        headers: headers(config),
+        headers: { ...headers(config), 'Content-Type': 'application/json' },
+        body: JSON.stringify(['SET', id, shard, 'EX', String(ttl)]),
       })
       if (!res.ok) {
         throw new Error(`Upstash store failed: ${res.status}`)
@@ -37,7 +38,7 @@ export function createUpstashAdapter(config: UpstashLikeConfig): ProviderAdapter
     },
 
     async fetch(id) {
-      const res = await fetch(`${baseUrl}/get/${id}`, {
+      const res = await fetch(`${baseUrl}/getdel/${id}`, {
         method: 'POST',
         headers: headers(config),
       })
@@ -47,12 +48,6 @@ export function createUpstashAdapter(config: UpstashLikeConfig): ProviderAdapter
       const data: unknown = await res.json()
       const result = data as { result?: string | null }
       if (result.result === null || result.result === undefined) return null
-
-      // Delete after read
-      await fetch(`${baseUrl}/del/${id}`, {
-        method: 'POST',
-        headers: headers(config),
-      })
 
       return result.result
     },
