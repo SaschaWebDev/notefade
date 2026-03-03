@@ -896,15 +896,19 @@
     display: flex;
   }
 
+  .textareaWrap {
+    max-height: 210px;
+  }
+
   .previewArea {
-    min-height: 180px;
-    max-height: 300px;
+    min-height: 126px;
+    max-height: 210px;
     padding: 20px;
   }
 
   .textarea {
-    min-height: 180px;
-    max-height: 300px;
+    min-height: 126px;
+    max-height: 210px;
     padding: 20px;
     font-size: 18px;
   }
@@ -1128,10 +1132,39 @@
   border-color: rgba(var(--fg), 0.12);
 }
 
+.launchCodeLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--accent);
+  margin: 0 0 6px;
+}
+
+.launchCodeBoxScroll {
+  composes: launchCodeBox;
+  max-height: 72px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--fg), 0.1) transparent;
+}
+
+.launchCodeBoxScroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.launchCodeBoxScroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.launchCodeBoxScroll::-webkit-scrollbar-thumb {
+  background: rgba(var(--fg), 0.1);
+  border-radius: 2px;
+}
+
 .launchCodeActions {
   display: flex;
   gap: 8px;
   margin-top: 10px;
+  margin-bottom: 18px;
 }
 
 .launchCodeBtn {
@@ -1150,6 +1183,65 @@
 .launchCodeBtn:hover {
   background: rgba(var(--fg), 0.08);
   border-color: rgba(var(--fg), 0.15);
+}
+
+.createAnotherWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 36px;
+}
+
+.confirmBanner {
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(var(--warning-rgb), 0.85);
+  background: rgba(var(--warning-rgb), 0.06);
+  border: 1px solid rgba(var(--warning-rgb), 0.15);
+  border-radius: 4px;
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  text-align: center;
+  animation: byos-in 0.15s ease;
+}
+
+.createAnotherLink {
+  font-size: 15px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: #ffffff;
+  text-decoration: none;
+  text-align: center;
+  padding: 10px 28px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.createAnotherLink:hover {
+  background: var(--accent-hover);
+}
+
+.createAnotherLinkDanger {
+  font-size: 15px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: var(--text-primary);
+  text-decoration: none;
+  text-align: center;
+  padding: 10px 28px;
+  border: 1px solid rgba(var(--warning-rgb), 0.25);
+  border-radius: 10px;
+  background: rgba(var(--warning-rgb), 0.15);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.createAnotherLinkDanger:hover {
+  background: rgba(var(--warning-rgb), 0.25);
+  border-color: rgba(var(--warning-rgb), 0.4);
 }
 
 /* --- Decoy Links --- */

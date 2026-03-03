@@ -18,6 +18,7 @@ export type { ReadState }
 
 interface UseReadNoteReturn {
   state: ReadState
+  remainingReads: number | null
 }
 
 export function useReadNote(
@@ -28,10 +29,11 @@ export function useReadNote(
   shardIds?: string[],
 ): UseReadNoteReturn {
   const [state, setState] = useState<ReadState>({ status: 'idle' })
+  const [remainingReads, setRemainingReads] = useState<number | null>(null)
 
   // Cache promises so React StrictMode's double-mount reuses
   // the same in-flight request instead of making duplicates.
-  const checkPromiseRef = useRef<Promise<boolean> | null>(null)
+  const checkPromiseRef = useRef<Promise<number> | null>(null)
   const fetchPromiseRef = useRef<Promise<string | null> | null>(null)
 
   // Stable serialized key for provider dependency
@@ -48,29 +50,29 @@ export function useReadNote(
     let cancelled = false
 
     if (!checkPromiseRef.current) {
-      // Check all shards to see if any exist
-      const checkAll = async (): Promise<boolean> => {
-        for (const id of allShardIds) {
-          let exists: boolean
-          if (provider) {
-            const adapter = createAdapter(provider)
-            exists = await adapter.check(id)
-          } else {
-            exists = await checkShard(id)
-          }
-          if (exists) return true
-        }
-        return false
+      // Check all shards in parallel to count how many remain
+      const countRemaining = async (): Promise<number> => {
+        const results = await Promise.all(
+          allShardIds.map(async (id) => {
+            if (provider) {
+              const adapter = createAdapter(provider)
+              return adapter.check(id)
+            }
+            return checkShard(id)
+          }),
+        )
+        return results.filter(Boolean).length
       }
-      checkPromiseRef.current = checkAll()
+      checkPromiseRef.current = countRemaining()
     }
 
     async function probe() {
       try {
-        const exists = await checkPromiseRef.current
+        const count = await checkPromiseRef.current
         if (cancelled) return
 
-        if (!exists) {
+        setRemainingReads(count)
+        if (count === 0) {
           setState({ status: 'gone' })
         }
       } catch {
@@ -191,5 +193,5 @@ export function useReadNote(
     }
   }, [shardId, urlPayload, confirmed, providerKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { state }
+  return { state, remainingReads }
 }

@@ -7,7 +7,6 @@ import {
 } from 'react';
 import { CreateNote } from './CreateNote';
 import { useTheme } from '@/hooks';
-import { decodeImageStego } from '@/crypto';
 import styles from './LandingShell.module.css';
 
 const PILL_ROWS = [
@@ -179,170 +178,6 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
-type DecodeState =
-  | { status: 'idle' }
-  | { status: 'decoding' }
-  | { status: 'success'; url: string }
-  | { status: 'error'; message: string };
-
-function StegoDecoder() {
-  const [state, setState] = useState<DecodeState>({ status: 'idle' });
-  const [copied, setCopied] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const decodeFile = useCallback((file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setState({ status: 'error', message: 'please upload an image file' });
-      return;
-    }
-
-    setState({ status: 'decoding' });
-
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(file);
-
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        setState({ status: 'error', message: 'failed to process image' });
-        return;
-      }
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const result = decodeImageStego(imageData);
-      if (result) {
-        setState({ status: 'success', url: result });
-      } else {
-        setState({ status: 'error', message: 'no hidden data found in this image' });
-      }
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      setState({ status: 'error', message: 'failed to load image' });
-    };
-
-    img.src = objectUrl;
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragOver(false);
-      const file = e.dataTransfer.files[0];
-      if (file) decodeFile(file);
-    },
-    [decodeFile],
-  );
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) decodeFile(file);
-      // Reset so the same file can be re-selected
-      e.target.value = '';
-    },
-    [decodeFile],
-  );
-
-  return (
-    <section className={styles.stegoDecodeSection}>
-      <FadeSection>
-        <h2 className={styles.sectionLabel}>decode a steganographic image</h2>
-      </FadeSection>
-      <FadeSection delay={80}>
-        <p className={styles.stegoDecodeSubtitle}>
-          received a generated image? upload it to extract the hidden link.
-        </p>
-        <div
-          className={`${styles.stegoDropZone} ${dragOver ? styles.stegoDropZoneActive : ''}`}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
-          onClick={() => inputRef.current?.click()}
-          role='button'
-          tabIndex={0}
-        >
-          <input
-            ref={inputRef}
-            type='file'
-            accept='image/*'
-            className={styles.stegoFileInput}
-            onChange={handleFileChange}
-          />
-          <svg width='24' height='24' viewBox='0 0 24 24' fill='none' className={styles.stegoDropIcon}>
-            <rect x='3' y='3' width='18' height='18' rx='3' stroke='currentColor' strokeWidth='1.5' />
-            <circle cx='8.5' cy='8.5' r='2' stroke='currentColor' strokeWidth='1.2' />
-            <path d='M3 16l5-5 3.5 3.5L15 11l6 6' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round' />
-          </svg>
-          <span className={styles.stegoDropText}>
-            {state.status === 'decoding' ? 'decoding...' : 'drop an image or click to upload'}
-          </span>
-        </div>
-
-        {state.status === 'success' && (
-          <div className={styles.stegoDecodeResult}>
-            <span className={styles.stegoDecodeResultLabel}>hidden link found</span>
-            <a
-              href={state.url}
-              className={styles.stegoDecodeLink}
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              {state.url.length > 100 ? state.url.slice(0, 100) + '...' : state.url}
-            </a>
-            <div className={styles.stegoDecodeActions}>
-              <button
-                type='button'
-                className={styles.stegoDecodeCopy}
-                onClick={() => {
-                  if (state.status === 'success') {
-                    navigator.clipboard.writeText(state.url);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 1500);
-                  }
-                }}
-              >
-                {copied ? 'copied' : 'copy link'}
-              </button>
-              <a href={state.url} className={styles.stegoDecodeOpen} target='_blank' rel='noopener noreferrer'>
-                open link
-              </a>
-            </div>
-          </div>
-        )}
-
-        {state.status === 'error' && (
-          <div className={styles.stegoDecodeError}>
-            {state.message}
-          </div>
-        )}
-
-        {(state.status === 'success' || state.status === 'error') && (
-          <button
-            type='button'
-            className={styles.stegoDecodeReset}
-            onClick={() => {
-              setState({ status: 'idle' });
-              setCopied(false);
-            }}
-          >
-            try another image
-          </button>
-        )}
-      </FadeSection>
-    </section>
-  );
-}
-
 const OFFICIAL_HOSTS = ['notefade.com', 'www.notefade.com'];
 
 function useBuildVerified(): boolean {
@@ -382,8 +217,8 @@ function DomainIndicator() {
             />
             warning
           </span>
-          <br />
-          Not the official notefade.com either self-hosted or a phishing attempt
+          {' '}&mdash;{' '}
+          This is not the official notefade.com
         </div>
       )}
     </div>
@@ -568,7 +403,34 @@ export function LandingShell({ children }: { children: ReactNode }) {
 
       {!noteCreated && (
         <>
-          <StegoDecoder />
+          <section className={styles.ctaSection}>
+            <FadeSection>
+              <h2 className={styles.sectionLabel}>tools</h2>
+            </FadeSection>
+            <div className={styles.ctaCards}>
+              <FadeSection delay={80}>
+                <a href='/activate' className={styles.ctaCard}>
+                  <svg width='20' height='20' viewBox='0 0 20 20' fill='none' className={styles.ctaIcon}>
+                    <path d='M10 2v6m0 0l3-3m-3 3L7 5' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
+                    <path d='M3 10a7 7 0 1014 0' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+                  </svg>
+                  <span className={styles.ctaTitle}>activate a deferred note</span>
+                  <span className={styles.ctaDesc}>upload a launch code to make a pre-created note live</span>
+                </a>
+              </FadeSection>
+              <FadeSection delay={160}>
+                <a href='/decode' className={styles.ctaCard}>
+                  <svg width='20' height='20' viewBox='0 0 20 20' fill='none' className={styles.ctaIcon}>
+                    <rect x='2' y='2' width='16' height='16' rx='3' stroke='currentColor' strokeWidth='1.5' />
+                    <circle cx='7' cy='7' r='1.5' stroke='currentColor' strokeWidth='1.2' />
+                    <path d='M2 14l4.5-4.5 3 3L13 9l5 5' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round' />
+                  </svg>
+                  <span className={styles.ctaTitle}>decode steganography</span>
+                  <span className={styles.ctaDesc}>extract a hidden link from an image or text</span>
+                </a>
+              </FadeSection>
+            </div>
+          </section>
 
           <div className={styles.divider} />
 

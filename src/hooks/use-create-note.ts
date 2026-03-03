@@ -408,6 +408,8 @@ export function useCreateNote(): UseCreateNoteReturn {
   }
 
   const resetNote = () => {
+    setMessage('')
+    setTtl(86400)
     setNoteUrl(null)
     setCompactUrl(null)
     setShardId(null)
@@ -415,7 +417,7 @@ export function useCreateNote(): UseCreateNoteReturn {
     setPasswordState('')
     setPasswordEnabledState(false)
     setReadCount(1)
-    setBarDuration(0)
+    setBarDuration(300)
     setTimeLockEnabled(false)
     setTimeLockAt('')
     setDeferredMode(false)

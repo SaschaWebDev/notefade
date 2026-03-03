@@ -5,6 +5,7 @@ import { ReadNote } from '@/components/ReadNote'
 import { PasswordGate } from '@/components/PasswordGate'
 import { Docs } from '@/components/Docs'
 import { Activate } from '@/components/Activate'
+import { Decode } from '@/components/Decode'
 import { VerifyReceipt } from '@/components/VerifyReceipt'
 
 export function App() {
@@ -22,6 +23,14 @@ export function App() {
     return (
       <Layout>
         <Activate />
+      </Layout>
+    )
+  }
+
+  if (window.location.pathname === '/decode') {
+    return (
+      <Layout>
+        <Decode />
       </Layout>
     )
   }

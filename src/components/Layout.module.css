@@ -126,35 +126,6 @@
   }
 }
 
-.pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 32px;
-}
-
-.pill {
-  font-size: 13px;
-  font-weight: 400;
-  color: rgba(var(--fg), 0.45);
-  background: rgba(var(--fg), 0.05);
-  border: 1px solid rgba(var(--fg), 0.08);
-  border-radius: 20px;
-  padding: 7px 16px;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.pill:hover {
-  color: rgba(var(--fg), 0.65);
-  background: rgba(var(--fg), 0.08);
-  border-color: rgba(var(--fg), 0.12);
-}
-
 .paletteDocs {
   max-width: 880px;
 }
@@ -165,15 +136,6 @@
 
 .backdropDocs {
   align-items: flex-start;
-}
-
-.hint {
-  margin-top: 24px;
-  font-size: 13px;
-  font-weight: 400;
-  color: rgba(var(--fg), 0.25);
-  letter-spacing: 0.02em;
-  text-align: center;
 }
 
 @media (max-width: 600px) {
@@ -187,9 +149,5 @@
 
   .paletteDocs {
     max-width: 100%;
-  }
-
-  .pills {
-    gap: 6px;
   }
 }

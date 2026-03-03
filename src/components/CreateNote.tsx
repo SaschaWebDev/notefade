@@ -143,6 +143,10 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   const [pwCopied, setPwCopied] = useState(false);
   const [expertOpen, setExpertOpen] = useState(false);
   const [launchCodeCopied, setLaunchCodeCopied] = useState(false);
+  const [noteUrlCopied, setNoteUrlCopied] = useState(false);
+  const [hasEverCopiedUrl, setHasEverCopiedUrl] = useState(false);
+  const [hasEverCopiedLaunchCode, setHasEverCopiedLaunchCode] = useState(false);
+  const [confirmingLeave, setConfirmingLeave] = useState(false);
   const [byosMode, setByosMode] = useState<'default' | 'custom'>(
     isCustomServer ? 'custom' : 'default',
   );
@@ -433,7 +437,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
       <span key='lock'>
         <span className={styles.sentenceText}>has </span>
         <a
-          href='/docs#auto-expiring'
+          href='/docs#time-lock'
           target='_blank'
           rel='noopener noreferrer'
           className={styles.sentenceLink}
@@ -507,21 +511,6 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
         </a>
       </span>,
     );
-  if (isCustomServer)
-    expertClauses.push(
-      <span key='server'>
-        <span className={styles.sentenceText}>routes through </span>
-        <a
-          href='/docs#self-hosting'
-          target='_blank'
-          rel='noopener noreferrer'
-          className={styles.sentenceTag}
-          onClick={() => closeExpertPanel()}
-        >
-          custom server
-        </a>
-      </span>,
-    );
   const contentKey = launchCode ? 'launch' : noteUrl ? 'link' : 'form';
 
   return (
@@ -531,40 +520,66 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
           <div className={styles.launchCodePanel}>
             <h3 className={styles.launchCodeHeading}>deferred note created</h3>
             <p className={styles.launchCodeDesc}>
-              the link will become active when you upload this launch code. keep
-              it safe — if lost, the note is unrecoverable. the note's ttl
-              starts counting from the moment you activate — not from now. the
-              launch code must be activated within 30 days.
+              <strong style={{ color: 'var(--accent)' }}>save both the note link and the launch code below</strong>
+              <br />
+              you won't see them again. if either is lost, the note is
+              unrecoverable.
+              <br />
+              the link becomes active only after you upload the launch code.
+              <br />
+              the note's ttl starts counting from the moment you activate, not
+              from now. the launch code must be activated within 30 days.
             </p>
             {noteUrl && (
-              <div
-                className={styles.launchCodeBox}
-                style={{ marginBottom: 10 }}
-                onClick={() => {
-                  navigator.clipboard.writeText(noteUrl);
-                }}
-                title='note link (inactive until activated)'
-              >
-                <span
-                  style={{
-                    fontSize: 10,
-                    color: 'rgba(var(--fg), 0.25)',
-                    display: 'block',
-                    marginBottom: 4,
+              <>
+                <p className={styles.launchCodeLabel}>
+                  {noteUrlCopied
+                    ? 'copied to clipboard'
+                    : 'note link (inactive until activated)'}
+                </p>
+                <div
+                  className={styles.launchCodeBoxScroll}
+                  onClick={() => {
+                    navigator.clipboard.writeText(noteUrl);
+                    setNoteUrlCopied(true);
+                    setHasEverCopiedUrl(true);
+                    setConfirmingLeave(false);
+                    setTimeout(() => setNoteUrlCopied(false), 1500);
                   }}
+                  title='click to copy'
                 >
-                  note link (inactive until activated)
-                </span>
-                {noteUrl}
-              </div>
+                  {noteUrl}
+                </div>
+                <div className={styles.launchCodeActions}>
+                  <button
+                    type='button'
+                    className={styles.launchCodeBtn}
+                    onClick={() => {
+                      navigator.clipboard.writeText(noteUrl);
+                      setNoteUrlCopied(true);
+                      setHasEverCopiedUrl(true);
+                      setConfirmingLeave(false);
+                      setTimeout(() => setNoteUrlCopied(false), 1500);
+                    }}
+                  >
+                    {noteUrlCopied ? 'copied' : 'copy link'}
+                  </button>
+                </div>
+              </>
             )}
+            <p className={styles.launchCodeLabel}>
+              {launchCodeCopied ? 'copied to clipboard' : 'launch code'}
+            </p>
             <div
-              className={styles.launchCodeBox}
+              className={styles.launchCodeBoxScroll}
               onClick={() => {
                 navigator.clipboard.writeText(JSON.stringify(launchCode));
                 setLaunchCodeCopied(true);
+                setHasEverCopiedLaunchCode(true);
+                setConfirmingLeave(false);
                 setTimeout(() => setLaunchCodeCopied(false), 1500);
               }}
+              title='click to copy'
             >
               {JSON.stringify(launchCode)}
             </div>
@@ -575,6 +590,8 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 onClick={() => {
                   navigator.clipboard.writeText(JSON.stringify(launchCode));
                   setLaunchCodeCopied(true);
+                  setHasEverCopiedLaunchCode(true);
+                  setConfirmingLeave(false);
                   setTimeout(() => setLaunchCodeCopied(false), 1500);
                 }}
               >
@@ -584,6 +601,8 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 type='button'
                 className={styles.launchCodeBtn}
                 onClick={() => {
+                  setHasEverCopiedLaunchCode(true);
+                  setConfirmingLeave(false);
                   const blob = new Blob([JSON.stringify(launchCode, null, 2)], {
                     type: 'application/json',
                   });
@@ -608,22 +627,41 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
               </a>
             </p>
           </div>
-          <a
-            href={window.location.pathname}
-            className={styles.launchCodeBtn}
-            style={{
-              margin: '12px 36px',
-              textAlign: 'center',
-              textDecoration: 'none',
-              display: 'block',
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              resetNote();
-            }}
-          >
-            create another
-          </a>
+          <div className={styles.createAnotherWrap}>
+            {confirmingLeave && (
+              <div className={styles.confirmBanner}>
+                {!hasEverCopiedUrl && !hasEverCopiedLaunchCode
+                  ? "you haven't copied the note link or the launch code yet"
+                  : !hasEverCopiedUrl
+                    ? "you haven't copied the note link yet"
+                    : "you haven't copied the launch code yet"}
+              </div>
+            )}
+            <a
+              href={window.location.pathname}
+              className={
+                confirmingLeave
+                  ? styles.createAnotherLinkDanger
+                  : styles.createAnotherLink
+              }
+              onClick={(e) => {
+                e.preventDefault();
+                const allCopied = hasEverCopiedUrl && hasEverCopiedLaunchCode;
+                if (!allCopied && !confirmingLeave) {
+                  setConfirmingLeave(true);
+                  return;
+                }
+                setHasEverCopiedUrl(false);
+                setHasEverCopiedLaunchCode(false);
+                setConfirmingLeave(false);
+                setExpertOpen(false);
+                setShowPassword(false);
+                resetNote();
+              }}
+            >
+              {confirmingLeave ? 'leave anyway' : 'create another'}
+            </a>
+          </div>
         </div>
       ) : noteUrl ? (
         <NoteLink
@@ -1517,6 +1555,20 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                   </span>
                 );
               })}
+              {isCustomServer && (
+                <span className={styles.sentenceLine}>
+                  <span className={styles.sentenceText}> at </span>
+                  <a
+                    href='/docs#self-hosting'
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className={styles.sentenceLink}
+                    onClick={() => closeExpertPanel()}
+                  >
+                    your server
+                  </a>
+                </span>
+              )}
             </div>
 
             <div className={styles.footerRight}>

@@ -181,6 +181,23 @@ No metadata. No timestamps. No IP logs. No content.`}
           the fragment from the address bar. Even if someone inspects browser
           history, the payload is gone.
         </p>
+        <h3 className={styles.h3}>Multi-read</h3>
+        <p className={styles.p}>
+          The creator can allow between 1 and 10 reads. For each allowed read,
+          an independent copy of the server shard is stored under a unique ID.
+          All IDs are embedded in the URL (
+          <code className={styles.code}>id1~id2~id3</code>). Each read consumes
+          one copy via the same GET-and-delete mechanism. Once every copy is
+          consumed, the note is gone.
+        </p>
+        <p className={styles.p}>
+          The server never knows the copies are related — each is an independent
+          16-byte value with its own TTL. Every copy holds the same shard value
+          but under a different ID. No single copy reveals more information than
+          any other. The cryptographic security is identical to one-time read —
+          the only difference is the number of times the shard can be retrieved
+          before all copies are deleted.
+        </p>
         <DocsCallout variant="caveat">
           Once decrypted, the reader can copy the text, screenshot it, or
           memorize it. No technology can prevent that. One-time read means the
@@ -264,6 +281,46 @@ No metadata. No timestamps. No IP logs. No content.`}
           server-side metadata. The server has no knowledge of whether a note
           has a 30-second or 15-minute fade timer — only the recipient's
           browser knows, after decryption.
+        </DocsCallout>
+      </DocsSection>
+
+      <DocsSection id="time-lock" title="time-lock">
+        <p className={styles.p}>
+          Time-lock lets you create a note that cannot be read until a specific
+          date and time. The recipient can open the link immediately, but they
+          see a live countdown instead of the note content. Once the unlock time
+          arrives, the note becomes readable.
+        </p>
+        <h3 className={styles.h3}>How it works</h3>
+        <p className={styles.p}>
+          The sender picks a future date and time when creating the note. The
+          unlock timestamp is embedded directly into the URL — either as an
+          explicit prefix in compact (QR) links, or steganographically hidden in
+          the random padding of full-length links. When the recipient opens the
+          link, the client extracts the timestamp and compares it to the current
+          time. If the unlock time hasn't arrived yet, the client shows a
+          countdown and blocks all decryption attempts — the shard is never
+          fetched from the server until the lock expires.
+        </p>
+        <h3 className={styles.h3}>Server knows nothing</h3>
+        <p className={styles.p}>
+          The time-lock is purely client-side. The server never receives the
+          unlock timestamp — it lives entirely in the URL fragment. The server
+          stores the same 16-byte shard as any other note and has no idea
+          whether a time-lock is attached.
+        </p>
+        <h3 className={styles.h3}>Constraints</h3>
+        <ul className={styles.list}>
+          <li>The unlock time must be at least 1 minute in the future</li>
+          <li>The unlock time must be before the note's TTL expiry — a note that expires in 1 hour cannot be time-locked for 2 hours</li>
+          <li>When combined with deferred activation, the note is doubly gated: the shard must be activated first, then the time-lock must expire</li>
+        </ul>
+        <DocsCallout variant="caveat">
+          Time-lock is a client-side control. It prevents the normal reading
+          flow, but a technically sophisticated user could extract the unlock
+          timestamp from the URL and manipulate their system clock. This is an
+          accepted trade-off — the feature provides a usability gate, not a
+          cryptographic guarantee.
         </DocsCallout>
       </DocsSection>
 

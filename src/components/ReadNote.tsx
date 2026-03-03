@@ -110,7 +110,7 @@ export function ReadNote({
     return () => clearInterval(interval);
   }, [timeLockAt, timeLockReady]);
 
-  const { state } = useReadNote(
+  const { state, remainingReads } = useReadNote(
     validationError || !timeLockReady ? '' : shardId,
     urlPayload,
     confirmed && !validationError && timeLockReady,
@@ -202,6 +202,9 @@ export function ReadNote({
         >
           {new Date(timeLockAt * 1000).toLocaleString()}
         </p>
+        <a href={pathname} className={styles.newLink}>
+          back to main
+        </a>
       </div>
     );
   } else if (!validationError && state.status === 'gone') {
@@ -280,15 +283,30 @@ export function ReadNote({
           </div>
         )}
         <p className={styles.disclaimerText}>
-          this note can only be read{' '}
-          <strong>
-            {shardIds.length > 1 ? `${shardIds.length} times` : 'once'}
-          </strong>
+          {shardIds.length > 1 ? (
+            remainingReads !== null ? (
+              <>this note has <strong>{remainingReads} of {shardIds.length}</strong> reads remaining</>
+            ) : (
+              <>this note can be read up to <strong>{shardIds.length} times</strong></>
+            )
+          ) : (
+            <>this note can only be read <strong>once</strong></>
+          )}
         </p>
         <p className={styles.disclaimerDetail}>
-          opening it will permanently destroy the key needed to decrypt it
-          <br />
-          the content itself was never stored on any server
+          {shardIds.length > 1 ? (
+            <>
+              opening it will use one read — the note is destroyed when all reads are consumed
+              <br />
+              the content itself was never stored on any server
+            </>
+          ) : (
+            <>
+              opening it will permanently destroy the key needed to decrypt it
+              <br />
+              the content itself was never stored on any server
+            </>
+          )}
         </p>
 
         <label className={styles.checkboxLabel}>

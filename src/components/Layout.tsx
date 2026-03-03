@@ -2,13 +2,6 @@ import { type ReactNode, useCallback } from 'react'
 import { useTheme } from '@/hooks'
 import styles from './Layout.module.css'
 
-const PILLS = [
-  { label: 'AES-256 encrypted', sectionId: 'encryption' },
-  { label: 'zero knowledge', sectionId: 'zero-knowledge' },
-  { label: 'one-time read', sectionId: 'one-time-read' },
-  { label: 'auto-expiring', sectionId: 'auto-expiring' },
-] as const
-
 interface LayoutProps {
   children: ReactNode
   isDocs?: boolean
@@ -22,18 +15,6 @@ export function Layout({ children, isDocs }: LayoutProps) {
       window.location.href = '/'
     },
     [],
-  )
-
-  const handlePillClick = useCallback(
-    (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
-      if (!isDocs) return
-      e.preventDefault()
-      document.getElementById(sectionId)?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      })
-    },
-    [isDocs],
   )
 
   return (
@@ -81,24 +62,6 @@ export function Layout({ children, isDocs }: LayoutProps) {
           {children}
         </div>
 
-        {!isDocs && (
-          <>
-            <div className={styles.pills}>
-              {PILLS.map(({ label, sectionId }) => (
-                <a
-                  key={sectionId}
-                  href={`/docs#${sectionId}`}
-                  className={styles.pill}
-                  onClick={(e) => handlePillClick(e, sectionId)}
-                >
-                  {label}
-                </a>
-              ))}
-            </div>
-
-            <p className={styles.hint}>encrypted entirely in your browser</p>
-          </>
-        )}
       </div>
     </main>
   )
