@@ -1,5 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { handleRequest } from './index'
+import { createDeferToken } from './defer-token'
 import type { ShardStore } from './shard-store'
 
 function mockStore(): ShardStore {
@@ -10,6 +11,16 @@ function mockStore(): ShardStore {
     delete: vi.fn<ShardStore['delete']>().mockResolvedValue(false),
   }
 }
+
+const MOCK_SECRET = 'a0b1c2d3e4f5061728394a5b6c7d8e9fa0b1c2d3e4f5061728394a5b6c7d8e9f'
+
+interface MockEnv {
+  SHARDS: object
+  DEFER_SECRET?: string
+}
+
+const mockEnv: MockEnv = { SHARDS: {} as object }
+const mockEnvWithSecret: MockEnv = { SHARDS: {} as object, DEFER_SECRET: MOCK_SECRET }
 
 function req(
   method: string,
@@ -44,7 +55,7 @@ describe('worker handleRequest', () => {
 
   it('OPTIONS returns 204 with CORS headers', async () => {
     const store = mockStore()
-    const res = await handleRequest(req('OPTIONS', '/shard'), store)
+    const res = await handleRequest(req('OPTIONS', '/shard'), store, mockEnv)
     expect(res.status).toBe(204)
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe(
       'https://notefade.com',
@@ -58,6 +69,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('OPTIONS', '/shard', { origin: 'http://localhost:5173' }),
       store,
+      mockEnv,
     )
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe(
       'http://localhost:5173',
@@ -69,6 +81,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('OPTIONS', '/shard', { origin: 'https://www.notefade.com' }),
       store,
+      mockEnv,
     )
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe(
       'https://www.notefade.com',
@@ -80,6 +93,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('OPTIONS', '/shard', { origin: 'https://evil.com' }),
       store,
+      mockEnv,
     )
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe(
       'https://notefade.com',
@@ -91,7 +105,7 @@ describe('worker handleRequest', () => {
   it('POST /shard with valid body returns 201 and id', async () => {
     const store = mockStore()
     const body = JSON.stringify({ shard: 'ABCDEFGHIJKLMNOPQRSTU', ttl: 3600 })
-    const res = await handleRequest(req('POST', '/shard', { body }), store)
+    const res = await handleRequest(req('POST', '/shard', { body }), store, mockEnv)
 
     expect(res.status).toBe(201)
     const json = (await res.json()) as { id: string }
@@ -108,6 +122,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('POST', '/shard', { body: 'not json{' }),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(400)
     const json = (await res.json()) as { error: string }
@@ -119,6 +134,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('POST', '/shard', { body: JSON.stringify({ shard: 'abc' }) }),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(400)
     const json = (await res.json()) as { error: string }
@@ -131,6 +147,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('POST', '/shard', { body }),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(413)
     const json = (await res.json()) as { error: string }
@@ -143,14 +160,14 @@ describe('worker handleRequest', () => {
       shard: 'ABCDEFGHIJKLMNOPQRSTU',
       ttl: 9999,
     })
-    const res = await handleRequest(req('POST', '/shard', { body }), store)
+    const res = await handleRequest(req('POST', '/shard', { body }), store, mockEnv)
     expect(res.status).toBe(400)
   })
 
   it('POST /shard with invalid shard format returns 400', async () => {
     const store = mockStore()
     const body = JSON.stringify({ shard: '!!!', ttl: 3600 })
-    const res = await handleRequest(req('POST', '/shard', { body }), store)
+    const res = await handleRequest(req('POST', '/shard', { body }), store, mockEnv)
     expect(res.status).toBe(400)
   })
 
@@ -160,7 +177,7 @@ describe('worker handleRequest', () => {
       shard: 'ABCDEFGHIJKLMNOPQRSTU',
       ttl: 86400,
     })
-    await handleRequest(req('POST', '/shard', { body }), store)
+    await handleRequest(req('POST', '/shard', { body }), store, mockEnv)
     expect(store.put).toHaveBeenCalledWith(
       'aabbccdd11223344',
       'ABCDEFGHIJKLMNOPQRSTU',
@@ -176,6 +193,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('HEAD', '/shard/aabbccdd11223344'),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(200)
   })
@@ -185,6 +203,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('HEAD', '/shard/aabbccdd11223344'),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(404)
   })
@@ -194,6 +213,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('HEAD', '/shard/INVALID!'),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(400)
   })
@@ -206,6 +226,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('GET', '/shard/aabbccdd11223344'),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(200)
     const json = (await res.json()) as { shard: string }
@@ -217,6 +238,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('GET', '/shard/aabbccdd11223344'),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(404)
     const json = (await res.json()) as { error: string }
@@ -228,6 +250,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('GET', '/shard/INVALID!'),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(400)
     const json = (await res.json()) as { error: string }
@@ -242,6 +265,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('DELETE', '/shard/aabbccdd11223344'),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(200)
     const json = (await res.json()) as { deleted: boolean }
@@ -253,6 +277,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('DELETE', '/shard/aabbccdd11223344'),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(404)
   })
@@ -262,6 +287,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('DELETE', '/shard/INVALID!'),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(400)
   })
@@ -270,7 +296,7 @@ describe('worker handleRequest', () => {
 
   it('unknown route returns 404', async () => {
     const store = mockStore()
-    const res = await handleRequest(req('GET', '/unknown'), store)
+    const res = await handleRequest(req('GET', '/unknown'), store, mockEnv)
     expect(res.status).toBe(404)
   })
 
@@ -279,6 +305,7 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('POST', '/other', { body: '{}' }),
       store,
+      mockEnv,
     )
     expect(res.status).toBe(404)
   })
@@ -291,13 +318,14 @@ describe('worker handleRequest', () => {
     const res = await handleRequest(
       req('GET', '/shard/aabbccdd11223344'),
       store,
+      mockEnv,
     )
     expect(res.headers.get('Cache-Control')).toBe('no-store')
   })
 
   it('all responses include Pragma no-cache', async () => {
     const store = mockStore()
-    const res = await handleRequest(req('GET', '/unknown'), store)
+    const res = await handleRequest(req('GET', '/unknown'), store, mockEnv)
     expect(res.headers.get('Pragma')).toBe('no-cache')
   })
 
@@ -309,7 +337,175 @@ describe('worker handleRequest', () => {
       shard: 'ABCDEFGHIJKLMNOPQRSTU',
       ttl,
     })
-    const res = await handleRequest(req('POST', '/shard', { body }), store)
+    const res = await handleRequest(req('POST', '/shard', { body }), store, mockEnv)
     expect(res.status).toBe(201)
+  })
+
+  // --- POST /shard/defer ---
+
+  it('POST /shard/defer returns 201 with token and id', async () => {
+    const store = mockStore()
+    const body = JSON.stringify({ shard: 'ABCDEFGHIJKLMNOPQRSTU', ttl: 86400 })
+    const res = await handleRequest(
+      req('POST', '/shard/defer', { body }),
+      store,
+      mockEnvWithSecret,
+    )
+
+    expect(res.status).toBe(201)
+    const json = (await res.json()) as { token: string; id: string }
+    expect(json.token).toBeTruthy()
+    expect(json.token).toMatch(/^[A-Za-z0-9~-]+$/)
+    expect(json.id).toBe('aabbccdd11223344')
+    // Should NOT call store.put — shard is deferred
+    expect(store.put).not.toHaveBeenCalled()
+  })
+
+  it('POST /shard/defer returns 400 for invalid shard', async () => {
+    const store = mockStore()
+    const body = JSON.stringify({ shard: '!!!', ttl: 86400 })
+    const res = await handleRequest(
+      req('POST', '/shard/defer', { body }),
+      store,
+      mockEnvWithSecret,
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it('POST /shard/defer returns 400 for invalid TTL', async () => {
+    const store = mockStore()
+    const body = JSON.stringify({ shard: 'ABCDEFGHIJKLMNOPQRSTU', ttl: 9999 })
+    const res = await handleRequest(
+      req('POST', '/shard/defer', { body }),
+      store,
+      mockEnvWithSecret,
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it('POST /shard/defer returns 400 for invalid JSON', async () => {
+    const store = mockStore()
+    const res = await handleRequest(
+      req('POST', '/shard/defer', { body: 'not json{' }),
+      store,
+      mockEnvWithSecret,
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it('POST /shard/defer returns 501 when DEFER_SECRET not set', async () => {
+    const store = mockStore()
+    const body = JSON.stringify({ shard: 'ABCDEFGHIJKLMNOPQRSTU', ttl: 86400 })
+    const res = await handleRequest(
+      req('POST', '/shard/defer', { body }),
+      store,
+      mockEnv,
+    )
+    expect(res.status).toBe(501)
+  })
+
+  // --- POST /shard/activate ---
+
+  it('POST /shard/activate returns 201 for valid token', async () => {
+    const store = mockStore()
+    // Create a real token to activate
+    const token = await createDeferToken(MOCK_SECRET, {
+      id: 'aabbccdd11223344',
+      shard: 'ABCDEFGHIJKLMNOPQRSTU',
+      ttl: 86400,
+      ts: Date.now(),
+    })
+    const body = JSON.stringify({ token })
+    const res = await handleRequest(
+      req('POST', '/shard/activate', { body }),
+      store,
+      mockEnvWithSecret,
+    )
+
+    expect(res.status).toBe(201)
+    const json = (await res.json()) as { id: string }
+    expect(json.id).toBe('aabbccdd11223344')
+    expect(store.put).toHaveBeenCalledWith(
+      'aabbccdd11223344',
+      'ABCDEFGHIJKLMNOPQRSTU',
+      86400,
+    )
+  })
+
+  it('POST /shard/activate returns 400 for tampered token', async () => {
+    const store = mockStore()
+    const token = await createDeferToken(MOCK_SECRET, {
+      id: 'aabbccdd11223344',
+      shard: 'ABCDEFGHIJKLMNOPQRSTU',
+      ttl: 86400,
+      ts: Date.now(),
+    })
+    // Tamper with the token
+    const tampered = token.slice(0, -4) + 'XXXX'
+    const body = JSON.stringify({ token: tampered })
+    const res = await handleRequest(
+      req('POST', '/shard/activate', { body }),
+      store,
+      mockEnvWithSecret,
+    )
+
+    expect(res.status).toBe(400)
+    const json = (await res.json()) as { error: string }
+    expect(json.error).toBe('Invalid or tampered token')
+  })
+
+  it('POST /shard/activate returns 410 for expired token', async () => {
+    const store = mockStore()
+    // Create token with old timestamp
+    const thirtyOneDaysAgo = Date.now() - 31 * 24 * 60 * 60 * 1000
+    const token = await createDeferToken(MOCK_SECRET, {
+      id: 'aabbccdd11223344',
+      shard: 'ABCDEFGHIJKLMNOPQRSTU',
+      ttl: 86400,
+      ts: thirtyOneDaysAgo,
+    })
+    const body = JSON.stringify({ token })
+    const res = await handleRequest(
+      req('POST', '/shard/activate', { body }),
+      store,
+      mockEnvWithSecret,
+    )
+
+    expect(res.status).toBe(410)
+    const json = (await res.json()) as { error: string }
+    expect(json.error).toBe('Token expired')
+    expect(store.put).not.toHaveBeenCalled()
+  })
+
+  it('POST /shard/activate returns 501 when DEFER_SECRET not set', async () => {
+    const store = mockStore()
+    const body = JSON.stringify({ token: 'sometoken' })
+    const res = await handleRequest(
+      req('POST', '/shard/activate', { body }),
+      store,
+      mockEnv,
+    )
+    expect(res.status).toBe(501)
+  })
+
+  it('POST /shard/activate returns 400 for empty token', async () => {
+    const store = mockStore()
+    const body = JSON.stringify({ token: '' })
+    const res = await handleRequest(
+      req('POST', '/shard/activate', { body }),
+      store,
+      mockEnvWithSecret,
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it('POST /shard/activate returns 400 for invalid JSON', async () => {
+    const store = mockStore()
+    const res = await handleRequest(
+      req('POST', '/shard/activate', { body: 'not json{' }),
+      store,
+      mockEnvWithSecret,
+    )
+    expect(res.status).toBe(400)
   })
 })

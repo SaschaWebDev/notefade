@@ -10,6 +10,7 @@ vi.mock('@/crypto', () => ({
 
 vi.mock('@/api', () => ({
   storeShard: vi.fn(),
+  deferShard: vi.fn(),
   createAdapter: vi.fn(),
   encodeProviderConfig: vi.fn(),
 }))
@@ -113,7 +114,7 @@ describe('useCreateNote', () => {
       await result.current.handleCreate()
     })
 
-    expect(mockCreateNote).toHaveBeenCalledWith('secret message')
+    expect(mockCreateNote).toHaveBeenCalledWith('secret message', { barSeconds: 300 })
     expect(mockStoreShard).toHaveBeenCalledWith('server-shard', 86400)
     expect(result.current.noteUrl).toContain('#shard-id-123:chk:url-payload')
     expect(result.current.shardId).toBe('shard-id-123')

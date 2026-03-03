@@ -3,6 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 vi.mock('@/crypto', () => ({
   unpadPayload: (s: string) => s,
   stringFromBase64Url: vi.fn(),
+  extractTimeLock: vi.fn(() => null),
 }))
 
 vi.mock('@/api/provider-config', () => ({
@@ -10,11 +11,12 @@ vi.mock('@/api/provider-config', () => ({
 }))
 
 import { parseFragment } from './use-hash-route'
-import { stringFromBase64Url } from '@/crypto'
+import { stringFromBase64Url, extractTimeLock } from '@/crypto'
 import { decodeProviderConfig } from '@/api/provider-config'
 
 const mockStringFromBase64Url = vi.mocked(stringFromBase64Url)
 const mockDecodeProviderConfig = vi.mocked(decodeProviderConfig)
+const mockExtractTimeLock = vi.mocked(extractTimeLock)
 
 beforeEach(() => {
   vi.resetAllMocks()
@@ -43,9 +45,11 @@ describe('parseFragment', () => {
     const result = parseFragment('abc123:checkval:urlpayload')
     expect(result).toEqual({
       shardId: 'abc123',
+      shardIds: ['abc123'],
       check: 'checkval',
       urlPayload: 'urlpayload',
       provider: null,
+      timeLockAt: null,
     })
   })
 
@@ -63,9 +67,11 @@ describe('parseFragment', () => {
     const result = parseFragment('abc123:urlpayload')
     expect(result).toEqual({
       shardId: 'abc123',
+      shardIds: ['abc123'],
       check: null,
       urlPayload: 'urlpayload',
       provider: null,
+      timeLockAt: null,
     })
   })
 
@@ -81,9 +87,11 @@ describe('parseFragment', () => {
     const result = parseFragment('abc123:check:payload@encoded')
     expect(result).toEqual({
       shardId: 'abc123',
+      shardIds: ['abc123'],
       check: 'check',
       urlPayload: 'payload',
       provider: { t: 'cf-kv', a: 'acc', n: 'ns', k: 'tok' },
+      timeLockAt: null,
     })
     expect(mockDecodeProviderConfig).toHaveBeenCalledWith('encoded')
   })
@@ -97,9 +105,11 @@ describe('parseFragment', () => {
     const result = parseFragment('abc123:payload@legacyenc')
     expect(result).toEqual({
       shardId: 'abc123',
+      shardIds: ['abc123'],
       check: null,
       urlPayload: 'payload',
       provider: { t: 'self', u: 'https://custom.example.com' },
+      timeLockAt: null,
     })
   })
 
@@ -114,9 +124,11 @@ describe('parseFragment', () => {
     const result = parseFragment('abc123:payload@garbage')
     expect(result).toEqual({
       shardId: 'abc123',
+      shardIds: ['abc123'],
       check: null,
       urlPayload: 'payload@garbage',
       provider: null,
+      timeLockAt: null,
     })
   })
 
@@ -134,9 +146,11 @@ describe('parseFragment', () => {
     const result = parseFragment('abc123:payload@noturl')
     expect(result).toEqual({
       shardId: 'abc123',
+      shardIds: ['abc123'],
       check: null,
       urlPayload: 'payload@noturl',
       provider: null,
+      timeLockAt: null,
     })
   })
 
@@ -145,9 +159,11 @@ describe('parseFragment', () => {
     const result = parseFragment('abc123:@encoded')
     expect(result).toEqual({
       shardId: 'abc123',
+      shardIds: ['abc123'],
       check: null,
       urlPayload: '@encoded',
       provider: null,
+      timeLockAt: null,
     })
   })
 
@@ -155,9 +171,11 @@ describe('parseFragment', () => {
     const result = parseFragment('abc123:payload@')
     expect(result).toEqual({
       shardId: 'abc123',
+      shardIds: ['abc123'],
       check: null,
       urlPayload: 'payload@',
       provider: null,
+      timeLockAt: null,
     })
   })
 
@@ -171,9 +189,51 @@ describe('parseFragment', () => {
     const result = parseFragment('abc123:payload@config')
     expect(result).toEqual({
       shardId: 'abc123',
+      shardIds: ['abc123'],
       check: null,
       urlPayload: 'payload',
       provider: { t: 'supabase', u: 'https://x.supabase.co', k: 'key' },
+      timeLockAt: null,
+    })
+  })
+
+  // --- Steganographic time-lock extraction ---
+
+  it('extracts steganographic time-lock from padded payload', () => {
+    mockExtractTimeLock.mockReturnValueOnce(1735689600)
+    const result = parseFragment('abc123:checkval:.paddedpayload')
+    expect(result?.timeLockAt).toBe(1735689600)
+    expect(mockExtractTimeLock).toHaveBeenCalledWith('.paddedpayload', 'checkval')
+  })
+
+  it('prefers tl: prefix over steganographic extraction', () => {
+    const result = parseFragment('tl:1735689600:abc123:checkval:.paddedpayload')
+    expect(result?.timeLockAt).toBe(1735689600)
+    expect(mockExtractTimeLock).not.toHaveBeenCalled()
+  })
+
+  it('does not attempt stego extraction for non-padded payloads', () => {
+    const result = parseFragment('abc123:checkval:rawpayload')
+    expect(result?.timeLockAt).toBeNull()
+    expect(mockExtractTimeLock).not.toHaveBeenCalled()
+  })
+
+  it('stego extraction returns null gracefully when no timestamp embedded', () => {
+    // Default mock returns null
+    const result = parseFragment('abc123:checkval:.paddednots')
+    expect(result?.timeLockAt).toBeNull()
+    expect(mockExtractTimeLock).toHaveBeenCalledWith('.paddednots', 'checkval')
+  })
+
+  it('backward compat: old tl: prefix URLs still parse correctly', () => {
+    const result = parseFragment('tl:1800000000:abc123:checkval:urlpayload')
+    expect(result).toEqual({
+      shardId: 'abc123',
+      shardIds: ['abc123'],
+      check: 'checkval',
+      urlPayload: 'urlpayload',
+      provider: null,
+      timeLockAt: 1800000000,
     })
   })
 })

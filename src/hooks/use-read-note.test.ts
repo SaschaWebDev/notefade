@@ -66,7 +66,7 @@ describe('useReadNote', () => {
   it('confirmed triggers fetch + decrypt → decrypted state', async () => {
     mockCheckShard.mockResolvedValueOnce(true)
     mockFetchShard.mockResolvedValueOnce('server-shard')
-    mockOpenNote.mockResolvedValueOnce('decrypted message')
+    mockOpenNote.mockResolvedValueOnce({ plaintext: 'decrypted message', metadata: {} })
 
     const { result } = renderHook(() =>
       useReadNote('shard-id', 'payload', true),
@@ -87,7 +87,7 @@ describe('useReadNote', () => {
   it('auto-clear: transitions to faded after PLAINTEXT_TTL_MS', async () => {
     mockCheckShard.mockResolvedValueOnce(true)
     mockFetchShard.mockResolvedValueOnce('shard')
-    mockOpenNote.mockResolvedValueOnce('text')
+    mockOpenNote.mockResolvedValueOnce({ plaintext: 'text', metadata: {} })
 
     const { result } = renderHook(() =>
       useReadNote('shard-id', 'payload', true),
@@ -168,7 +168,7 @@ describe('useReadNote', () => {
       delete: vi.fn(),
     }
     mockCreateAdapter.mockReturnValue(mockAdapter)
-    mockOpenNote.mockResolvedValueOnce('decrypted')
+    mockOpenNote.mockResolvedValueOnce({ plaintext: 'decrypted', metadata: {} })
 
     const provider = { t: 'self' as const, u: 'https://custom.com' }
     const { result } = renderHook(() =>

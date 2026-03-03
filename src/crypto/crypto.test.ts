@@ -17,6 +17,9 @@ import {
   computeCheck,
   protectFragment,
   unprotectFragment,
+  deriveTimeLockPositions,
+  embedTimeLock,
+  extractTimeLock,
 } from './crypto'
 
 describe('toBase64Url / fromBase64Url', () => {
@@ -235,8 +238,8 @@ describe('createNote / openNote', () => {
   it('full round-trip: create → open', async () => {
     const message = 'This is a secret note.'
     const { urlPayload, serverShard } = await createNote(message)
-    const decrypted = await openNote(urlPayload, serverShard)
-    expect(decrypted).toBe(message)
+    const result = await openNote(urlPayload, serverShard)
+    expect(result.plaintext).toBe(message)
   })
 
   it('fails with wrong shard', async () => {
@@ -247,15 +250,15 @@ describe('createNote / openNote', () => {
 
   it('handles empty message', async () => {
     const { urlPayload, serverShard } = await createNote('')
-    const decrypted = await openNote(urlPayload, serverShard)
-    expect(decrypted).toBe('')
+    const result = await openNote(urlPayload, serverShard)
+    expect(result.plaintext).toBe('')
   })
 
   it('handles long message', async () => {
     const message = 'x'.repeat(1800)
     const { urlPayload, serverShard } = await createNote(message)
-    const decrypted = await openNote(urlPayload, serverShard)
-    expect(decrypted).toBe(message)
+    const result = await openNote(urlPayload, serverShard)
+    expect(result.plaintext).toBe(message)
   })
 
   it('serverShard is base64url of exactly 16 bytes', async () => {
@@ -274,15 +277,15 @@ describe('createNote / openNote', () => {
   it('round-trips CJK and emoji through full flow', async () => {
     const message = '🔒 秘密のメッセージ 비밀 消息'
     const { urlPayload, serverShard } = await createNote(message)
-    const decrypted = await openNote(urlPayload, serverShard)
-    expect(decrypted).toBe(message)
+    const result = await openNote(urlPayload, serverShard)
+    expect(result.plaintext).toBe(message)
   })
 
   it('round-trips special characters through full flow', async () => {
     const message = '<script>alert("xss")</script>\n& " \' \0 \t'
     const { urlPayload, serverShard } = await createNote(message)
-    const decrypted = await openNote(urlPayload, serverShard)
-    expect(decrypted).toBe(message)
+    const result = await openNote(urlPayload, serverShard)
+    expect(result.plaintext).toBe(message)
   })
 
   it('two createNote calls produce different payloads', async () => {
@@ -379,8 +382,8 @@ describe('stress tests — character encoding edge cases', () => {
   // Helper: full round-trip through createNote/openNote and verify byte math
   async function roundTrip(message: string) {
     const { urlPayload, serverShard } = await createNote(message)
-    const decrypted = await openNote(urlPayload, serverShard)
-    return { decrypted, urlPayload, serverShard }
+    const result = await openNote(urlPayload, serverShard)
+    return { decrypted: result.plaintext, urlPayload, serverShard }
   }
 
   // --- Max-length payloads by script ---
@@ -599,8 +602,8 @@ describe('padPayload / unpadPayload', () => {
     const message = 'padded openNote test'
     const { urlPayload, serverShard } = await createNote(message)
     const padded = padPayload(urlPayload)
-    const decrypted = await openNote(padded, serverShard)
-    expect(decrypted).toBe(message)
+    const result = await openNote(padded, serverShard)
+    expect(result.plaintext).toBe(message)
   })
 
   it('uniform length for different payload sizes', async () => {
@@ -710,7 +713,7 @@ describe('protectFragment / unprotectFragment', () => {
   it('output uses URL-safe characters only', async () => {
     const protectedData = await protectFragment('test-fragment', 'pw')
     // Output format is base64url:base64url — both parts + colon are URL-safe
-    expect(protectedData).toMatch(/^[A-Za-z0-9_:-]+$/)
+    expect(protectedData).toMatch(/^[A-Za-z0-9~:-]+$/)
   })
 
   it('long password (1000 chars) works', async () => {
@@ -738,8 +741,8 @@ describe('protectFragment / unprotectFragment', () => {
     expect(parts[0]).toBe(shardId)
     expect(parts[1]).toBe(check)
     const recoveredPayload = parts.slice(2).join(':')
-    const plaintext = await openNote(recoveredPayload, serverShard)
-    expect(plaintext).toBe(message)
+    const result = await openNote(recoveredPayload, serverShard)
+    expect(result.plaintext).toBe(message)
   })
 
   it('end-to-end with padded payload through protectFragment/unprotectFragment', async () => {
@@ -760,7 +763,154 @@ describe('protectFragment / unprotectFragment', () => {
     expect(parts[0]).toBe(shardId)
     expect(parts[1]).toBe(check)
     const recoveredPayload = parts.slice(2).join(':')
-    const plaintext = await openNote(recoveredPayload, serverShard)
-    expect(plaintext).toBe(message)
+    const result = await openNote(recoveredPayload, serverShard)
+    expect(result.plaintext).toBe(message)
+  })
+})
+
+describe('steganographic time-lock — deriveTimeLockPositions / embedTimeLock / extractTimeLock', () => {
+  /** Helper: extract fill area bounds from a padded payload */
+  function getFillBounds(padded: string) {
+    const lenBytes = fromBase64Url(padded.slice(1, 5))
+    const payloadLen = ((lenBytes[0] ?? 0) << 16) | ((lenBytes[1] ?? 0) << 8) | (lenBytes[2] ?? 0)
+    const fillStart = 5 + payloadLen
+    const fillLength = PAYLOAD_PAD_LEN - fillStart
+    return { fillStart, fillLength }
+  }
+
+  it('round-trips: embed → extract recovers timestamp', async () => {
+    const { urlPayload } = await createNote('stego test')
+    const check = computeCheck(urlPayload)
+    const padded = padPayload(urlPayload)
+    const timestamp = 1735689600 // 2025-01-01T00:00:00Z
+    const embedded = embedTimeLock(padded, check, timestamp)
+    const extracted = extractTimeLock(embedded, check)
+    expect(extracted).toBe(timestamp)
+  })
+
+  it('round-trips across many different timestamps', async () => {
+    const { urlPayload } = await createNote('many timestamps')
+    const check = computeCheck(urlPayload)
+    const timestamps = [1704067200, 1735689600, 1800000000, 2000000000, 4000000000]
+    for (const ts of timestamps) {
+      const padded = padPayload(urlPayload)
+      const embedded = embedTimeLock(padded, check, ts)
+      expect(extractTimeLock(embedded, check)).toBe(ts)
+    }
+  })
+
+  it('wrong check returns null', async () => {
+    const { urlPayload } = await createNote('wrong check test')
+    const check = computeCheck(urlPayload)
+    const padded = padPayload(urlPayload)
+    const embedded = embedTimeLock(padded, check, 1735689600)
+    const wrongCheck = computeCheck('different-payload')
+    expect(extractTimeLock(embedded, wrongCheck)).toBeNull()
+  })
+
+  it('unpadding still works after embedding', async () => {
+    const { urlPayload } = await createNote('unpad after embed')
+    const check = computeCheck(urlPayload)
+    const padded = padPayload(urlPayload)
+    const embedded = embedTimeLock(padded, check, 1735689600)
+    const unpadded = unpadPayload(embedded)
+    expect(unpadded).toBe(urlPayload)
+  })
+
+  it('full decrypt flow works after embedding', async () => {
+    const message = 'full decrypt after embed'
+    const { urlPayload, serverShard } = await createNote(message)
+    const check = computeCheck(urlPayload)
+    const padded = padPayload(urlPayload)
+    const embedded = embedTimeLock(padded, check, 1735689600)
+    const result = await openNote(embedded, serverShard)
+    expect(result.plaintext).toBe(message)
+  })
+
+  it('position derivation is deterministic', async () => {
+    const { urlPayload } = await createNote('deterministic')
+    const check = computeCheck(urlPayload)
+    const padded = padPayload(urlPayload)
+    const { fillStart, fillLength } = getFillBounds(padded)
+    const pos1 = deriveTimeLockPositions(check, fillStart, fillLength)
+    const pos2 = deriveTimeLockPositions(check, fillStart, fillLength)
+    expect(pos1).toEqual(pos2)
+  })
+
+  it('positions have no duplicates', async () => {
+    const { urlPayload } = await createNote('no duplicates')
+    const check = computeCheck(urlPayload)
+    const padded = padPayload(urlPayload)
+    const { fillStart, fillLength } = getFillBounds(padded)
+    const positions = deriveTimeLockPositions(check, fillStart, fillLength)
+    const unique = new Set(positions)
+    expect(unique.size).toBe(8)
+  })
+
+  it('positions are within fill area bounds', async () => {
+    const { urlPayload } = await createNote('bounds test')
+    const check = computeCheck(urlPayload)
+    const padded = padPayload(urlPayload)
+    const { fillStart, fillLength } = getFillBounds(padded)
+    const positions = deriveTimeLockPositions(check, fillStart, fillLength)
+    for (const pos of positions) {
+      expect(pos).toBeGreaterThanOrEqual(fillStart)
+      expect(pos).toBeLessThan(fillStart + fillLength)
+    }
+  })
+
+  it('returns null for non-padded payload', () => {
+    expect(extractTimeLock('rawPayloadNoDot', 'check')).toBeNull()
+  })
+
+  it('embedded payload has same length as original', async () => {
+    const { urlPayload } = await createNote('length test')
+    const check = computeCheck(urlPayload)
+    const padded = padPayload(urlPayload)
+    const embedded = embedTimeLock(padded, check, 1735689600)
+    expect(embedded.length).toBe(padded.length)
+    expect(embedded.length).toBe(PAYLOAD_PAD_LEN)
+  })
+
+  it('returns empty array when fill is too small for segments', () => {
+    const positions = deriveTimeLockPositions('check', 0, 7)
+    expect(positions).toEqual([])
+  })
+
+  it('different checks produce different positions', async () => {
+    const { urlPayload } = await createNote('diff positions')
+    const padded = padPayload(urlPayload)
+    const { fillStart, fillLength } = getFillBounds(padded)
+    const posA = deriveTimeLockPositions('checkA', fillStart, fillLength)
+    const posB = deriveTimeLockPositions('checkB', fillStart, fillLength)
+    expect(posA).not.toEqual(posB)
+  })
+
+  it('end-to-end with password protection and stego time-lock', async () => {
+    const message = 'password + stego time-lock'
+    const { urlPayload, serverShard } = await createNote(message)
+    const check = computeCheck(urlPayload)
+    const shardId = 'stego01'
+    const timestamp = 1735689600
+
+    // Embed time-lock steganographically in padded payload
+    let paddedUrlPayload = padPayload(urlPayload)
+    paddedUrlPayload = embedTimeLock(paddedUrlPayload, check, timestamp)
+    const fragment = `${shardId}:${check}:${paddedUrlPayload}`
+
+    // Password protect
+    const password = 'stego-pw'
+    const protectedData = await protectFragment(fragment, password)
+    const decryptedFragment = await unprotectFragment(protectedData, password)
+    expect(decryptedFragment).toBe(fragment)
+
+    // Extract stego timestamp from recovered payload
+    const parts = decryptedFragment.split(':')
+    const recoveredPayload = parts.slice(2).join(':')
+    expect(extractTimeLock(recoveredPayload, check)).toBe(timestamp)
+
+    // Decrypt note
+    const result = await openNote(recoveredPayload, serverShard)
+    expect(result.plaintext).toBe(message)
   })
 })
