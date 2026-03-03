@@ -15,14 +15,15 @@ Notefade splits your encryption key so the server stores only 16 meaningless byt
 ## Features
 
 - **AES-256-GCM encryption** — Web Crypto API only, zero external crypto dependencies
-- **XOR key splitting** — server stores just 16 bytes; meaningless without the URL half
+- **XOR key splitting** — server stores just 16 bytes; each shard alone is an information-theoretic one-time pad, making reconstruction without both halves mathematically impossible regardless of computational power
 - **URL fragment architecture** — `#fragment` is never sent to the server, by design
 - **One-time read** — shard is deleted the moment it's served
 - **Auto-expiring links** — 1 hour, 24 hours, or 7 days
 - **Password protection** — optional PBKDF2 layer (600k iterations, SHA-256)
 - **QR code sharing** — generate and export as PNG
 - **Dark / light theme** — auto-detects system preference, manual toggle to override
-- **Markdown rendering** — notes render markdown content
+- **Rich text editor** — formatting toolbar with bold, italic, headings, lists, code blocks, and links; notes render as markdown
+- **Dead drop mode** — encrypt now, share an inert link, activate later via launch code
 - **7 backend adapters** — Cloudflare KV, Cloudflare D1, Upstash Redis, Vercel KV, Supabase, AWS DynamoDB, or your own API
 - **Self-hostable** — frontend and backend, no vendor lock-in
 - **Reproducible builds** — deterministic Docker builds, SHA-256 build manifests on every release
@@ -237,14 +238,16 @@ worker/
 
 ## API
 
-Four endpoints. That's the entire backend.
+Six endpoints. That's the entire backend.
 
-| Method   | Endpoint     | Description                     |
-| -------- | ------------ | ------------------------------- |
-| `POST`   | `/shard`     | Store a shard (returns ID)      |
-| `HEAD`   | `/shard/:id` | Check if a shard exists         |
-| `GET`    | `/shard/:id` | Fetch and delete a shard        |
-| `DELETE` | `/shard/:id` | Destroy a shard without reading |
+| Method   | Endpoint           | Description                              |
+| -------- | ------------------ | ---------------------------------------- |
+| `POST`   | `/shard`           | Store a shard (returns ID)               |
+| `HEAD`   | `/shard/:id`       | Check if a shard exists                  |
+| `GET`    | `/shard/:id`       | Fetch and delete a shard                 |
+| `DELETE` | `/shard/:id`       | Destroy a shard without reading          |
+| `POST`   | `/shard/defer`     | Create a defer token (dead drop)         |
+| `POST`   | `/shard/activate`  | Activate a deferred note                 |
 
 Rate limited per IP. Max request body: 1 KB. Full API docs at [notefade.com/docs](https://notefade.com/docs).
 
