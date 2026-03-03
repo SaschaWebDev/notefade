@@ -10,6 +10,20 @@ export interface SplitResult {
   serverShard: string
 }
 
+/** Metadata embedded inside encrypted plaintext */
+export interface NoteMetadata {
+  /** Burn-after-reading duration in seconds */
+  barSeconds?: number
+  /** Receipt seed for proof of read (32 bytes, base64url-encoded) */
+  receiptSeed?: string
+}
+
+/** Result from opening a note, including parsed metadata */
+export interface OpenNoteResult {
+  plaintext: string
+  metadata: NoteMetadata
+}
+
 interface EncryptedNote {
   ciphertext: Uint8Array
   iv: Uint8Array
@@ -147,7 +161,7 @@ export function toBase64Url(bytes: Uint8Array): string {
 }
 
 export function fromBase64Url(str: string): Uint8Array {
-  const base64 = str.replace(/-/g, '+').replace(/_/g, '/')
+  const base64 = str.replace(/-/g, '+').replace(/[_~]/g, '/')
   const binary = atob(base64)
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) {
@@ -224,11 +238,252 @@ export function unpadPayload(payload: string): string {
   return payload.slice(5, 5 + len)
 }
 
+// --- PLAINTEXT METADATA ---
+
+/** Encode metadata prefixes into plaintext before encryption */
+export function encodeMetadata(message: string, metadata: NoteMetadata): string {
+  let prefix = ''
+  if (metadata.barSeconds !== undefined) {
+    prefix += `BAR:${metadata.barSeconds}:`
+  }
+  if (metadata.receiptSeed !== undefined) {
+    prefix += `RECEIPT:${metadata.receiptSeed}:`
+  }
+  return prefix + message
+}
+
+/** Parse metadata prefixes from decrypted plaintext */
+export function decodeMetadata(plaintext: string): OpenNoteResult {
+  const metadata: NoteMetadata = {}
+  let remaining = plaintext
+
+  // Parse BAR prefix
+  const barMatch = remaining.match(/^BAR:(\d+):/)
+  if (barMatch) {
+    metadata.barSeconds = parseInt(barMatch[1]!, 10)
+    remaining = remaining.slice(barMatch[0]!.length)
+  }
+
+  // Parse RECEIPT prefix
+  const receiptMatch = remaining.match(/^RECEIPT:([A-Za-z0-9_-]+):/)
+  if (receiptMatch) {
+    metadata.receiptSeed = receiptMatch[1]!
+    remaining = remaining.slice(receiptMatch[0]!.length)
+  }
+
+  return { plaintext: remaining, metadata }
+}
+
+// --- PROOF OF READ (HMAC-SHA256) ---
+
+/** Generate a 32-byte random receipt seed */
+export function generateReceiptSeed(): string {
+  const seed = crypto.getRandomValues(new Uint8Array(32))
+  return toBase64Url(seed)
+}
+
+/** Compute HMAC-SHA256 proof: proves someone decrypted the note */
+export async function computeReceiptProof(
+  receiptSeed: string,
+  plaintext: string,
+): Promise<string> {
+  const seedBytes = fromBase64Url(receiptSeed)
+  const plaintextBytes = new TextEncoder().encode(plaintext)
+
+  // Hash the plaintext first
+  const plaintextHash = new Uint8Array(
+    await crypto.subtle.digest('SHA-256', toArrayBuffer(plaintextBytes)),
+  )
+
+  // HMAC-SHA256(key=seed, message=SHA256(plaintext))
+  const hmacKey = await crypto.subtle.importKey(
+    'raw',
+    toArrayBuffer(seedBytes),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+
+  const signature = new Uint8Array(
+    await crypto.subtle.sign('HMAC', hmacKey, toArrayBuffer(plaintextHash)),
+  )
+
+  return toBase64Url(signature)
+}
+
+/** Verify a receipt proof against the original plaintext and seed */
+export async function verifyReceiptProof(
+  receiptSeed: string,
+  plaintext: string,
+  proof: string,
+): Promise<boolean> {
+  const expected = await computeReceiptProof(receiptSeed, plaintext)
+  return expected === proof
+}
+
+// --- STEGANOGRAPHIC TIME-LOCK ---
+
+/** Simple xorshift32 PRNG — returns unsigned 32-bit integer */
+function xorshift32(state: number): number {
+  state ^= state << 13
+  state ^= state >>> 17
+  state ^= state << 5
+  return state >>> 0
+}
+
+/** FNV-1a hash of raw bytes, returned as unsigned 32-bit */
+function fnv1aBytes(bytes: Uint8Array): number {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < bytes.length; i++) {
+    hash ^= bytes[i]!
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return hash >>> 0
+}
+
+/**
+ * Derive 8 deterministic positions within the fill area of a padded payload.
+ * Seeds a PRNG with FNV-1a of the check string, then picks one position
+ * per segment (fill divided into 8 equal parts).
+ */
+export function deriveTimeLockPositions(
+  check: string,
+  fillStart: number,
+  fillLength: number,
+): number[] {
+  // Seed PRNG with FNV-1a of check string
+  let state = 0x811c9dc5
+  for (let i = 0; i < check.length; i++) {
+    state ^= check.charCodeAt(i)
+    state = Math.imul(state, 0x01000193)
+  }
+  state = state >>> 0
+
+  const segmentSize = Math.floor(fillLength / 8)
+  if (segmentSize === 0) return []
+
+  const positions: number[] = []
+  for (let i = 0; i < 8; i++) {
+    state = xorshift32(state)
+    const offset = state % segmentSize
+    positions.push(fillStart + i * segmentSize + offset)
+  }
+
+  return positions
+}
+
+/**
+ * Embed a time-lock timestamp steganographically into a padded payload.
+ * Encodes: 4 bytes uint32 BE timestamp + 2 bytes FNV-1a checksum = 6 bytes → 8 base64url chars.
+ * Overwrites 8 characters at PRNG-derived positions in the fill area.
+ * Returns a modified padded payload of the same length.
+ */
+export function embedTimeLock(
+  paddedPayload: string,
+  check: string,
+  timeLockAt: number,
+): string {
+  // Extract fill area bounds from padded payload
+  const lenBytes = fromBase64Url(paddedPayload.slice(1, 5))
+  const len = ((lenBytes[0] ?? 0) << 16) | ((lenBytes[1] ?? 0) << 8) | (lenBytes[2] ?? 0)
+  const fillStart = 5 + len
+  const fillLength = PAYLOAD_PAD_LEN - fillStart
+
+  // Encode timestamp: 4 bytes uint32 BE
+  const tsBytes = new Uint8Array(4)
+  tsBytes[0] = (timeLockAt >>> 24) & 0xff
+  tsBytes[1] = (timeLockAt >>> 16) & 0xff
+  tsBytes[2] = (timeLockAt >>> 8) & 0xff
+  tsBytes[3] = timeLockAt & 0xff
+
+  // FNV-1a checksum XOR-folded to 16 bits
+  const hash32 = fnv1aBytes(tsBytes)
+  const hash16 = ((hash32 >>> 16) ^ (hash32 & 0xffff)) & 0xffff
+
+  const encoded = new Uint8Array(6)
+  encoded.set(tsBytes, 0)
+  encoded[4] = (hash16 >>> 8) & 0xff
+  encoded[5] = hash16 & 0xff
+
+  const chars = toBase64Url(encoded) // 8 base64url characters
+
+  // Get positions and overwrite fill characters
+  const positions = deriveTimeLockPositions(check, fillStart, fillLength)
+  const result = paddedPayload.split('')
+  for (let i = 0; i < 8; i++) {
+    result[positions[i]!] = chars[i]!
+  }
+
+  return result.join('')
+}
+
+/**
+ * Extract a steganographically embedded time-lock from a padded payload.
+ * Reads 8 characters from PRNG-derived positions, decodes 6 bytes,
+ * validates FNV-1a checksum and timestamp range.
+ * Returns Unix timestamp or null if not found / invalid.
+ */
+export function extractTimeLock(
+  paddedPayload: string,
+  check: string,
+): number | null {
+  if (!paddedPayload.startsWith('.')) return null
+
+  // Extract fill area bounds
+  const lenBytes = fromBase64Url(paddedPayload.slice(1, 5))
+  const len = ((lenBytes[0] ?? 0) << 16) | ((lenBytes[1] ?? 0) << 8) | (lenBytes[2] ?? 0)
+  const fillStart = 5 + len
+  const fillLength = PAYLOAD_PAD_LEN - fillStart
+
+  if (fillLength < 8) return null
+
+  // Get positions and read characters
+  const positions = deriveTimeLockPositions(check, fillStart, fillLength)
+  if (positions.length !== 8) return null
+
+  let chars = ''
+  for (let i = 0; i < 8; i++) {
+    chars += paddedPayload[positions[i]!]
+  }
+
+  // Decode 6 bytes
+  let decoded: Uint8Array
+  try {
+    decoded = fromBase64Url(chars)
+  } catch {
+    return null
+  }
+  if (decoded.length !== 6) return null
+
+  // Extract timestamp (uint32 BE)
+  const timestamp =
+    ((decoded[0]! << 24) | (decoded[1]! << 16) | (decoded[2]! << 8) | decoded[3]!) >>> 0
+
+  // Validate FNV-1a checksum
+  const tsBytes = decoded.slice(0, 4)
+  const hash32 = fnv1aBytes(tsBytes)
+  const expectedHash16 = ((hash32 >>> 16) ^ (hash32 & 0xffff)) & 0xffff
+  const actualHash16 = ((decoded[4]! << 8) | decoded[5]!) & 0xffff
+
+  if (expectedHash16 !== actualHash16) return null
+
+  // Validate timestamp range: 2024-01-01 to 2100-01-01
+  const MIN_TS = 1704067200
+  const MAX_TS = 4102444800
+  if (timestamp < MIN_TS || timestamp > MAX_TS) return null
+
+  return timestamp
+}
+
 // --- FULL FLOW ---
 
 /** Sender creates a note: encrypts message and splits key */
-export async function createNote(message: string): Promise<SplitResult> {
-  const { ciphertext, iv, key } = await encrypt(message)
+export async function createNote(
+  message: string,
+  metadata?: NoteMetadata,
+): Promise<SplitResult> {
+  const encodedMessage = metadata ? encodeMetadata(message, metadata) : message
+  const { ciphertext, iv, key } = await encrypt(encodedMessage)
   const { urlShare, serverShard } = splitKey(key)
 
   // URL payload: urlShare (48) + iv (12) + ciphertext (variable + 16 GCM tag)
@@ -347,7 +602,7 @@ export async function unprotectFragment(
 export async function openNote(
   urlPayload: string,
   serverShard: string,
-): Promise<string> {
+): Promise<OpenNoteResult> {
   // Strip URL-level padding if present
   const realPayload = unpadPayload(urlPayload)
   const urlBytes = fromBase64Url(realPayload)
@@ -360,7 +615,10 @@ export async function openNote(
   const key = reconstructKey(urlShare, shard)
   const decryptedBytes = await decryptToBytes(ciphertext, iv, key)
   const unpadded = unpadPlaintext(decryptedBytes)
-  const plaintext = new TextDecoder().decode(unpadded)
+  const rawPlaintext = new TextDecoder().decode(unpadded)
+
+  // Parse metadata prefixes from decrypted content
+  const result = decodeMetadata(rawPlaintext)
 
   // Zero out sensitive data (best-effort)
   key.fill(0)
@@ -373,5 +631,5 @@ export async function openNote(
     window.history.replaceState(null, '', window.location.pathname)
   }
 
-  return plaintext
+  return result
 }

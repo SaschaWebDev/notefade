@@ -11,10 +11,20 @@ export {
   unpadPayload,
   PAYLOAD_PAD_LEN,
   fromBase64Url,
+  toBase64Url,
   stringToBase64Url,
   stringFromBase64Url,
   computeCheck,
   protectFragment,
   unprotectFragment,
+  encodeMetadata,
+  decodeMetadata,
+  generateReceiptSeed,
+  computeReceiptProof,
+  verifyReceiptProof,
+  deriveTimeLockPositions,
+  embedTimeLock,
+  extractTimeLock,
 } from './crypto'
-export type { SplitResult } from './crypto'
+export type { SplitResult, NoteMetadata, OpenNoteResult } from './crypto'
+export { encodeZeroWidth, decodeZeroWidth, hasZeroWidthData, encodeImageStego, decodeImageStego, generateStegoImage, generateStegoFilename } from './stego'
