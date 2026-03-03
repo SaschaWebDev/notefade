@@ -258,17 +258,34 @@
 }
 
 .footerTop {
-  display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 10px 16px;
+  line-height: 3.6;
+}
+
+.footerTop .ttlToggle {
+  height: 44.15px;
+  box-sizing: border-box;
+  transform: none;
+  align-items: center;
+}
+
+.footerTop .sentenceControl {
+  margin: 0 4px;
+}
+
+.footerTop .passwordInputWrapper {
+  height: 44.15px;
+  box-sizing: border-box;
+}
+
+.footerTop .sentenceTagPlain {
+  margin: 0 4px;
 }
 
 .passwordInputWrapper {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  flex: 1;
-  min-width: 0;
+  vertical-align: middle;
+  margin-right: 4px;
   background: rgba(var(--fg), 0.05);
   border: 1px solid rgba(var(--fg), 0.08);
   border-radius: 8px;
@@ -281,8 +298,7 @@
 }
 
 .passwordInlineInput {
-  flex: 1;
-  min-width: 0;
+  min-width: 14ch;
   padding: 7px 16px;
   font-size: 17px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
@@ -370,27 +386,15 @@
   cursor: not-allowed;
 }
 
-.settingPair {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.ttlLabel {
-  font-size: 17px;
-  font-weight: 400;
-  color: rgba(var(--fg), 0.3);
-  letter-spacing: 0.02em;
-}
-
 .ttlToggle {
   position: relative;
-  display: flex;
+  display: inline-flex;
+  vertical-align: middle;
   background: rgba(var(--fg), 0.05);
   border: 1px solid rgba(var(--fg), 0.08);
   border-radius: 8px;
   padding: 3px;
-  transform: scale(0.9);
+  transform: scale(0.8);
   transform-origin: center;
 }
 
@@ -433,6 +437,75 @@
 .ttlOption:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.sentenceText {
+  font-size: 17px;
+  font-weight: 400;
+  color: rgba(var(--fg), 0.3);
+  letter-spacing: 0.02em;
+}
+
+.sentenceControl {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+
+.sentenceTag {
+  font-size: 15px;
+  font-weight: 500;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  color: rgba(var(--fg), 0.35);
+  background: rgba(var(--fg), 0.05);
+  border: 1px solid rgba(var(--fg), 0.08);
+  border-radius: 8px;
+  height: 44.15px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 18px;
+  white-space: nowrap;
+  text-decoration: underline dotted rgba(var(--fg), 0.2);
+  text-underline-offset: 3px;
+  margin-right: 4px;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.sentenceTag:hover {
+  color: rgba(var(--fg), 0.55);
+  background: rgba(var(--fg), 0.07);
+  border-color: rgba(var(--fg), 0.12);
+}
+
+.sentenceLink {
+  font-size: 15px;
+  font-weight: 500;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  color: rgba(var(--fg), 0.35);
+  text-decoration: underline dotted rgba(var(--fg), 0.2);
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.sentenceLink:hover {
+  color: rgba(var(--fg), 0.55);
+}
+
+.sentenceTagPlain {
+  font-size: 15px;
+  font-weight: 500;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  color: rgba(var(--fg), 0.35);
+  background: rgba(var(--fg), 0.05);
+  border: 1px solid rgba(var(--fg), 0.08);
+  border-radius: 8px;
+  height: 44.15px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 18px;
+  white-space: nowrap;
+  margin-right: 4px;
 }
 
 .footerRight {
@@ -548,10 +621,20 @@
 
 /* --- BYOS Panel --- */
 
-.byosPanel {
+.expertPanel .ttlToggle {
+  height: 37.47px;
+  box-sizing: border-box;
+  align-items: center;
+  transform: none;
+}
+
+.expertPanel {
   padding: 16px 28px 20px;
   border-top: 1px solid rgba(var(--fg), 0.06);
   animation: byos-in 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 @keyframes byos-in {
@@ -559,11 +642,48 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+.expertSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.expertSectionRow {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.expertSectionRow > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.expertSectionHeader {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(var(--fg), 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.expertDivider {
+  height: 1px;
+  background: rgba(var(--fg), 0.06);
+  margin: 4px 0;
+}
+
+.advancedRowWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .byosHeader {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 6px;
 }
 
 .byosTitle {
@@ -811,33 +931,25 @@
     padding: 16px 20px;
   }
 
-  .footerTop {
-    flex-direction: column;
-    gap: 10px;
+  .sentenceText {
+    font-size: 15px;
+  }
+
+  .sentenceTag {
+    font-size: 13px;
   }
 
   .passwordInputWrapper {
-    width: 100%;
-    flex: none;
+    max-width: 100%;
+  }
+
+  .sentenceLine {
+    display: block;
   }
 
   .passwordInlineInput {
     width: 100%;
     font-size: 15px;
-  }
-
-  .settingPair {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .ttlLabel,
-  .ttlOption {
-    font-size: 14px;
-  }
-
-  .ttlOption {
-    padding: 6px 14px;
   }
 
   .footerRight {
@@ -852,4 +964,290 @@
 
 :global([data-theme="light"]) .byosSelect {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='rgba(0,0,0,0.3)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* --- Advanced Settings Panel --- */
+
+.advancedRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.advancedLabel {
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(var(--fg), 0.3);
+  letter-spacing: 0.02em;
+  min-width: fit-content;
+}
+
+.sliderGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  max-width: 180px;
+}
+
+.rangeSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  background: rgba(var(--fg), 0.1);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.rangeSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.8);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.rangeSlider::-webkit-slider-thumb:hover {
+  background: rgba(var(--accent-rgb), 1);
+  transform: scale(1.15);
+}
+
+.rangeSlider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.8);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.rangeSlider::-moz-range-thumb:hover {
+  background: rgba(var(--accent-rgb), 1);
+  transform: scale(1.15);
+}
+
+.rangeSlider::-moz-range-track {
+  height: 4px;
+  background: rgba(var(--fg), 0.1);
+  border-radius: 2px;
+  border: none;
+}
+
+.rangeSlider:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sliderValue {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(var(--fg), 0.5);
+  min-width: 18px;
+  text-align: center;
+}
+
+.sliderHint {
+  font-size: 12px;
+  color: rgba(var(--fg), 0.35);
+}
+
+.timeLockInput {
+  padding: 6px 10px;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: var(--text-primary);
+  background: rgba(var(--fg), 0.05);
+  border: 1px solid rgba(var(--fg), 0.08);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s ease;
+  color-scheme: dark;
+}
+
+:global([data-theme="light"]) .timeLockInput {
+  color-scheme: light;
+}
+
+.timeLockInput:focus {
+  border-color: rgba(var(--accent-rgb), 0.4);
+}
+
+.advancedHint {
+  font-size: 11px;
+  color: rgba(var(--fg), 0.2);
+  font-style: italic;
+  padding-left: 2px;
+  line-height: 1.4;
+}
+
+
+/* --- Launch Code (Deferred Activation) --- */
+
+.launchCodePanel {
+  padding: 20px 36px;
+  border-top: 1px solid rgba(var(--fg), 0.06);
+  animation: byos-in 0.3s ease;
+}
+
+.launchCodeHeading {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(var(--fg), 0.5);
+  margin: 0 0 8px;
+}
+
+.launchCodeDesc {
+  font-size: 12px;
+  color: rgba(var(--fg), 0.3);
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+.launchCodeBox {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  color: rgba(var(--fg), 0.5);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
+  border-radius: 8px;
+  word-break: break-all;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.launchCodeBox:hover {
+  border-color: rgba(var(--fg), 0.12);
+}
+
+.launchCodeActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.launchCodeBtn {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  border-radius: 6px;
+  border: 1px solid rgba(var(--fg), 0.08);
+  background: rgba(var(--fg), 0.04);
+  color: rgba(var(--fg), 0.5);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.launchCodeBtn:hover {
+  background: rgba(var(--fg), 0.08);
+  border-color: rgba(var(--fg), 0.15);
+}
+
+/* --- Decoy Links --- */
+
+.decoySection {
+  padding: 12px 36px;
+  border-top: 1px solid rgba(var(--fg), 0.06);
+  animation: byos-in 0.3s ease;
+}
+
+.decoyInput {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: var(--text-primary);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
+  border-radius: 8px;
+  outline: none;
+  resize: none;
+  min-height: 60px;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+
+.decoyInput:focus {
+  border-color: rgba(var(--accent-rgb), 0.4);
+}
+
+.decoyUrlList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.decoyUrlItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  color: rgba(var(--fg), 0.4);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
+  border-radius: 6px;
+  padding: 6px 10px;
+  word-break: break-all;
+  cursor: pointer;
+}
+
+.decoyUrlItem:hover {
+  border-color: rgba(var(--fg), 0.12);
+}
+
+.decoyLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(var(--fg), 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .expertPanel {
+    padding: 12px 20px 16px;
+  }
+
+  .advancedRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .expertSection {
+    gap: 10px;
+  }
+
+  .expertSectionHeader {
+    font-size: 10px;
+  }
+
+  .expertDivider {
+    margin: 2px 0;
+  }
+
+  .expertSectionRow {
+    gap: 16px;
+  }
+
+  .launchCodePanel {
+    padding: 16px 20px;
+  }
+
+  .decoySection {
+    padding: 12px 20px;
+  }
 }

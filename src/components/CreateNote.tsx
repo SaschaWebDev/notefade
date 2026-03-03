@@ -39,6 +39,55 @@ function isProviderConfigComplete(config: ProviderConfig | null): boolean {
   });
 }
 
+function OnOffToggle({
+  enabled,
+  onToggle,
+  disabled,
+  small,
+  offLabel = 'off',
+  onLabel = 'on',
+}: {
+  enabled: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+  small?: boolean;
+  offLabel?: string;
+  onLabel?: string;
+}) {
+  const btnStyle = small
+    ? ({ fontSize: '13px', padding: '5px 10px' } as const)
+    : undefined;
+  return (
+    <div className={styles.ttlToggle}>
+      <div
+        className={styles.ttlSlider}
+        style={{
+          width: 'calc(100% / 2 - 2px)',
+          transform: `translateX(${enabled ? '100%' : '0%'})`,
+        }}
+      />
+      <button
+        type='button'
+        className={`${styles.ttlOption} ${!enabled ? styles.ttlOptionActive : ''}`}
+        onClick={onToggle}
+        disabled={disabled}
+        style={btnStyle}
+      >
+        {offLabel}
+      </button>
+      <button
+        type='button'
+        className={`${styles.ttlOption} ${enabled ? styles.ttlOptionActive : ''}`}
+        onClick={onToggle}
+        disabled={disabled}
+        style={btnStyle}
+      >
+        {onLabel}
+      </button>
+    </div>
+  );
+}
+
 interface CreateNoteProps {
   onNoteCreated?: (hasUrl: boolean) => void;
 }
@@ -69,19 +118,48 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
     setPassword,
     passwordEnabled,
     setPasswordEnabled,
+    readCount,
+    setReadCount,
+    maxReadCount,
+    barDuration,
+    setBarDuration,
+    barOptions,
+    timeLockEnabled,
+    setTimeLockEnabled,
+    timeLockAt,
+    setTimeLockAt,
+    deferredMode,
+    setDeferredMode,
+    launchCode,
+    receiptEnabled,
+    setReceiptEnabled,
+    receiptVerification,
+    decoyUrls,
     handleCreate,
     resetNote,
   } = useCreateNote();
   const [focused, setFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [pwCopied, setPwCopied] = useState(false);
-  const [byosOpen, setByosOpen] = useState(false);
+  const [expertOpen, setExpertOpen] = useState(false);
+  const [launchCodeCopied, setLaunchCodeCopied] = useState(false);
   const [byosMode, setByosMode] = useState<'default' | 'custom'>(
     isCustomServer ? 'custom' : 'default',
   );
   const [viewMode, setViewMode] = useState<'write' | 'preview'>('write');
   const [hasSelection, setHasSelection] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const closeExpertPanel = useCallback(() => {
+    if (expertOpen) {
+      setExpertOpen(false);
+      requestAnimationFrame(() => {
+        document
+          .querySelector('header')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, [expertOpen]);
+
   const showTypewriter = isEmpty && !focused;
   const placeholder = useTypewriter(showTypewriter);
   const firstFieldRef = useRef<HTMLInputElement>(null);
@@ -279,16 +357,15 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   }, [noteUrl, onNoteCreated]);
 
   useEffect(() => {
-    if (byosOpen && byosMode === 'custom') {
+    if (expertOpen && byosMode === 'custom') {
       firstFieldRef.current?.focus();
     }
-  }, [byosOpen, byosMode, currentProviderType]);
+  }, [expertOpen, byosMode, currentProviderType]);
 
   const handleModeSwitch = (mode: 'default' | 'custom') => {
     setByosMode(mode);
     if (mode === 'default') {
       resetProvider();
-      setByosOpen(false);
     } else {
       if (!providerConfig) {
         setProviderType('self');
@@ -305,14 +382,250 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   const handleReset = () => {
     resetProvider();
     setByosMode('default');
-    setByosOpen(false);
   };
 
-  const contentKey = noteUrl ? 'link' : 'form';
+  // Deferred activation requires a server-side worker (default API or self-hosted API).
+  // BYOS adapters that connect directly to storage from the browser (cf-kv, cf-d1, etc.)
+  // have no server-side worker to hold DEFER_SECRET, so defer is unavailable for them.
+  const canDefer = !providerConfig || providerConfig.t === 'self';
+
+  const expertClauses: React.ReactNode[] = [];
+  if (readCount > 1)
+    expertClauses.push(
+      <span key='reads'>
+        <span className={styles.sentenceText}>can be </span>
+        <a
+          href='/docs#one-time-read'
+          target='_blank'
+          rel='noopener noreferrer'
+          className={styles.sentenceLink}
+          onClick={() => closeExpertPanel()}
+        >
+          read
+        </a>
+        <span className={styles.sentenceText}> </span>
+        <span className={styles.sentenceTagPlain}>{readCount} times</span>
+      </span>,
+    );
+  if (barDuration !== 300) {
+    const barLabel =
+      barOptions.find((o) => o.value === barDuration)?.label ??
+      `${barDuration}s`;
+    expertClauses.push(
+      <span key='fade'>
+        <span className={styles.sentenceText}>will </span>
+        <a
+          href='/docs#auto-expiring'
+          target='_blank'
+          rel='noopener noreferrer'
+          className={styles.sentenceLink}
+          onClick={() => closeExpertPanel()}
+        >
+          fade
+        </a>
+        <span className={styles.sentenceText}> </span>
+        <span className={styles.sentenceTagPlain}>within {barLabel}</span>
+      </span>,
+    );
+  }
+  if (timeLockEnabled && timeLockAt)
+    expertClauses.push(
+      <span key='lock'>
+        <span className={styles.sentenceText}>has </span>
+        <a
+          href='/docs#auto-expiring'
+          target='_blank'
+          rel='noopener noreferrer'
+          className={styles.sentenceLink}
+          onClick={() => closeExpertPanel()}
+        >
+          time-locked
+        </a>
+        <span className={styles.sentenceText}> first read</span>
+        <span className={styles.sentenceTagPlain}>
+          {new Date(timeLockAt).toLocaleString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+          })}
+        </span>
+      </span>,
+    );
+  if (deferredMode && receiptEnabled)
+    expertClauses.push(
+      <span key='defer-receipt'>
+        <span className={styles.sentenceText}>uses </span>
+        <a
+          href='/docs#deferred-activation'
+          target='_blank'
+          rel='noopener noreferrer'
+          className={styles.sentenceLink}
+          onClick={() => closeExpertPanel()}
+        >
+          dead drop
+        </a>
+        <span className={styles.sentenceText}> and </span>
+        <a
+          href='/docs#one-time-read'
+          target='_blank'
+          rel='noopener noreferrer'
+          className={styles.sentenceLink}
+          onClick={() => closeExpertPanel()}
+        >
+          proof of read
+        </a>
+      </span>,
+    );
+  else if (deferredMode)
+    expertClauses.push(
+      <span key='defer'>
+        <span className={styles.sentenceText}>uses </span>
+        <a
+          href='/docs#deferred-activation'
+          target='_blank'
+          rel='noopener noreferrer'
+          className={styles.sentenceLink}
+          onClick={() => closeExpertPanel()}
+        >
+          dead drop
+        </a>
+      </span>,
+    );
+  else if (receiptEnabled)
+    expertClauses.push(
+      <span key='receipt'>
+        <span className={styles.sentenceText}>uses </span>
+        <a
+          href='/docs#one-time-read'
+          target='_blank'
+          rel='noopener noreferrer'
+          className={styles.sentenceLink}
+          onClick={() => closeExpertPanel()}
+        >
+          proof of read
+        </a>
+      </span>,
+    );
+  if (isCustomServer)
+    expertClauses.push(
+      <span key='server'>
+        <span className={styles.sentenceText}>routes through </span>
+        <a
+          href='/docs#self-hosting'
+          target='_blank'
+          rel='noopener noreferrer'
+          className={styles.sentenceTag}
+          onClick={() => closeExpertPanel()}
+        >
+          custom server
+        </a>
+      </span>,
+    );
+  const contentKey = launchCode ? 'launch' : noteUrl ? 'link' : 'form';
 
   return (
     <ContentFade contentKey={contentKey}>
-      {noteUrl ? (
+      {launchCode ? (
+        <div className={styles.container}>
+          <div className={styles.launchCodePanel}>
+            <h3 className={styles.launchCodeHeading}>deferred note created</h3>
+            <p className={styles.launchCodeDesc}>
+              the link will become active when you upload this launch code. keep
+              it safe — if lost, the note is unrecoverable. the note's ttl
+              starts counting from the moment you activate — not from now. the
+              launch code must be activated within 30 days.
+            </p>
+            {noteUrl && (
+              <div
+                className={styles.launchCodeBox}
+                style={{ marginBottom: 10 }}
+                onClick={() => {
+                  navigator.clipboard.writeText(noteUrl);
+                }}
+                title='note link (inactive until activated)'
+              >
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: 'rgba(var(--fg), 0.25)',
+                    display: 'block',
+                    marginBottom: 4,
+                  }}
+                >
+                  note link (inactive until activated)
+                </span>
+                {noteUrl}
+              </div>
+            )}
+            <div
+              className={styles.launchCodeBox}
+              onClick={() => {
+                navigator.clipboard.writeText(JSON.stringify(launchCode));
+                setLaunchCodeCopied(true);
+                setTimeout(() => setLaunchCodeCopied(false), 1500);
+              }}
+            >
+              {JSON.stringify(launchCode)}
+            </div>
+            <div className={styles.launchCodeActions}>
+              <button
+                type='button'
+                className={styles.launchCodeBtn}
+                onClick={() => {
+                  navigator.clipboard.writeText(JSON.stringify(launchCode));
+                  setLaunchCodeCopied(true);
+                  setTimeout(() => setLaunchCodeCopied(false), 1500);
+                }}
+              >
+                {launchCodeCopied ? 'copied' : 'copy launch code'}
+              </button>
+              <button
+                type='button'
+                className={styles.launchCodeBtn}
+                onClick={() => {
+                  const blob = new Blob([JSON.stringify(launchCode, null, 2)], {
+                    type: 'application/json',
+                  });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'notefade-launch-code.json';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                download as file
+              </button>
+            </div>
+            <p
+              className={styles.launchCodeDesc}
+              style={{ marginTop: 12, marginBottom: 0 }}
+            >
+              when ready,{' '}
+              <a href='/activate' style={{ color: 'var(--accent)' }}>
+                activate at /activate
+              </a>
+            </p>
+          </div>
+          <a
+            href={window.location.pathname}
+            className={styles.launchCodeBtn}
+            style={{
+              margin: '12px 36px',
+              textAlign: 'center',
+              textDecoration: 'none',
+              display: 'block',
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              resetNote();
+            }}
+          >
+            create another
+          </a>
+        </div>
+      ) : noteUrl ? (
         <NoteLink
           url={noteUrl}
           compactUrl={compactUrl ?? undefined}
@@ -321,11 +634,16 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
           providerConfig={providerConfig}
           password={password}
           onCreateAnother={resetNote}
+          readCount={readCount}
+          receiptVerification={receiptVerification}
+          decoyUrls={decoyUrls}
         />
       ) : (
         <div className={styles.container}>
           <div className={styles.textareaWrap}>
-            <div className={`${styles.toolbar} ${showToolbar ? styles.toolbarVisible : ''}`}>
+            <div
+              className={`${styles.toolbar} ${showToolbar ? styles.toolbarVisible : ''}`}
+            >
               <button
                 type='button'
                 className={styles.toolbarBtn}
@@ -386,9 +704,33 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                   <circle cx='2.5' cy='4' r='1.2' fill='currentColor' />
                   <circle cx='2.5' cy='7' r='1.2' fill='currentColor' />
                   <circle cx='2.5' cy='10' r='1.2' fill='currentColor' />
-                  <line x1='5.5' y1='4' x2='12' y2='4' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
-                  <line x1='5.5' y1='7' x2='12' y2='7' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
-                  <line x1='5.5' y1='10' x2='12' y2='10' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                  <line
+                    x1='5.5'
+                    y1='4'
+                    x2='12'
+                    y2='4'
+                    stroke='currentColor'
+                    strokeWidth='1.2'
+                    strokeLinecap='round'
+                  />
+                  <line
+                    x1='5.5'
+                    y1='7'
+                    x2='12'
+                    y2='7'
+                    stroke='currentColor'
+                    strokeWidth='1.2'
+                    strokeLinecap='round'
+                  />
+                  <line
+                    x1='5.5'
+                    y1='10'
+                    x2='12'
+                    y2='10'
+                    stroke='currentColor'
+                    strokeWidth='1.2'
+                    strokeLinecap='round'
+                  />
                 </svg>
               </button>
               <button
@@ -399,12 +741,63 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 tabIndex={-1}
               >
                 <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                  <text x='1' y='5.5' fill='currentColor' fontSize='5' fontWeight='600' fontFamily='system-ui'>1</text>
-                  <text x='1' y='8.5' fill='currentColor' fontSize='5' fontWeight='600' fontFamily='system-ui'>2</text>
-                  <text x='1' y='11.5' fill='currentColor' fontSize='5' fontWeight='600' fontFamily='system-ui'>3</text>
-                  <line x1='5.5' y1='4' x2='12' y2='4' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
-                  <line x1='5.5' y1='7' x2='12' y2='7' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
-                  <line x1='5.5' y1='10' x2='12' y2='10' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                  <text
+                    x='1'
+                    y='5.5'
+                    fill='currentColor'
+                    fontSize='5'
+                    fontWeight='600'
+                    fontFamily='system-ui'
+                  >
+                    1
+                  </text>
+                  <text
+                    x='1'
+                    y='8.5'
+                    fill='currentColor'
+                    fontSize='5'
+                    fontWeight='600'
+                    fontFamily='system-ui'
+                  >
+                    2
+                  </text>
+                  <text
+                    x='1'
+                    y='11.5'
+                    fill='currentColor'
+                    fontSize='5'
+                    fontWeight='600'
+                    fontFamily='system-ui'
+                  >
+                    3
+                  </text>
+                  <line
+                    x1='5.5'
+                    y1='4'
+                    x2='12'
+                    y2='4'
+                    stroke='currentColor'
+                    strokeWidth='1.2'
+                    strokeLinecap='round'
+                  />
+                  <line
+                    x1='5.5'
+                    y1='7'
+                    x2='12'
+                    y2='7'
+                    stroke='currentColor'
+                    strokeWidth='1.2'
+                    strokeLinecap='round'
+                  />
+                  <line
+                    x1='5.5'
+                    y1='10'
+                    x2='12'
+                    y2='10'
+                    stroke='currentColor'
+                    strokeWidth='1.2'
+                    strokeLinecap='round'
+                  />
                 </svg>
               </button>
               <button
@@ -415,11 +808,49 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 tabIndex={-1}
               >
                 <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                  <rect x='1.5' y='3' width='4.5' height='4.5' rx='1' stroke='currentColor' strokeWidth='1.2' />
-                  <line x1='8' y1='5.25' x2='12.5' y2='5.25' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
-                  <rect x='1.5' y='9' width='4.5' height='4.5' rx='1' stroke='currentColor' strokeWidth='1.2' />
-                  <path d='M2.8 11.25L4 12.5L5.5 10' stroke='currentColor' strokeWidth='1.1' strokeLinecap='round' strokeLinejoin='round' />
-                  <line x1='8' y1='11.25' x2='12.5' y2='11.25' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                  <rect
+                    x='1.5'
+                    y='3'
+                    width='4.5'
+                    height='4.5'
+                    rx='1'
+                    stroke='currentColor'
+                    strokeWidth='1.2'
+                  />
+                  <line
+                    x1='8'
+                    y1='5.25'
+                    x2='12.5'
+                    y2='5.25'
+                    stroke='currentColor'
+                    strokeWidth='1.2'
+                    strokeLinecap='round'
+                  />
+                  <rect
+                    x='1.5'
+                    y='9'
+                    width='4.5'
+                    height='4.5'
+                    rx='1'
+                    stroke='currentColor'
+                    strokeWidth='1.2'
+                  />
+                  <path
+                    d='M2.8 11.25L4 12.5L5.5 10'
+                    stroke='currentColor'
+                    strokeWidth='1.1'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                  />
+                  <line
+                    x1='8'
+                    y1='11.25'
+                    x2='12.5'
+                    y2='11.25'
+                    stroke='currentColor'
+                    strokeWidth='1.2'
+                    strokeLinecap='round'
+                  />
                 </svg>
               </button>
               <button
@@ -430,8 +861,14 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 tabIndex={-1}
               >
                 <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                  <path d='M3 4.5C3 3.67 3.67 3 4.5 3H5.5C5.78 3 6 3.22 6 3.5V5.5C6 6.33 5.33 7 4.5 7H4C4 8 4.5 9 5.5 9.5C5.22 10 4.5 10.5 3.5 10C2.5 9.5 2 8 2 6.5V5C2 4.72 2 4.5 3 4.5Z' fill='currentColor' />
-                  <path d='M9 4.5C9 3.67 9.67 3 10.5 3H11.5C11.78 3 12 3.22 12 3.5V5.5C12 6.33 11.33 7 10.5 7H10C10 8 10.5 9 11.5 9.5C11.22 10 10.5 10.5 9.5 10C8.5 9.5 8 8 8 6.5V5C8 4.72 8 4.5 9 4.5Z' fill='currentColor' />
+                  <path
+                    d='M3 4.5C3 3.67 3.67 3 4.5 3H5.5C5.78 3 6 3.22 6 3.5V5.5C6 6.33 5.33 7 4.5 7H4C4 8 4.5 9 5.5 9.5C5.22 10 4.5 10.5 3.5 10C2.5 9.5 2 8 2 6.5V5C2 4.72 2 4.5 3 4.5Z'
+                    fill='currentColor'
+                  />
+                  <path
+                    d='M9 4.5C9 3.67 9.67 3 10.5 3H11.5C11.78 3 12 3.22 12 3.5V5.5C12 6.33 11.33 7 10.5 7H10C10 8 10.5 9 11.5 9.5C11.22 10 10.5 10.5 9.5 10C8.5 9.5 8 8 8 6.5V5C8 4.72 8 4.5 9 4.5Z'
+                    fill='currentColor'
+                  />
                 </svg>
               </button>
               <span className={styles.toolbarDivider} />
@@ -443,12 +880,22 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 tabIndex={-1}
               >
                 <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                  <line x1='1' y1='7' x2='13' y2='7' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+                  <line
+                    x1='1'
+                    y1='7'
+                    x2='13'
+                    y2='7'
+                    stroke='currentColor'
+                    strokeWidth='1.5'
+                    strokeLinecap='round'
+                  />
                 </svg>
               </button>
               <div className={styles.toolbarSpacer} />
               {showFormatToggle && (
-                <div className={`${styles.formatToggle} ${styles.formatToggleDesktop}`}>
+                <div
+                  className={`${styles.formatToggle} ${styles.formatToggleDesktop}`}
+                >
                   <button
                     type='button'
                     className={`${styles.formatToggleBtn} ${viewMode === 'write' ? styles.formatToggleActive : ''}`}
@@ -497,7 +944,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
             )}
             <div className={styles.charCountRow}>
               {showFormatToggle && (
-                <div className={`${styles.formatToggle} ${styles.formatToggleMobile}`}>
+                <div
+                  className={`${styles.formatToggle} ${styles.formatToggleMobile}`}
+                >
                   <button
                     type='button'
                     className={`${styles.formatToggleBtn} ${viewMode === 'write' ? styles.formatToggleActive : ''}`}
@@ -531,369 +980,560 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
             </div>
           </div>
 
-          {byosOpen && (
-            <div className={styles.byosPanel}>
-              <div className={styles.byosHeader}>
-                <span className={styles.byosTitle}>select server</span>
-                <span className={styles.byosSubtitle}>
-                  meaningless 16 bytes stored
-                </span>
+          {expertOpen && (
+            <div className={styles.expertPanel}>
+              {/* — destruction — */}
+              <div className={styles.expertSection}>
+                <span className={styles.expertSectionHeader}>destruction</span>
+                <div className={styles.expertSectionRow}>
+                  <div className={styles.advancedRowWrap}>
+                    <div className={styles.advancedRow}>
+                      <span className={styles.advancedLabel}>
+                        reads before destruct
+                      </span>
+                      <div className={styles.sliderGroup}>
+                        <input
+                          type='range'
+                          className={styles.rangeSlider}
+                          value={readCount}
+                          onChange={(e) =>
+                            setReadCount(parseInt(e.target.value, 10))
+                          }
+                          min={1}
+                          max={maxReadCount}
+                          step={1}
+                          disabled={loading}
+                        />
+                        <span className={styles.sliderValue}>{readCount}</span>
+                      </div>
+                    </div>
+                    {readCount === 1 && (
+                      <span className={styles.advancedHint}>(one-time read)</span>
+                    )}
+                  </div>
+                  <div className={styles.advancedRow}>
+                    <span className={styles.advancedLabel}>
+                      fade after reading
+                    </span>
+                    <div className={styles.ttlToggle}>
+                      <div
+                        className={styles.ttlSlider}
+                        style={{
+                          width: `calc(100% / ${barOptions.length} - 2px)`,
+                          transform: `translateX(${barOptions.findIndex((o) => o.value === barDuration) * 100}%)`,
+                        }}
+                      />
+                      {barOptions.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type='button'
+                          className={`${styles.ttlOption} ${barDuration === opt.value ? styles.ttlOptionActive : ''}`}
+                          onClick={() => setBarDuration(opt.value)}
+                          disabled={loading}
+                          style={{ fontSize: '13px', padding: '5px 10px' }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className={styles.serverToggle}>
-                <div
-                  className={styles.serverToggleSlider}
-                  style={{
-                    transform:
-                      byosMode === 'custom'
-                        ? 'translateX(100%)'
-                        : 'translateX(0)',
-                  }}
-                />
-                <button
-                  type='button'
-                  className={`${styles.serverToggleOption} ${byosMode === 'default' ? styles.serverToggleOptionActive : ''}`}
-                  onClick={() => handleModeSwitch('default')}
-                >
-                  notefade server
-                </button>
-                <button
-                  type='button'
-                  className={`${styles.serverToggleOption} ${byosMode === 'custom' ? styles.serverToggleOptionActive : ''}`}
-                  onClick={() => handleModeSwitch('custom')}
-                >
-                  bring my own server
-                </button>
-              </div>
+              <div className={styles.expertDivider} />
 
-              {byosMode === 'custom' && (
-                <div className={styles.byosConfig}>
-                  <label className={styles.byosLabel}>provider</label>
-                  <select
-                    className={styles.byosSelect}
-                    value={currentProviderType}
-                    onChange={(e) =>
-                      setProviderType(e.target.value as ProviderType)
-                    }
-                  >
-                    {BYOS_PROVIDER_TYPES.map((type) => {
-                      const entry = getProviderEntry(type);
-                      return (
-                        <option key={type} value={type}>
-                          {entry?.label ?? type}
-                        </option>
-                      );
-                    })}
-                  </select>
-
-                  {currentEntry?.showCredentialWarning && (
-                    <p className={styles.credentialWarning}>
-                      credentials are stored in the link and visible in browser
-                      devtools
-                    </p>
-                  )}
-
-                  {currentEntry?.fields.map((field, i) => (
-                    <div key={field.key} className={styles.byosFieldGroup}>
-                      <label className={styles.byosLabel}>{field.label}</label>
-                      <input
-                        ref={i === 0 ? firstFieldRef : undefined}
-                        type={field.secret ? 'password' : 'text'}
-                        className={styles.byosInput}
-                        value={
-                          providerConfig
-                            ? getConfigFieldValue(providerConfig, field.key)
-                            : ''
-                        }
-                        onChange={(e) =>
-                          handleFieldChange(field.key, e.target.value)
-                        }
-                        placeholder={field.placeholder}
-                        spellCheck={false}
-                        autoComplete='off'
+              {/* — security — */}
+              <div className={styles.expertSection}>
+                <span className={styles.expertSectionHeader}>security</span>
+                <div className={styles.expertSectionRow}>
+                  <div className={styles.advancedRowWrap}>
+                    <div className={styles.advancedRow}>
+                      <span className={styles.advancedLabel}>time-lock</span>
+                      <OnOffToggle
+                        enabled={timeLockEnabled}
+                        onToggle={() => {
+                          if (!timeLockEnabled && !timeLockAt) {
+                            setTimeLockAt(
+                              new Date(Date.now() + 86400000)
+                                .toISOString()
+                                .slice(0, 16),
+                            );
+                          }
+                          setTimeLockEnabled(!timeLockEnabled);
+                        }}
+                        disabled={loading}
+                        small
                       />
                     </div>
-                  ))}
+                    {timeLockEnabled && (
+                      <input
+                        type='datetime-local'
+                        className={styles.timeLockInput}
+                        value={timeLockAt}
+                        onChange={(e) => setTimeLockAt(e.target.value)}
+                        min={new Date(Date.now() + 60000)
+                          .toISOString()
+                          .slice(0, 16)}
+                        disabled={loading}
+                      />
+                    )}
+                    {timeLockEnabled && (
+                      <span className={styles.advancedHint}>
+                        client-enforced, not cryptographic
+                      </span>
+                    )}
+                  </div>
+                  <div className={styles.advancedRowWrap}>
+                    <div className={styles.advancedRow}>
+                      <span className={styles.advancedLabel}>dead drop mode</span>
+                      <OnOffToggle
+                        enabled={deferredMode}
+                        onToggle={() => setDeferredMode(!deferredMode)}
+                        disabled={loading || !canDefer}
+                        small
+                      />
+                    </div>
+                    {!canDefer && (
+                      <span className={styles.advancedHint}>
+                        requires default API or self-hosted worker
+                      </span>
+                    )}
+                    {deferredMode && canDefer && (
+                      <span className={styles.advancedHint}>
+                        encrypt now, activate later via launch code
+                      </span>
+                    )}
+                  </div>
+                  <div className={styles.advancedRowWrap}>
+                    <div className={styles.advancedRow}>
+                      <span className={styles.advancedLabel}>proof of read</span>
+                      <OnOffToggle
+                        enabled={receiptEnabled}
+                        onToggle={() => setReceiptEnabled(!receiptEnabled)}
+                        disabled={loading}
+                        small
+                      />
+                    </div>
+                    {receiptEnabled && (
+                      <span className={styles.advancedHint}>
+                        reader can prove they decrypted the note
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-                  {isCustomServer && (
+              <div className={styles.expertDivider} />
+
+              {/* — server — */}
+              <div className={styles.expertSection}>
+                <span className={styles.expertSectionHeader}>server</span>
+                <div>
+                  <div className={styles.byosHeader}>
+                    <span className={styles.byosTitle}>
+                      custom self-hosted server
+                    </span>
+                    <span className={styles.byosSubtitle}>
+                      meaningless 16 bytes stored
+                    </span>
+                  </div>
+
+                  <div className={styles.serverToggle}>
+                    <div
+                      className={styles.serverToggleSlider}
+                      style={{
+                        transform:
+                          byosMode === 'custom'
+                            ? 'translateX(100%)'
+                            : 'translateX(0)',
+                      }}
+                    />
                     <button
                       type='button'
-                      className={styles.byosResetButton}
-                      onClick={handleReset}
+                      className={`${styles.serverToggleOption} ${byosMode === 'default' ? styles.serverToggleOptionActive : ''}`}
+                      onClick={() => handleModeSwitch('default')}
                     >
-                      <svg
-                        width='14'
-                        height='14'
-                        viewBox='0 0 14 14'
-                        fill='none'
-                      >
-                        <path
-                          d='M1.5 1.5v4h4'
-                          stroke='currentColor'
-                          strokeWidth='1.3'
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                        />
-                        <path
-                          d='M2.1 8.5a5 5 0 108.4-4.6A5 5 0 002.1 5.5L1.5 5.5'
-                          stroke='currentColor'
-                          strokeWidth='1.3'
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                        />
-                      </svg>
-                      reset
+                      notefade server
                     </button>
+                    <button
+                      type='button'
+                      className={`${styles.serverToggleOption} ${byosMode === 'custom' ? styles.serverToggleOptionActive : ''}`}
+                      onClick={() => handleModeSwitch('custom')}
+                    >
+                      bring my own server
+                    </button>
+                  </div>
+
+                  {byosMode === 'custom' && (
+                    <div className={styles.byosConfig}>
+                      <label className={styles.byosLabel}>provider</label>
+                      <select
+                        className={styles.byosSelect}
+                        value={currentProviderType}
+                        onChange={(e) =>
+                          setProviderType(e.target.value as ProviderType)
+                        }
+                      >
+                        {BYOS_PROVIDER_TYPES.map((type) => {
+                          const entry = getProviderEntry(type);
+                          return (
+                            <option key={type} value={type}>
+                              {entry?.label ?? type}
+                            </option>
+                          );
+                        })}
+                      </select>
+
+                      {currentEntry?.showCredentialWarning && (
+                        <p className={styles.credentialWarning}>
+                          credentials are stored in the link and visible in
+                          browser devtools
+                        </p>
+                      )}
+
+                      {currentEntry?.fields.map((field, i) => (
+                        <div key={field.key} className={styles.byosFieldGroup}>
+                          <label className={styles.byosLabel}>
+                            {field.label}
+                          </label>
+                          <input
+                            ref={i === 0 ? firstFieldRef : undefined}
+                            type={field.secret ? 'password' : 'text'}
+                            className={styles.byosInput}
+                            value={
+                              providerConfig
+                                ? getConfigFieldValue(providerConfig, field.key)
+                                : ''
+                            }
+                            onChange={(e) =>
+                              handleFieldChange(field.key, e.target.value)
+                            }
+                            placeholder={field.placeholder}
+                            spellCheck={false}
+                            autoComplete='off'
+                          />
+                        </div>
+                      ))}
+
+                      {isCustomServer && (
+                        <button
+                          type='button'
+                          className={styles.byosResetButton}
+                          onClick={handleReset}
+                        >
+                          <svg
+                            width='14'
+                            height='14'
+                            viewBox='0 0 14 14'
+                            fill='none'
+                          >
+                            <path
+                              d='M1.5 1.5v4h4'
+                              stroke='currentColor'
+                              strokeWidth='1.3'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                            />
+                            <path
+                              d='M2.1 8.5a5 5 0 108.4-4.6A5 5 0 002.1 5.5L1.5 5.5'
+                              stroke='currentColor'
+                              strokeWidth='1.3'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                            />
+                          </svg>
+                          reset
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
+              </div>
             </div>
           )}
 
           <div className={styles.footer}>
             <div className={styles.footerTop}>
-              <div className={styles.settingPair}>
-                <span className={styles.ttlLabel}>self-destruct in</span>
-                <div className={styles.ttlToggle}>
-                  <div
-                    className={styles.ttlSlider}
-                    style={{
-                      transform: `translateX(${ttlOptions.findIndex((o) => o.value === ttl) * 100}%)`,
-                    }}
-                  />
-                  {ttlOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type='button'
-                      className={`${styles.ttlOption} ${ttl === opt.value ? styles.ttlOptionActive : ''}`}
-                      onClick={() => setTtl(opt.value)}
-                      disabled={loading}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <span className={styles.sentenceLine}>
+                <span className={styles.sentenceText}>
+                  your secret note will{' '}
+                </span>
+              </span>
+              <span className={styles.sentenceLine}>
+                <a
+                  href='/docs#one-time-read'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className={styles.sentenceLink}
+                  onClick={() => closeExpertPanel()}
+                >
+                  self-destruct
+                </a>
+                <span className={styles.sentenceText}> in </span>
+                <span className={styles.sentenceControl}>
+                  <span className={styles.ttlToggle}>
+                    <span
+                      className={styles.ttlSlider}
+                      style={{
+                        transform: `translateX(${ttlOptions.findIndex((o) => o.value === ttl) * 100}%)`,
+                      }}
+                    />
+                    {ttlOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type='button'
+                        className={`${styles.ttlOption} ${ttl === opt.value ? styles.ttlOptionActive : ''}`}
+                        onClick={() => {
+                          setTtl(opt.value);
+                          closeExpertPanel();
+                        }}
+                        disabled={loading}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </span>
+                </span>
+              </span>
 
-              <div className={styles.settingPair}>
-                <span className={styles.ttlLabel}>password protect</span>
-                <div className={styles.ttlToggle}>
-                  <div
-                    className={styles.ttlSlider}
-                    style={{
-                      width: 'calc(100% / 2 - 2px)',
-                      transform: `translateX(${passwordEnabled ? '100%' : '0%'})`,
+              <span className={styles.sentenceLine}>
+                <span className={styles.sentenceText}>
+                  {' '}is {passwordEnabled ? '' : 'not '}
+                </span>
+                <a
+                  href='/docs#encryption'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className={styles.sentenceLink}
+                  onClick={() => closeExpertPanel()}
+                >
+                  password protected
+                </a>
+                <span className={styles.sentenceText}> </span>
+                <span className={styles.sentenceControl}>
+                  <OnOffToggle
+                    enabled={passwordEnabled}
+                    onToggle={() => {
+                      if (passwordEnabled) setPassword('');
+                      setPasswordEnabled(!passwordEnabled);
+                      closeExpertPanel();
                     }}
+                    disabled={loading}
                   />
-                  <button
-                    type='button'
-                    className={`${styles.ttlOption} ${!passwordEnabled ? styles.ttlOptionActive : ''}`}
-                    onClick={() => setPasswordEnabled(!passwordEnabled)}
-                    disabled={loading}
-                  >
-                    off
-                  </button>
-                  <button
-                    type='button'
-                    className={`${styles.ttlOption} ${passwordEnabled ? styles.ttlOptionActive : ''}`}
-                    onClick={() => setPasswordEnabled(!passwordEnabled)}
-                    disabled={loading}
-                  >
-                    on
-                  </button>
-                </div>
-              </div>
+                </span>
+              </span>
               {passwordEnabled && (
-                <div className={styles.passwordInputWrapper}>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    className={styles.passwordInlineInput}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value.slice(0, 24))}
-                    maxLength={24}
-                    placeholder='enter a password'
-                    spellCheck={false}
-                    autoComplete='off'
-                    disabled={loading}
-                  />
-                  <button
-                    type='button'
-                    className={`${styles.copyPasswordButton} ${pwCopied ? styles.copyPasswordButtonCopied : ''}`}
-                    onClick={() => {
-                      if (pwCopied) return;
-                      navigator.clipboard.writeText(password);
-                      setShowPassword(false);
-                      setPwCopied(true);
-                      setTimeout(() => setPwCopied(false), 1500);
-                    }}
-                    title={pwCopied ? 'copied' : 'copy password'}
-                    tabIndex={-1}
-                    disabled={loading || password.length === 0}
-                  >
-                    {pwCopied ? (
-                      <svg
-                        width='14'
-                        height='14'
-                        viewBox='0 0 14 14'
-                        fill='none'
-                      >
-                        <path
-                          d='M3 7.5L5.5 10L11 4.5'
-                          stroke='#22c55e'
-                          strokeWidth='1.5'
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        width='14'
-                        height='14'
-                        viewBox='0 0 14 14'
-                        fill='none'
-                      >
-                        <rect
-                          x='4.5'
-                          y='4.5'
-                          width='7'
-                          height='7'
-                          rx='1.5'
-                          stroke='currentColor'
-                          strokeWidth='1.2'
-                        />
-                        <path
-                          d='M9.5 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v5A1.5 1.5 0 003 9.5h1.5'
-                          stroke='currentColor'
-                          strokeWidth='1.2'
-                        />
-                      </svg>
-                    )}
-                  </button>
-                  <button
-                    type='button'
-                    className={styles.showPasswordButton}
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    tabIndex={-1}
-                  >
-                    {showPassword ? (
-                      <svg
-                        width='14'
-                        height='14'
-                        viewBox='0 0 14 14'
-                        fill='none'
-                      >
-                        <path
-                          d='M1.5 7s2.2-3.5 5.5-3.5S12.5 7 12.5 7s-2.2 3.5-5.5 3.5S1.5 7 1.5 7z'
-                          stroke='currentColor'
-                          strokeWidth='1.2'
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                        />
-                        <circle
-                          cx='7'
-                          cy='7'
-                          r='1.8'
-                          stroke='currentColor'
-                          strokeWidth='1.2'
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        width='14'
-                        height='14'
-                        viewBox='0 0 14 14'
-                        fill='none'
-                      >
-                        <path
-                          d='M2 2l10 10M5.6 5.7a1.8 1.8 0 002.7 2.6'
-                          stroke='currentColor'
-                          strokeWidth='1.2'
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                        />
-                        <path
-                          d='M4 4.3C2.7 5.2 1.5 7 1.5 7s2.2 3.5 5.5 3.5c1 0 1.9-.3 2.7-.8M9.5 9.2c1.5-1 2.9-2.7 3-2.7s-2.2-3.5-5.5-3.5c-.6 0-1.2.1-1.7.3'
-                          stroke='currentColor'
-                          strokeWidth='1.2'
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                        />
-                      </svg>
-                    )}
-                  </button>
-                  <button
-                    type='button'
-                    className={styles.generatePasswordButton}
-                    onClick={() => {
-                      const charset =
-                        'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*_';
-                      const lenByte = new Uint8Array(1);
-                      crypto.getRandomValues(lenByte);
-                      const len = 16 + ((lenByte[0] ?? 0) % 9);
-                      const bytes = new Uint8Array(len);
-                      crypto.getRandomValues(bytes);
-                      const pw = Array.from(
-                        bytes,
-                        (b) => charset[b % charset.length],
-                      ).join('');
-                      setPassword(pw);
-                      setShowPassword(true);
-                    }}
-                    title='generate random password'
-                    tabIndex={-1}
-                    disabled={loading}
-                  >
-                    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                      <path
-                        d='M2.5 7a4.5 4.5 0 018.3-2.4'
-                        stroke='currentColor'
-                        strokeWidth='1.2'
-                        strokeLinecap='round'
+                <span className={styles.sentenceLine}>
+                  <span className={styles.sentenceText}> with </span>
+                  <span className={styles.sentenceControl}>
+                    <span className={styles.passwordInputWrapper}>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        className={styles.passwordInlineInput}
+                        style={{ width: `${Math.max(14, password.length + 1)}ch` }}
+                        value={password}
+                        onChange={(e) =>
+                          setPassword(e.target.value.slice(0, 24))
+                        }
+                        maxLength={24}
+                        placeholder='password'
+                        spellCheck={false}
+                        autoComplete='off'
+                        disabled={loading}
                       />
-                      <path
-                        d='M11.5 7a4.5 4.5 0 01-8.3 2.4'
-                        stroke='currentColor'
-                        strokeWidth='1.2'
-                        strokeLinecap='round'
-                      />
-                      <path
-                        d='M10.2 2.2l.6 2.4-2.4-.6'
-                        stroke='currentColor'
-                        strokeWidth='1.2'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                      />
-                      <path
-                        d='M3.8 11.8l-.6-2.4 2.4.6'
-                        stroke='currentColor'
-                        strokeWidth='1.2'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                      />
-                    </svg>
-                  </button>
-                </div>
+                      <button
+                        type='button'
+                        className={`${styles.copyPasswordButton} ${pwCopied ? styles.copyPasswordButtonCopied : ''}`}
+                        onClick={() => {
+                          if (pwCopied) return;
+                          navigator.clipboard.writeText(password);
+                          setShowPassword(false);
+                          setPwCopied(true);
+                          setTimeout(() => setPwCopied(false), 1500);
+                        }}
+                        title={pwCopied ? 'copied' : 'copy password'}
+                        tabIndex={-1}
+                        disabled={loading || password.length === 0}
+                      >
+                        {pwCopied ? (
+                          <svg
+                            width='14'
+                            height='14'
+                            viewBox='0 0 14 14'
+                            fill='none'
+                          >
+                            <path
+                              d='M3 7.5L5.5 10L11 4.5'
+                              stroke='#22c55e'
+                              strokeWidth='1.5'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            width='14'
+                            height='14'
+                            viewBox='0 0 14 14'
+                            fill='none'
+                          >
+                            <rect
+                              x='4.5'
+                              y='4.5'
+                              width='7'
+                              height='7'
+                              rx='1.5'
+                              stroke='currentColor'
+                              strokeWidth='1.2'
+                            />
+                            <path
+                              d='M9.5 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v5A1.5 1.5 0 003 9.5h1.5'
+                              stroke='currentColor'
+                              strokeWidth='1.2'
+                            />
+                          </svg>
+                        )}
+                      </button>
+                      <button
+                        type='button'
+                        className={styles.showPasswordButton}
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        tabIndex={-1}
+                      >
+                        {showPassword ? (
+                          <svg
+                            width='14'
+                            height='14'
+                            viewBox='0 0 14 14'
+                            fill='none'
+                          >
+                            <path
+                              d='M1.5 7s2.2-3.5 5.5-3.5S12.5 7 12.5 7s-2.2 3.5-5.5 3.5S1.5 7 1.5 7z'
+                              stroke='currentColor'
+                              strokeWidth='1.2'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                            />
+                            <circle
+                              cx='7'
+                              cy='7'
+                              r='1.8'
+                              stroke='currentColor'
+                              strokeWidth='1.2'
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            width='14'
+                            height='14'
+                            viewBox='0 0 14 14'
+                            fill='none'
+                          >
+                            <path
+                              d='M2 2l10 10M5.6 5.7a1.8 1.8 0 002.7 2.6'
+                              stroke='currentColor'
+                              strokeWidth='1.2'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                            />
+                            <path
+                              d='M4 4.3C2.7 5.2 1.5 7 1.5 7s2.2 3.5 5.5 3.5c1 0 1.9-.3 2.7-.8M9.5 9.2c1.5-1 2.9-2.7 3-2.7s-2.2-3.5-5.5-3.5c-.6 0-1.2.1-1.7.3'
+                              stroke='currentColor'
+                              strokeWidth='1.2'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                            />
+                          </svg>
+                        )}
+                      </button>
+                      <button
+                        type='button'
+                        className={styles.generatePasswordButton}
+                        onClick={() => {
+                          const charset =
+                            'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*_';
+                          const lenByte = new Uint8Array(1);
+                          crypto.getRandomValues(lenByte);
+                          const len = 16 + ((lenByte[0] ?? 0) % 9);
+                          const bytes = new Uint8Array(len);
+                          crypto.getRandomValues(bytes);
+                          const pw = Array.from(
+                            bytes,
+                            (b) => charset[b % charset.length],
+                          ).join('');
+                          setPassword(pw);
+                          setShowPassword(true);
+                        }}
+                        title='generate random password'
+                        tabIndex={-1}
+                        disabled={loading}
+                      >
+                        <svg
+                          width='14'
+                          height='14'
+                          viewBox='0 0 14 14'
+                          fill='none'
+                        >
+                          <path
+                            d='M2.5 7a4.5 4.5 0 018.3-2.4'
+                            stroke='currentColor'
+                            strokeWidth='1.2'
+                            strokeLinecap='round'
+                          />
+                          <path
+                            d='M11.5 7a4.5 4.5 0 01-8.3 2.4'
+                            stroke='currentColor'
+                            strokeWidth='1.2'
+                            strokeLinecap='round'
+                          />
+                          <path
+                            d='M10.2 2.2l.6 2.4-2.4-.6'
+                            stroke='currentColor'
+                            strokeWidth='1.2'
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                          />
+                          <path
+                            d='M3.8 11.8l-.6-2.4 2.4.6'
+                            stroke='currentColor'
+                            strokeWidth='1.2'
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                          />
+                        </svg>
+                      </button>
+                    </span>
+                  </span>
+                </span>
               )}
+
+              {expertClauses.map((clause, i) => {
+                const isLast = i === expertClauses.length - 1;
+                const sep = isLast && expertClauses.length > 1 ? ' and ' : ' ';
+                return (
+                  <span key={i} className={styles.sentenceLine}>
+                    <span className={styles.sentenceText}>{sep}</span>
+                    {clause}
+                  </span>
+                );
+              })}
             </div>
 
             <div className={styles.footerRight}>
               <button
                 type='button'
-                className={`${styles.gearButton} ${isCustomServer ? styles.gearButtonActive : ''}`}
-                onClick={() =>
-                  setByosOpen((prev) => {
-                    if (
-                      prev &&
-                      isCustomServer &&
-                      !isProviderConfigComplete(providerConfig)
-                    ) {
+                className={`${styles.gearButton} ${expertOpen ? styles.gearButtonActive : ''}`}
+                onClick={() => {
+                  if (expertOpen) {
+                    if (isCustomServer && !isProviderConfigComplete(providerConfig)) {
                       handleReset();
-                      return false;
                     }
-                    return !prev;
-                  })
-                }
-                title='custom server'
+                    closeExpertPanel();
+                  } else {
+                    setExpertOpen(true);
+                  }
+                }}
+                title='expert settings'
               >
                 <svg width='15' height='15' viewBox='0 0 15 15' fill='none'>
                   <path
