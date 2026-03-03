@@ -13,7 +13,7 @@ type GateState =
   | { status: 'idle' }
   | { status: 'unlocking' }
   | { status: 'error'; message: string }
-  | { status: 'unlocked'; shardId: string; urlPayload: string; check: string | null; provider: import('@/api/provider-types').ProviderConfig | null }
+  | { status: 'unlocked'; shardId: string; shardIds: string[]; urlPayload: string; check: string | null; provider: import('@/api/provider-types').ProviderConfig | null; timeLockAt: number | null }
 
 export function PasswordGate({ protectedData }: PasswordGateProps) {
   const [password, setPassword] = useState('');
@@ -43,9 +43,11 @@ export function PasswordGate({ protectedData }: PasswordGateProps) {
       setState({
         status: 'unlocked',
         shardId: parsed.shardId,
+        shardIds: parsed.shardIds,
         urlPayload: parsed.urlPayload,
         check: parsed.check,
         provider: parsed.provider,
+        timeLockAt: parsed.timeLockAt,
       });
     } catch {
       setState({ status: 'error', message: 'wrong password' });
@@ -56,9 +58,11 @@ export function PasswordGate({ protectedData }: PasswordGateProps) {
     return (
       <ReadNote
         shardId={state.shardId}
+        shardIds={state.shardIds}
         urlPayload={state.urlPayload}
         check={state.check}
         provider={state.provider}
+        timeLockAt={state.timeLockAt}
       />
     );
   }

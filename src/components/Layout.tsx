@@ -47,8 +47,15 @@ export function Layout({ children, isDocs }: LayoutProps) {
       >
         {theme === 'dark' ? (
           <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
-            <circle cx='8' cy='8' r='3.5' stroke='currentColor' strokeWidth='1.3' />
-            <path d='M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1' stroke='currentColor' strokeWidth='1.3' strokeLinecap='round' />
+            <circle cx='8' cy='8' r='3' fill='currentColor' />
+            <line x1='8' y1='1' x2='8' y2='3' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='8' y1='13' x2='8' y2='15' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='1' y1='8' x2='3' y2='8' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='13' y1='8' x2='15' y2='8' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='3.05' y1='3.05' x2='4.46' y2='4.46' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='11.54' y1='11.54' x2='12.95' y2='12.95' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='3.05' y1='12.95' x2='4.46' y2='11.54' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='11.54' y1='4.46' x2='12.95' y2='3.05' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
           </svg>
         ) : (
           <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
