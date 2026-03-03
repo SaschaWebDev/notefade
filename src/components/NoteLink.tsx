@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { deleteShard, createAdapter } from '@/api';
+import { encodeZeroWidth, generateStegoImage, generateStegoFilename } from '@/crypto';
 import type { ProviderConfig } from '@/api/provider-types';
+import type { ReceiptVerification } from '@/hooks/use-create-note';
 import { QrCode } from './QrCode';
 import styles from './NoteLink.module.css';
 
@@ -18,6 +20,9 @@ interface NoteLinkProps {
   providerConfig: ProviderConfig | null;
   password: string;
   onCreateAnother: () => void;
+  readCount?: number;
+  receiptVerification?: ReceiptVerification | null;
+  decoyUrls?: string[];
 }
 
 function formatCountdown(diff: number): string {
@@ -67,11 +72,20 @@ export function NoteLink({
   providerConfig,
   password,
   onCreateAnother,
+  readCount = 1,
+  receiptVerification,
+  decoyUrls = [],
 }: NoteLinkProps) {
   const remaining = useCountdown(expiresAt);
   const [copyState, setCopyState] = useState<'idle' | 'shown' | 'fading'>(
     'idle',
   );
+  const [stegoText, setStegoText] = useState('');
+  const [stegoResult, setStegoResult] = useState<string | null>(null);
+  const [stegoCopied, setStegoCopied] = useState(false);
+  const [stegoImage, setStegoImage] = useState<string | null>(null);
+  const [stegoImageLoading, setStegoImageLoading] = useState(false);
+  const [verificationCopied, setVerificationCopied] = useState(false);
   const [hasCopied, setHasCopied] = useState(false);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -240,6 +254,39 @@ export function NoteLink({
       baseUrlInputRef.current?.select();
     }
   }, [settingsOpen]);
+
+  // Cleanup stego image object URL on unmount or when image changes
+  useEffect(() => {
+    return () => {
+      if (stegoImage) URL.revokeObjectURL(stegoImage);
+    };
+  }, [stegoImage]);
+
+  const stegoImageBlobRef = useRef<Blob | null>(null);
+
+  const handleGenerateStegoImage = useCallback(async () => {
+    setStegoImageLoading(true);
+    try {
+      const blob = await generateStegoImage(displayUrl);
+      stegoImageBlobRef.current = blob;
+      if (stegoImage) URL.revokeObjectURL(stegoImage);
+      setStegoImage(URL.createObjectURL(blob));
+    } catch {
+      // silently fail
+    } finally {
+      setStegoImageLoading(false);
+    }
+  }, [displayUrl, stegoImage]);
+
+  const handleDownloadStegoImage = useCallback(() => {
+    const blob = stegoImageBlobRef.current;
+    if (!blob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = generateStegoFilename();
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }, []);
 
   return (
     <div className={styles.container}>
@@ -489,27 +536,6 @@ export function NoteLink({
                     </svg>
                   )}
                 </button>
-                {typeof navigator.share === 'function' && (
-                  <button
-                    type='button'
-                    className={styles.copyIcon}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigator.share({ title: 'notefade', url: displayUrl }).catch(() => {});
-                    }}
-                    title='share link'
-                  >
-                    <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
-                      <path
-                        d='M4 10V12a1 1 0 001 1h6a1 1 0 001-1V10M8 2v7.5M5.5 4.5L8 2l2.5 2.5'
-                        stroke='currentColor'
-                        strokeWidth='1.2'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                      />
-                    </svg>
-                  </button>
-                )}
                 <button
                   type='button'
                   className={`${styles.settingsIcon} ${settingsOpen ? styles.settingsIconActive : ''}`}
@@ -610,8 +636,185 @@ export function NoteLink({
                   <path d='M2.5 4L8 8.5 13.5 4' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round' />
                 </svg>
               </a>
+              {typeof navigator.share === 'function' && (
+                <button
+                  type='button'
+                  className={styles.shareIcon}
+                  onClick={() => {
+                    navigator.share({ title: 'notefade', url: displayUrl }).catch(() => {});
+                  }}
+                  title='share link'
+                >
+                  <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
+                    <path
+                      d='M4 10V12a1 1 0 001 1h6a1 1 0 001-1V10M8 2v7.5M5.5 4.5L8 2l2.5 2.5'
+                      stroke='currentColor'
+                      strokeWidth='1.2'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Steganographic sharing (Feature 7) */}
+          <p className={styles.stegoLabel}>disguise your link with steganography</p>
+          <div className={styles.stegoColumns}>
+            <div className={styles.stegoColumn}>
+              <div className={styles.stegoSection}>
+                <p className={styles.stegoColumnLabel}>hide in text</p>
+                <div className={styles.stegoToggle}>
+                  <input
+                    type='text'
+                    className={styles.stegoInput}
+                    value={stegoText}
+                    onChange={(e) => {
+                      setStegoText(e.target.value);
+                      setStegoResult(null);
+                      setStegoCopied(false);
+                    }}
+                    placeholder='hide link in innocent text...'
+                    spellCheck={false}
+                  />
+                  <button
+                    type='button'
+                    className={styles.stegoBtn}
+                    onClick={() => {
+                      if (stegoText.length < 2) return;
+                      try {
+                        const result = encodeZeroWidth(displayUrl, stegoText);
+                        setStegoResult(result);
+                      } catch {
+                        setStegoResult(null);
+                      }
+                    }}
+                    disabled={stegoText.length < 2}
+                  >
+                    encode
+                  </button>
+                </div>
+                {stegoResult && (
+                  <div
+                    className={styles.stegoResult}
+                    onClick={() => {
+                      navigator.clipboard.writeText(stegoResult);
+                      setStegoCopied(true);
+                      setTimeout(() => setStegoCopied(false), 1500);
+                    }}
+                  >
+                    <span>{stegoResult.replace(/[\u200B\u200C\u200D]/g, '')}</span>
+                    <span className={styles.stegoHint}>
+                      {stegoCopied ? 'copied' : 'click to copy — link is hidden in zero-width chars'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <span className={styles.stegoColumnsOr}>or</span>
+
+            <div className={styles.stegoColumn}>
+              <div className={styles.stegoImageSection}>
+                <p className={styles.stegoColumnLabel}>hide in image</p>
+                <button
+                  type='button'
+                  className={styles.stegoImageBtn}
+                  onClick={handleGenerateStegoImage}
+                  disabled={stegoImageLoading}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
+                    <circle cx="5.5" cy="5.5" r="1.25" stroke="currentColor" strokeWidth="1" />
+                    <path d="M2 11l3.5-3.5L8 10l2.5-3L14 11" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {stegoImageLoading ? 'generating...' : stegoImage ? 'regenerate image' : 'generate image'}
+                </button>
+                {stegoImage && (
+                  <div className={styles.stegoPreview}>
+                    <img
+                      src={stegoImage}
+                      alt='steganographic image preview'
+                      className={styles.stegoPreviewImg}
+                    />
+                    <button
+                      type='button'
+                      className={styles.stegoDownloadBtn}
+                      onClick={handleDownloadStegoImage}
+                    >
+                      <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
+                        <path
+                          d='M6 1.5v6M3.5 5L6 7.5 8.5 5'
+                          stroke='currentColor'
+                          strokeWidth='1.2'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                        />
+                        <path
+                          d='M2 9.5h8'
+                          stroke='currentColor'
+                          strokeWidth='1.2'
+                          strokeLinecap='round'
+                        />
+                      </svg>
+                      download PNG
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Receipt verification download (Feature 6) */}
+          {receiptVerification && (
+            <div className={styles.receiptRow}>
+              <button
+                type='button'
+                className={styles.receiptDownload}
+                onClick={() => {
+                  const blob = new Blob([JSON.stringify(receiptVerification, null, 2)], { type: 'application/json' });
+                  const u = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = u;
+                  a.download = 'notefade-receipt-verification.json';
+                  a.click();
+                  URL.revokeObjectURL(u);
+                  setVerificationCopied(true);
+                  setTimeout(() => setVerificationCopied(false), 1500);
+                }}
+              >
+                {verificationCopied ? 'downloaded' : 'download receipt verification file'}
+              </button>
+              <span className={styles.receiptHint}>
+                keep this file to verify proof of read later
+              </span>
+            </div>
+          )}
+
+          {/* Multi-read indicator */}
+          {readCount > 1 && (
+            <div className={styles.multiReadBadge}>
+              this note can be read {readCount} times before it self-destructs
+            </div>
+          )}
+
+          {/* Decoy URLs (Feature 8) */}
+          {decoyUrls.length > 0 && (
+            <div className={styles.decoySection}>
+              <span className={styles.decoyLabel}>decoy links</span>
+              {decoyUrls.map((dUrl, i) => (
+                <div
+                  key={i}
+                  className={styles.decoyUrl}
+                  onClick={() => navigator.clipboard.writeText(dUrl)}
+                  title='click to copy'
+                >
+                  {dUrl.slice(0, 80)}...
+                </div>
+              ))}
+            </div>
+          )}
 
           {settingsOpen && (
             <div className={styles.settingsRow}>
