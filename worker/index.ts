@@ -79,14 +79,6 @@ const StoreShardSchema = z.object({
     (VALID_TTLS as readonly number[]).includes(v),
     { message: `ttl must be one of: ${VALID_TTLS.join(', ')}` },
   ),
-  /**
-   * Optional client-provided shard ID.
-   * TODO(cleanup): This field is no longer used by the deferred flow
-   * (which now uses POST /shard/defer). Remove this field and the
-   * corresponding `id` parameter in storeShard() once confirmed
-   * no other code paths depend on it.
-   */
-  id: z.string().regex(/^[a-f0-9]{8,16}$/, 'Invalid shard ID format').optional(),
 })
 
 const DeferShardSchema = z.object({
@@ -104,6 +96,9 @@ const ActivateTokenSchema = z.object({
 /** Maximum token age: 30 days */
 const MAX_TOKEN_AGE_MS = 30 * 24 * 60 * 60 * 1000
 
+/** Activation marker TTL: 31 days (outlives max token age, then auto-expires) */
+const ACTIVATED_MARKER_TTL = 31 * 24 * 60 * 60
+
 function corsHeaders(origin: string): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': origin,
@@ -115,14 +110,16 @@ function corsHeaders(origin: string): Record<string, string> {
   }
 }
 
+const ALLOWED_ORIGINS = new Set([
+  'https://notefade.com',
+  'https://www.notefade.com',
+])
+
+const DEV_ORIGIN_RE = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/
+
 function getAllowedOrigin(request: Request): string {
   const origin = request.headers.get('Origin') ?? ''
-  // In production, restrict to notefade.com
-  // For dev, allow all origins
-  if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-    return origin
-  }
-  if (origin === 'https://notefade.com' || origin === 'https://www.notefade.com') {
+  if (ALLOWED_ORIGINS.has(origin) || DEV_ORIGIN_RE.test(origin)) {
     return origin
   }
   return 'https://notefade.com'
@@ -164,12 +161,12 @@ async function handleRequest(
     const parsed = StoreShardSchema.safeParse(body)
     if (!parsed.success) {
       return Response.json(
-        { error: 'Invalid request', details: parsed.error.issues },
+        { error: 'Invalid request' },
         { status: 400, headers },
       )
     }
 
-    const id = parsed.data.id ?? crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+    const id = crypto.randomUUID().replace(/-/g, '').slice(0, 16)
     await store.put(id, parsed.data.shard, parsed.data.ttl)
     return Response.json({ id }, { status: 201, headers })
   }
@@ -257,7 +254,7 @@ async function handleRequest(
     const parsed = DeferShardSchema.safeParse(body)
     if (!parsed.success) {
       return Response.json(
-        { error: 'Invalid request', details: parsed.error.issues },
+        { error: 'Invalid request' },
         { status: 400, headers },
       )
     }
@@ -303,7 +300,7 @@ async function handleRequest(
     const parsed = ActivateTokenSchema.safeParse(body)
     if (!parsed.success) {
       return Response.json(
-        { error: 'Invalid request', details: parsed.error.issues },
+        { error: 'Invalid request' },
         { status: 400, headers },
       )
     }
@@ -336,11 +333,23 @@ async function handleRequest(
     // Check token age
     if (Date.now() - payload.ts > MAX_TOKEN_AGE_MS) {
       return Response.json(
-        { error: 'Token expired' },
+        { error: 'Token invalid or expired' },
         { status: 410, headers },
       )
     }
 
+    // Prevent replay: reject if this token was already activated
+    const markerKey = `activated:${payload.id}`
+    const alreadyUsed = await env.SHARDS.get(markerKey)
+    if (alreadyUsed !== null) {
+      return Response.json(
+        { error: 'Token invalid or expired' },
+        { status: 410, headers },
+      )
+    }
+
+    // Write activation marker before storing shard to minimize replay window
+    await env.SHARDS.put(markerKey, '1', { expirationTtl: ACTIVATED_MARKER_TTL })
     await store.put(payload.id, payload.shard, payload.ttl)
     return Response.json({ id: payload.id }, { status: 201, headers })
   }

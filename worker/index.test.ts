@@ -15,12 +15,19 @@ function mockStore(): ShardStore {
 const MOCK_SECRET = 'a0b1c2d3e4f5061728394a5b6c7d8e9fa0b1c2d3e4f5061728394a5b6c7d8e9f'
 
 interface MockEnv {
-  SHARDS: object
+  SHARDS: { get: ReturnType<typeof vi.fn>; put: ReturnType<typeof vi.fn> }
   DEFER_SECRET?: string
 }
 
-const mockEnv: MockEnv = { SHARDS: {} as object }
-const mockEnvWithSecret: MockEnv = { SHARDS: {} as object, DEFER_SECRET: MOCK_SECRET }
+function createMockShards(): MockEnv['SHARDS'] {
+  return {
+    get: vi.fn<(key: string) => Promise<string | null>>().mockResolvedValue(null),
+    put: vi.fn<(key: string, value: string, options?: object) => Promise<void>>().mockResolvedValue(undefined),
+  }
+}
+
+const mockEnv: MockEnv = { SHARDS: createMockShards() }
+const mockEnvWithSecret: MockEnv = { SHARDS: createMockShards(), DEFER_SECRET: MOCK_SECRET }
 
 function req(
   method: string,
@@ -48,6 +55,11 @@ beforeEach(() => {
   vi.spyOn(crypto, 'randomUUID').mockReturnValue(
     'aabbccdd-1122-3344-5566-778899aabbcc',
   )
+  // Reset KV mock state between tests
+  mockEnv.SHARDS.get.mockReset().mockResolvedValue(null)
+  mockEnv.SHARDS.put.mockReset().mockResolvedValue(undefined)
+  mockEnvWithSecret.SHARDS.get.mockReset().mockResolvedValue(null)
+  mockEnvWithSecret.SHARDS.put.mockReset().mockResolvedValue(undefined)
 })
 
 describe('worker handleRequest', () => {
@@ -92,6 +104,30 @@ describe('worker handleRequest', () => {
     const store = mockStore()
     const res = await handleRequest(
       req('OPTIONS', '/shard', { origin: 'https://evil.com' }),
+      store,
+      mockEnv,
+    )
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe(
+      'https://notefade.com',
+    )
+  })
+
+  it('CORS rejects origins containing localhost as substring', async () => {
+    const store = mockStore()
+    const res = await handleRequest(
+      req('OPTIONS', '/shard', { origin: 'https://evil-localhost.com' }),
+      store,
+      mockEnv,
+    )
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe(
+      'https://notefade.com',
+    )
+  })
+
+  it('CORS rejects origins with localhost in query string', async () => {
+    const store = mockStore()
+    const res = await handleRequest(
+      req('OPTIONS', '/shard', { origin: 'https://attacker.com?x=localhost' }),
       store,
       mockEnv,
     )
@@ -473,7 +509,7 @@ describe('worker handleRequest', () => {
 
     expect(res.status).toBe(410)
     const json = (await res.json()) as { error: string }
-    expect(json.error).toBe('Token expired')
+    expect(json.error).toBe('Token invalid or expired')
     expect(store.put).not.toHaveBeenCalled()
   })
 
@@ -507,5 +543,63 @@ describe('worker handleRequest', () => {
       mockEnvWithSecret,
     )
     expect(res.status).toBe(400)
+  })
+
+  it('POST /shard/activate returns 410 for already-activated token', async () => {
+    const store = mockStore()
+    // Simulate marker already present in KV
+    mockEnvWithSecret.SHARDS.get.mockResolvedValueOnce('1')
+
+    const token = await createDeferToken(MOCK_SECRET, {
+      id: 'aabbccdd11223344',
+      shard: 'ABCDEFGHIJKLMNOPQRSTU',
+      ttl: 86400,
+      ts: Date.now(),
+    })
+    const body = JSON.stringify({ token })
+    const res = await handleRequest(
+      req('POST', '/shard/activate', { body }),
+      store,
+      mockEnvWithSecret,
+    )
+
+    expect(res.status).toBe(410)
+    const json = (await res.json()) as { error: string }
+    expect(json.error).toBe('Token invalid or expired')
+    // Should NOT store the shard
+    expect(store.put).not.toHaveBeenCalled()
+    // Should NOT write a new marker
+    expect(mockEnvWithSecret.SHARDS.put).not.toHaveBeenCalled()
+  })
+
+  it('POST /shard/activate writes activation marker on first use', async () => {
+    const store = mockStore()
+
+    const token = await createDeferToken(MOCK_SECRET, {
+      id: 'aabbccdd11223344',
+      shard: 'ABCDEFGHIJKLMNOPQRSTU',
+      ttl: 86400,
+      ts: Date.now(),
+    })
+    const body = JSON.stringify({ token })
+    const res = await handleRequest(
+      req('POST', '/shard/activate', { body }),
+      store,
+      mockEnvWithSecret,
+    )
+
+    expect(res.status).toBe(201)
+    // Verify activation marker was written with 31-day TTL
+    expect(mockEnvWithSecret.SHARDS.put).toHaveBeenCalledWith(
+      'activated:aabbccdd11223344',
+      '1',
+      { expirationTtl: 31 * 24 * 60 * 60 },
+    )
+    // Verify shard was stored
+    expect(store.put).toHaveBeenCalledWith(
+      'aabbccdd11223344',
+      'ABCDEFGHIJKLMNOPQRSTU',
+      86400,
+    )
   })
 })
