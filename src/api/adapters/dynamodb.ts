@@ -1,64 +1,61 @@
+import { z } from 'zod'
 import type { ProviderAdapter, DynamoDBConfig } from '../provider-types'
-import { storeShard, checkShard, fetchShard, deleteShard } from '../shard-api'
 
-/** DynamoDB adapter: same as self-hosted but with x-api-key header via API Gateway */
+const StoreResponseSchema = z.object({ id: z.string().min(1) })
+const FetchResponseSchema = z.object({ shard: z.string().min(1) })
+
+/** DynamoDB adapter: calls the same shard API but injects x-api-key for API Gateway */
 export function createDynamoDBAdapter(config: DynamoDBConfig): ProviderAdapter {
-  // The user deploys API Gateway → Lambda → DynamoDB
-  // API Gateway expects x-api-key header, but the shard-api.ts uses
-  // standard fetch calls. We wrap them with a custom fetch that injects
-  // the header.
-  const originalFetch = globalThis.fetch
+  const baseUrl = config.u.replace(/\/$/, '')
 
-  function wrappedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    const newInit: RequestInit = {
-      ...init,
-      headers: {
-        ...init?.headers,
-        'x-api-key': config.k,
-      },
-    }
-    return originalFetch(input, newInit)
+  function authHeaders(extra?: Record<string, string>): Record<string, string> {
+    return { 'x-api-key': config.k, ...extra }
   }
 
   return {
     async store(shard, ttl) {
-      const saved = globalThis.fetch
-      globalThis.fetch = wrappedFetch
-      try {
-        return await storeShard(shard, ttl, config.u)
-      } finally {
-        globalThis.fetch = saved
+      const res = await fetch(`${baseUrl}/shard`, {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ shard, ttl }),
+      })
+      if (!res.ok) {
+        throw new Error(`Failed to store shard: ${res.status}`)
       }
+      const data: unknown = await res.json()
+      return StoreResponseSchema.parse(data).id
     },
 
     async check(id) {
-      const saved = globalThis.fetch
-      globalThis.fetch = wrappedFetch
-      try {
-        return await checkShard(id, config.u)
-      } finally {
-        globalThis.fetch = saved
-      }
+      const res = await fetch(`${baseUrl}/shard/${encodeURIComponent(id)}`, {
+        method: 'HEAD',
+        headers: authHeaders(),
+      })
+      return res.status === 200
     },
 
     async fetch(id) {
-      const saved = globalThis.fetch
-      globalThis.fetch = wrappedFetch
-      try {
-        return await fetchShard(id, config.u)
-      } finally {
-        globalThis.fetch = saved
+      const res = await fetch(`${baseUrl}/shard/${encodeURIComponent(id)}`, {
+        headers: authHeaders(),
+      })
+      if (res.status === 404) return null
+      if (!res.ok) {
+        throw new Error(`Failed to fetch shard: ${res.status}`)
       }
+      const data: unknown = await res.json()
+      return FetchResponseSchema.parse(data).shard
     },
 
     async delete(id) {
-      const saved = globalThis.fetch
-      globalThis.fetch = wrappedFetch
-      try {
-        return await deleteShard(id, config.u)
-      } finally {
-        globalThis.fetch = saved
+      const res = await fetch(`${baseUrl}/shard/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      })
+      if (res.status === 404) return false
+      if (!res.ok) {
+        throw new Error(`Failed to delete shard: ${res.status}`)
       }
+      return true
     },
   }
 }

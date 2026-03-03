@@ -1,4 +1,5 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
+import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { createDynamoDBAdapter } from './dynamodb'
 import type { DynamoDBConfig } from '../provider-types'
 
 const mockFetch = vi.fn()
@@ -9,27 +10,18 @@ const config: DynamoDBConfig = {
   k: 'test-api-key',
 }
 
-let originalFetch: typeof globalThis.fetch
-
 beforeEach(() => {
-  originalFetch = globalThis.fetch
   vi.stubGlobal('fetch', mockFetch)
   mockFetch.mockReset()
 })
 
-afterEach(() => {
-  globalThis.fetch = originalFetch
-})
-
 describe('dynamodb adapter', () => {
-  it('store: injects x-api-key header and restores fetch', async () => {
-    // Mock the underlying fetch that shard-api will use
+  it('store: injects x-api-key header', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ id: 'ddb-id-123' }),
     })
 
-    const { createDynamoDBAdapter } = await import('./dynamodb')
     const adapter = createDynamoDBAdapter(config)
     const id = await adapter.store('shard-data', 3600)
 
@@ -44,10 +36,21 @@ describe('dynamodb adapter', () => {
     )
   })
 
+  it('store: does not patch globalThis.fetch', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: 'ddb-id-123' }),
+    })
+
+    const adapter = createDynamoDBAdapter(config)
+    const fetchBefore = globalThis.fetch
+    await adapter.store('shard-data', 3600)
+    expect(globalThis.fetch).toBe(fetchBefore)
+  })
+
   it('check: injects x-api-key header', async () => {
     mockFetch.mockResolvedValueOnce({ status: 200 })
 
-    const { createDynamoDBAdapter } = await import('./dynamodb')
     const adapter = createDynamoDBAdapter(config)
     const exists = await adapter.check('test-id')
 
@@ -69,7 +72,6 @@ describe('dynamodb adapter', () => {
       json: () => Promise.resolve({ shard: 'fetched-shard' }),
     })
 
-    const { createDynamoDBAdapter } = await import('./dynamodb')
     const adapter = createDynamoDBAdapter(config)
     const shard = await adapter.fetch('test-id')
 
@@ -79,7 +81,6 @@ describe('dynamodb adapter', () => {
   it('delete: injects x-api-key header', async () => {
     mockFetch.mockResolvedValueOnce({ ok: true, status: 200 })
 
-    const { createDynamoDBAdapter } = await import('./dynamodb')
     const adapter = createDynamoDBAdapter(config)
     const deleted = await adapter.delete('test-id')
 
@@ -94,21 +95,9 @@ describe('dynamodb adapter', () => {
     )
   })
 
-  it('store: restores globalThis.fetch even on error', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('network error'))
-
-    const { createDynamoDBAdapter } = await import('./dynamodb')
-    const adapter = createDynamoDBAdapter(config)
-
-    await expect(adapter.store('shard', 3600)).rejects.toThrow('network error')
-    // fetch should be restored to the mockFetch (our stub)
-    expect(globalThis.fetch).toBe(mockFetch)
-  })
-
   it('check: returns false on non-200', async () => {
     mockFetch.mockResolvedValueOnce({ status: 404 })
 
-    const { createDynamoDBAdapter } = await import('./dynamodb')
     const adapter = createDynamoDBAdapter(config)
     expect(await adapter.check('missing')).toBe(false)
   })
@@ -116,7 +105,6 @@ describe('dynamodb adapter', () => {
   it('fetch: returns null on 404', async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 404 })
 
-    const { createDynamoDBAdapter } = await import('./dynamodb')
     const adapter = createDynamoDBAdapter(config)
     expect(await adapter.fetch('missing')).toBeNull()
   })
