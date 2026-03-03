@@ -49,6 +49,7 @@ export const TOC_GROUPS: TocGroup[] = [
       { id: 'one-time-read', label: 'One-Time Read' },
       { id: 'auto-expiring', label: 'Auto-Expiring' },
       { id: 'fade-after-reading', label: 'Fade After Reading' },
+      { id: 'time-lock', label: 'Time-Lock' },
       { id: 'deferred-activation', label: 'Deferred Activation' },
       { id: 'no-tracking', label: 'No Tracking' },
       { id: 'open-source', label: 'Open Source' },
@@ -188,7 +189,7 @@ Content-Type: application/json
     path: '/shard/:id',
     summary: 'Destroy a shard without reading',
     description:
-      'Deletes a shard without returning its value. Used by note creators to destroy an unread note (the "Destroy now" feature). Returns 404 if the shard was already consumed or expired.',
+      'Deletes a shard without returning its value. Used by note creators to destroy an unread note (the "Destroy now" feature). Returns 404 if the shard was already consumed or expired. Note: this endpoint is unauthenticated \u2014 anyone with the shard ID (visible in the note URL) can delete the shard. This is an accepted tradeoff: the URL is the access credential by design, and anyone who can DELETE can also GET (consuming the shard). DELETE only changes the type of interference (denial-of-service vs. reading), not the access boundary.',
     params: [
       {
         name: 'id',
@@ -277,7 +278,7 @@ Content-Type: application/json
     responses: [
       { status: 201, description: 'Shard activated and stored', body: '{ "id": "a1b2c3d4e5f67890" }' },
       { status: 400, description: 'Invalid, tampered, or malformed token' },
-      { status: 410, description: 'Token expired (older than 30 days)' },
+      { status: 410, description: 'Token invalid or expired (older than 30 days, or already activated)' },
       { status: 413, description: 'Request body exceeds 1 KB' },
       { status: 429, description: 'Rate limit exceeded' },
       { status: 501, description: 'DEFER_SECRET not configured on server' },
