@@ -1,4 +1,4 @@
-export { storeShard, fetchShard, checkShard, deleteShard } from './shard-api'
+export { storeShard, fetchShard, checkShard, deleteShard, deferShard, activateShard } from './shard-api'
 export { createAdapter } from './adapter-factory'
 export { encodeProviderConfig, decodeProviderConfig } from './provider-config'
 export { generateShardId } from './shard-id'
