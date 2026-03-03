@@ -215,6 +215,109 @@ No metadata. No timestamps. No IP logs. No content.`}
         </DocsCallout>
       </DocsSection>
 
+      <DocsSection id="fade-after-reading" title="fade after reading">
+        <p className={styles.p}>
+          After a note is decrypted, the plaintext is held in memory for a
+          limited time and then permanently cleared. This is the fade timer — a
+          client-side countdown that removes the decrypted content from the
+          browser when it expires.
+        </p>
+        <h3 className={styles.h3}>Default behavior</h3>
+        <p className={styles.p}>
+          Every note fades. If no duration is configured by the sender, the
+          default fade timer is <strong>5 minutes</strong>. After 5 minutes of
+          the note being visible, the decrypted text is replaced with a "note
+          has faded" message and cannot be recovered.
+        </p>
+        <h3 className={styles.h3}>Configurable intervals</h3>
+        <p className={styles.p}>
+          The sender can choose a specific fade duration when creating a note.
+          Available intervals are:
+        </p>
+        <DocsCodeBlock
+          language="text"
+          code={`30s    →  30 seconds
+60s    →  1 minute
+300s   →  5 minutes (default)
+900s   →  15 minutes`}
+        />
+        <p className={styles.p}>
+          The chosen duration is embedded in the encrypted note metadata. The
+          recipient sees a live countdown badge showing how much time remains
+          before the content fades.
+        </p>
+        <h3 className={styles.h3}>What happens when it fades</h3>
+        <ul className={styles.list}>
+          <li>The decrypted plaintext is dropped from React state — it no longer exists in the component tree</li>
+          <li>The server shard was already deleted on read, so the note cannot be decrypted again</li>
+          <li>The URL fragment was cleared from the address bar on decryption, so the link is also gone</li>
+          <li>The reader sees a "note has faded" screen with no way to recover the content</li>
+        </ul>
+        <DocsCallout variant="caveat">
+          The fade timer is a client-side control. It clears the plaintext from
+          the browser's memory, but it cannot prevent a reader from copying the
+          text, taking a screenshot, or saving the content before the timer
+          expires. It is a usability safeguard — not a security guarantee.
+        </DocsCallout>
+        <DocsCallout variant="note">
+          The fade duration is stored inside the encrypted payload, not as
+          server-side metadata. The server has no knowledge of whether a note
+          has a 30-second or 15-minute fade timer — only the recipient's
+          browser knows, after decryption.
+        </DocsCallout>
+      </DocsSection>
+
+      <DocsSection id="deferred-activation" title="deferred activation">
+        <p className={styles.p}>
+          Dead drop mode lets you encrypt a note now and activate it later.
+          The server shard is not stored until you explicitly trigger activation
+          with a launch code — until then, the note link exists but is inert.
+        </p>
+        <h3 className={styles.h3}>How it works</h3>
+        <ol className={styles.list}>
+          <li>Create a note with dead drop mode enabled</li>
+          <li>The server returns an opaque launch code (a JSON file containing an encrypted token and the URL fragment)</li>
+          <li>Share the note link — it won't work yet because the shard isn't stored</li>
+          <li>When ready, upload the launch code at <code className={styles.code}>/activate</code> — the server decrypts the token, stores the shard, and the link goes live</li>
+        </ol>
+        <h3 className={styles.h3}>TTL starts on activation</h3>
+        <p className={styles.p}>
+          The note's time-to-live countdown begins when the launch code is
+          activated, not when the note is created. Create a note on Monday with
+          a 24-hour TTL. Activate it on Wednesday. The note expires Thursday —
+          24 hours after activation, not after creation.
+        </p>
+        <h3 className={styles.h3}>30-day activation window</h3>
+        <p className={styles.p}>
+          Tokens must be activated within 30 days of creation. After that, the
+          server rejects the token with HTTP 410 Gone. This prevents
+          indefinitely-old tokens from accumulating.
+        </p>
+        <h3 className={styles.h3}>Token is opaque</h3>
+        <p className={styles.p}>
+          The launch code token is encrypted by the server using a secret key
+          (<code className={styles.code}>DEFER_SECRET</code>). The client
+          cannot read or modify the token's contents. If the token is tampered
+          with, activation fails.
+        </p>
+        <DocsCallout variant="note">
+          The URL fragment data (ciphertext, IV, XOR share) is still included
+          in the launch code because the client needs it to build the final note
+          URL. This data is meaningless without the server shard — possessing the
+          fragment alone reveals nothing about the note's content.
+        </DocsCallout>
+        <DocsCallout variant="caveat">
+          Deferred activation requires a server-side worker with{' '}
+          <code className={styles.code}>DEFER_SECRET</code> configured.
+          When using a BYOS provider that connects directly to a storage
+          backend (e.g. the Cloudflare KV API, D1, Upstash, or Supabase
+          adapters), deferred activation is not available — these adapters
+          talk to storage from the browser with no server-side worker to
+          hold the signing secret. The default notefade API and self-hosted
+          workers that use KV behind a worker support it natively.
+        </DocsCallout>
+      </DocsSection>
+
       <DocsSection id="no-tracking" title="no tracking">
         <p className={styles.p}>
           notefade loads zero third-party scripts. No analytics, no tracking

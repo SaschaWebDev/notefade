@@ -48,6 +48,8 @@ export const TOC_GROUPS: TocGroup[] = [
       { id: 'zero-knowledge', label: 'Zero Knowledge' },
       { id: 'one-time-read', label: 'One-Time Read' },
       { id: 'auto-expiring', label: 'Auto-Expiring' },
+      { id: 'fade-after-reading', label: 'Fade After Reading' },
+      { id: 'deferred-activation', label: 'Deferred Activation' },
       { id: 'no-tracking', label: 'No Tracking' },
       { id: 'open-source', label: 'Open Source' },
       { id: 'no-accounts', label: 'No Accounts' },
@@ -209,6 +211,88 @@ Content-Type: application/json
 
 {
   "deleted": true
+}`,
+  },
+  {
+    method: 'POST',
+    path: '/shard/defer',
+    summary: 'Create a defer token (dead drop)',
+    description:
+      'Encrypts the shard data into a server-signed token without storing anything. The shard is only written to storage when the token is later activated via POST /shard/activate. Requires DEFER_SECRET to be configured on the server.',
+    params: [
+      {
+        name: 'shard',
+        location: 'body',
+        type: 'string',
+        required: true,
+        description: 'Base64url-encoded 16-byte key shard',
+        pattern: '^[A-Za-z0-9_-]{20,24}$',
+      },
+      {
+        name: 'ttl',
+        location: 'body',
+        type: 'number',
+        required: true,
+        description: 'Time-to-live in seconds (applied when activated)',
+        pattern: '3600 | 86400 | 604800',
+      },
+    ],
+    responses: [
+      { status: 201, description: 'Defer token created', body: '{ "token": "...", "id": "a1b2c3d4e5f67890" }' },
+      { status: 400, description: 'Invalid JSON or failed schema validation' },
+      { status: 413, description: 'Request body exceeds 1 KB' },
+      { status: 429, description: 'Rate limit exceeded' },
+      { status: 501, description: 'DEFER_SECRET not configured on server' },
+    ],
+    exampleRequest: `POST /shard/defer HTTP/1.1
+Content-Type: application/json
+
+{
+  "shard": "dGhpcyBpcyBhIDE2Ynl0ZQ",
+  "ttl": 86400
+}`,
+    exampleResponse: `HTTP/1.1 201 Created
+Content-Type: application/json
+
+{
+  "token": "eyJpZCI6ImExYjJjM2Q0ZTVm...",
+  "id": "a1b2c3d4e5f67890"
+}`,
+  },
+  {
+    method: 'POST',
+    path: '/shard/activate',
+    summary: 'Activate a deferred note',
+    description:
+      'Decrypts a defer token and stores the shard. The TTL countdown begins at activation, not at token creation. Tokens must be activated within 30 days of creation or they expire (HTTP 410). Requires DEFER_SECRET to be configured on the server.',
+    params: [
+      {
+        name: 'token',
+        location: 'body',
+        type: 'string',
+        required: true,
+        description: 'Opaque defer token from POST /shard/defer',
+      },
+    ],
+    responses: [
+      { status: 201, description: 'Shard activated and stored', body: '{ "id": "a1b2c3d4e5f67890" }' },
+      { status: 400, description: 'Invalid, tampered, or malformed token' },
+      { status: 410, description: 'Token expired (older than 30 days)' },
+      { status: 413, description: 'Request body exceeds 1 KB' },
+      { status: 429, description: 'Rate limit exceeded' },
+      { status: 501, description: 'DEFER_SECRET not configured on server' },
+    ],
+    exampleRequest: `POST /shard/activate HTTP/1.1
+Content-Type: application/json
+
+{
+  "token": "eyJpZCI6ImExYjJjM2Q0ZTVm..."
+}`,
+    exampleResponse: `HTTP/1.1 201 Created
+Content-Type: application/json
+
+{
+  "id": "a1b2c3d4e5f67890"
 }`,
   },
 ]

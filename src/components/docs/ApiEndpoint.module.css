@@ -1,6 +1,6 @@
 .card {
   border-radius: 10px;
-  background: #161616;
+  background: rgba(var(--fg), 0.03);
   border: 1px solid rgba(var(--fg), 0.06);
   margin-bottom: 10px;
   transition: border-color 0.2s ease;

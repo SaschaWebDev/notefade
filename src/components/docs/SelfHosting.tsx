@@ -125,6 +125,41 @@ export function SelfHosting() {
           <code className={styles.inlineCode}>CF_KV_SHARDS_PREVIEW_ID</code>{' '}
           environment variables are set.
         </DocsCallout>
+
+        <h3 className={styles.subheading}>Enabling deferred activation</h3>
+        <p className={styles.text}>
+          Deferred activation (dead drop mode) is optional. If you want to
+          support it, set a{' '}
+          <code className={styles.inlineCode}>DEFER_SECRET</code> on your
+          worker. Without it, the{' '}
+          <code className={styles.inlineCode}>/shard/defer</code> and{' '}
+          <code className={styles.inlineCode}>/shard/activate</code> endpoints
+          return 501.
+        </p>
+        <DocsCodeBlock
+          code={`# Generate a 32-byte hex secret\nopenssl rand -hex 32\n\n# Store it as a Workers secret (never committed to code)\nwrangler secret put DEFER_SECRET`}
+          language="bash"
+        />
+        <p className={styles.text}>
+          <code className={styles.inlineCode}>DEFER_SECRET</code> is a
+          server-side secret consumed by the Cloudflare Worker, not the Pages
+          frontend.{' '}
+          <code className={styles.inlineCode}>wrangler secret put</code> stores
+          it encrypted and injects it at runtime via the worker's{' '}
+          <code className={styles.inlineCode}>env</code> parameter. The SPA
+          never sees this variable.
+        </p>
+        <DocsCallout variant="warning">
+          BYOS providers that connect directly to a storage backend from the
+          browser (the Cloudflare KV API, D1, Upstash, Supabase, DynamoDB, and
+          Vercel KV adapters) do not support deferred activation — there is no
+          server-side process to hold a secret or encrypt tokens. This does not
+          affect the default notefade deployment, which uses Cloudflare KV
+          behind a worker. Use the default Cloudflare Worker or a self-hosted
+          API that implements the{' '}
+          <code className={styles.inlineCode}>/shard/defer</code> and{' '}
+          <code className={styles.inlineCode}>/shard/activate</code> endpoints.
+        </DocsCallout>
       </DocsSection>
 
       <DocsSection id="verifying-builds" title="verifying builds">
@@ -170,9 +205,9 @@ export function SelfHosting() {
         </p>
         <DocsCodeBlock code={VERIFY_CLI} language="bash" />
         <p className={styles.text}>
-          The script fetches each asset from notefade.com, computes its SHA-256,
-          and compares against your local build manifest. It reports MATCH or
-          MISMATCH for every file.
+          The script fetches the build manifest from notefade.com, downloads
+          every listed file, and verifies SHA-256 hashes for self-consistency.
+          It also checks SRI integrity attributes on scripts and stylesheets.
         </p>
 
         <h3 className={styles.subheading}>GitHub release manifests</h3>
@@ -190,7 +225,11 @@ export function SelfHosting() {
           22.14.0, and{' '}
           <code className={styles.inlineCode}>yarn.lock</code> pins all
           dependencies. Docker is the most reliable method since it controls the
-          full environment.
+          full environment. If deploying via Cloudflare Pages, set{' '}
+          <code className={styles.inlineCode}>NODE_VERSION</code> to{' '}
+          <code className={styles.inlineCode}>22.14.0</code> in your Pages
+          environment variables — Cloudflare does not read{' '}
+          <code className={styles.inlineCode}>.nvmrc</code> by default.
         </DocsCallout>
       </DocsSection>
     </>
