@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { openNote } from '@/crypto'
+import type { NoteMetadata } from '@/crypto'
 import { checkShard, fetchShard, createAdapter } from '@/api'
 import type { ProviderConfig } from '@/api/provider-types'
 
-const PLAINTEXT_TTL_MS = 5 * 60 * 1000 // 5 minutes
+const DEFAULT_PLAINTEXT_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
 type ReadState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'decrypted'; plaintext: string }
+  | { status: 'decrypted'; plaintext: string; metadata: NoteMetadata; remainingMs: number }
   | { status: 'faded' }
   | { status: 'gone' }
   | { status: 'error'; message: string }
@@ -24,6 +25,7 @@ export function useReadNote(
   urlPayload: string,
   confirmed: boolean,
   provider?: ProviderConfig | null,
+  shardIds?: string[],
 ): UseReadNoteReturn {
   const [state, setState] = useState<ReadState>({ status: 'idle' })
 
@@ -35,19 +37,32 @@ export function useReadNote(
   // Stable serialized key for provider dependency
   const providerKey = provider ? JSON.stringify(provider) : ''
 
+  // All shard IDs to try (multi-read support)
+  const allShardIds = shardIds && shardIds.length > 0 ? shardIds : [shardId]
+
   // Phase 1: Non-destructive existence check (HEAD)
+  // For multi-read, check the first shard — if it exists, at least one read remains
   useEffect(() => {
     if (!shardId) return
 
     let cancelled = false
 
     if (!checkPromiseRef.current) {
-      if (provider) {
-        const adapter = createAdapter(provider)
-        checkPromiseRef.current = adapter.check(shardId)
-      } else {
-        checkPromiseRef.current = checkShard(shardId)
+      // Check all shards to see if any exist
+      const checkAll = async (): Promise<boolean> => {
+        for (const id of allShardIds) {
+          let exists: boolean
+          if (provider) {
+            const adapter = createAdapter(provider)
+            exists = await adapter.check(id)
+          } else {
+            exists = await checkShard(id)
+          }
+          if (exists) return true
+        }
+        return false
       }
+      checkPromiseRef.current = checkAll()
     }
 
     async function probe() {
@@ -71,16 +86,32 @@ export function useReadNote(
     }
   }, [shardId, providerKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-clear plaintext after timeout
+  // Auto-clear plaintext after timeout (dynamic based on BAR metadata)
   useEffect(() => {
     if (state.status !== 'decrypted') return
 
-    const timer = setTimeout(() => {
-      setState({ status: 'faded' })
-    }, PLAINTEXT_TTL_MS)
+    const ttlMs = state.metadata.barSeconds
+      ? state.metadata.barSeconds * 1000
+      : DEFAULT_PLAINTEXT_TTL_MS
 
-    return () => clearTimeout(timer)
-  }, [state.status])
+    // Update remaining time every second for countdown display
+    const startTime = Date.now()
+    const endTime = startTime + ttlMs
+
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, endTime - Date.now())
+      if (remaining <= 0) {
+        setState({ status: 'faded' })
+      } else {
+        setState((prev) => {
+          if (prev.status !== 'decrypted') return prev
+          return { ...prev, remainingMs: remaining }
+        })
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [state.status === 'decrypted' ? `${state.metadata.barSeconds}` : '']) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Phase 2: Destructive fetch + decrypt (only after confirmation)
   useEffect(() => {
@@ -91,12 +122,21 @@ export function useReadNote(
     let cancelled = false
 
     if (!fetchPromiseRef.current) {
-      if (provider) {
-        const adapter = createAdapter(provider)
-        fetchPromiseRef.current = adapter.fetch(shardId)
-      } else {
-        fetchPromiseRef.current = fetchShard(shardId)
+      // Multi-read: try shard IDs sequentially until one succeeds
+      const fetchFirst = async (): Promise<string | null> => {
+        for (const id of allShardIds) {
+          let shard: string | null
+          if (provider) {
+            const adapter = createAdapter(provider)
+            shard = await adapter.fetch(id)
+          } else {
+            shard = await fetchShard(id)
+          }
+          if (shard !== null) return shard
+        }
+        return null
       }
+      fetchPromiseRef.current = fetchFirst()
     }
 
     async function load() {
@@ -109,10 +149,19 @@ export function useReadNote(
           return
         }
 
-        const plaintext = await openNote(urlPayload, shard)
+        const result = await openNote(urlPayload, shard)
         if (cancelled) return
 
-        setState({ status: 'decrypted', plaintext })
+        const ttlMs = result.metadata.barSeconds
+          ? result.metadata.barSeconds * 1000
+          : DEFAULT_PLAINTEXT_TTL_MS
+
+        setState({
+          status: 'decrypted',
+          plaintext: result.plaintext,
+          metadata: result.metadata,
+          remainingMs: ttlMs,
+        })
       } catch (err) {
         if (cancelled) return
 

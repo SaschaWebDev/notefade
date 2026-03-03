@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { stringFromBase64Url, unpadPayload } from '@/crypto'
+import { stringFromBase64Url, unpadPayload, extractTimeLock } from '@/crypto'
 import { decodeProviderConfig } from '@/api/provider-config'
 import type { ProviderConfig } from '@/api/provider-types'
 
@@ -10,9 +10,13 @@ interface CreateRoute {
 interface ReadRoute {
   mode: 'read'
   shardId: string
+  /** Additional shard IDs for multi-read notes (Feature 1) */
+  shardIds: string[]
   urlPayload: string
   check: string | null
   provider: ProviderConfig | null
+  /** Unix timestamp when time-locked note becomes readable (Feature 2) */
+  timeLockAt: number | null
 }
 
 interface ProtectedRoute {
@@ -24,9 +28,12 @@ export type HashRoute = CreateRoute | ReadRoute | ProtectedRoute
 
 export interface ParsedFragment {
   shardId: string
+  /** All shard IDs for multi-read (first is shardId) */
+  shardIds: string[]
   urlPayload: string
   check: string | null
   provider: ProviderConfig | null
+  timeLockAt: number | null
 }
 
 /** Split urlPayload from an optional @<base64url(config)> suffix */
@@ -68,19 +75,38 @@ export function parseFragment(fragment: string): ParsedFragment | null {
     return null
   }
 
-  const colonIndex = fragment.indexOf(':')
+  let working = fragment
+  let timeLockAt: number | null = null
+
+  // Check for time-lock prefix: tl:<unix_timestamp>:
+  if (working.startsWith('tl:')) {
+    const tlRest = working.slice(3)
+    const tlColon = tlRest.indexOf(':')
+    if (tlColon === -1) return null
+    const timestamp = parseInt(tlRest.slice(0, tlColon), 10)
+    if (isNaN(timestamp)) return null
+    timeLockAt = timestamp
+    working = tlRest.slice(tlColon + 1)
+  }
+
+  const colonIndex = working.indexOf(':')
   if (colonIndex === -1) {
     return null
   }
 
-  const shardId = fragment.slice(0, colonIndex)
-  const rest = fragment.slice(colonIndex + 1)
+  const shardIdPart = working.slice(0, colonIndex)
+  const rest = working.slice(colonIndex + 1)
 
-  if (!shardId || !rest) {
+  if (!shardIdPart || !rest) {
     return null
   }
 
-  // New format: shardId:check:urlPayload[@encodedConfig] (two colons)
+  // Parse multi-read shard IDs: id1~id2~id3
+  const shardIds = shardIdPart.split('~').filter(Boolean)
+  if (shardIds.length === 0) return null
+  const shardId = shardIds[0]!
+
+  // New format: shardId(s):check:urlPayload[@encodedConfig] (two colons)
   // Old format: shardId:urlPayload (one colon)
   const secondColon = rest.indexOf(':')
   if (secondColon !== -1) {
@@ -90,11 +116,20 @@ export function parseFragment(fragment: string): ParsedFragment | null {
       return null
     }
     const { urlPayload: rawUrlPayload, provider } = extractProvider(rawPayload)
-    return { shardId, check, urlPayload: unpadPayload(rawUrlPayload), provider }
+
+    // Try steganographic time-lock extraction for padded payloads without tl: prefix
+    if (timeLockAt === null && rawUrlPayload.startsWith('.')) {
+      const stegoTs = extractTimeLock(rawUrlPayload, check)
+      if (stegoTs != null) {
+        timeLockAt = stegoTs
+      }
+    }
+
+    return { shardId, shardIds, check, urlPayload: unpadPayload(rawUrlPayload), provider, timeLockAt }
   }
 
   const { urlPayload: rawUrlPayload, provider } = extractProvider(rest)
-  return { shardId, check: null, urlPayload: unpadPayload(rawUrlPayload), provider }
+  return { shardId, shardIds, check: null, urlPayload: unpadPayload(rawUrlPayload), provider, timeLockAt }
 }
 
 function parseHash(): HashRoute {
