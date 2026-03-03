@@ -52,6 +52,15 @@
   border-bottom: 1px solid rgba(var(--warning-rgb), 0.2);
 }
 
+:global([data-theme="light"]) .domainWarning {
+  background: rgba(var(--warning-rgb), 0.18);
+  border-bottom: 1px solid rgba(var(--warning-rgb), 0.35);
+}
+
+:global([data-theme="light"]) .domainWarning .domainText {
+  color: rgb(var(--warning-rgb));
+}
+
 .domainDot {
   width: 8px;
   height: 8px;
@@ -74,6 +83,21 @@
   color: rgba(var(--fg), 0.5);
 }
 
+.domainSep {
+  color: rgba(var(--fg), 0.25);
+  margin: 0 2px;
+}
+
+.buildBadge {
+  color: rgba(var(--success-rgb), 0.7);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.buildBadge:hover {
+  color: rgb(var(--success-rgb));
+}
+
 @keyframes warningPulse {
   0%,
   100% {
@@ -87,8 +111,8 @@
 /* ---- Theme toggle ---- */
 
 .themeToggle {
-  position: fixed;
-  top: 14px;
+  position: absolute;
+  top: 64px;
   right: 16px;
   z-index: 51;
   display: flex;
@@ -543,6 +567,10 @@
   padding: 28px 28px;
 }
 
+:global([data-theme="light"]) .aboutBody {
+  background: rgba(var(--fg), 0.03);
+}
+
 .aboutTitle {
   display: flex;
   align-items: center;
@@ -636,6 +664,166 @@
 .fadeSectionVisible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* ---- Stego Decode ---- */
+
+.stegoDecodeSection {
+  position: relative;
+  z-index: 1;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.stegoDecodeSubtitle {
+  font-size: 14px;
+  color: rgba(var(--fg), 0.35);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.stegoDropZone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 24px;
+  background: rgba(var(--fg), 0.02);
+  border: 2px dashed rgba(var(--fg), 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stegoDropZone:hover {
+  border-color: rgba(var(--accent-rgb), 0.3);
+  background: rgba(var(--accent-rgb), 0.03);
+}
+
+.stegoDropZoneActive {
+  border-color: rgba(var(--accent-rgb), 0.5);
+  background: rgba(var(--accent-rgb), 0.06);
+}
+
+.stegoDropIcon {
+  color: rgba(var(--fg), 0.2);
+}
+
+.stegoDropText {
+  font-size: 13px;
+  color: rgba(var(--fg), 0.3);
+}
+
+.stegoFileInput {
+  display: none;
+}
+
+.stegoDecodeResult {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(var(--success-rgb), 0.04);
+  border: 1px solid rgba(var(--success-rgb), 0.15);
+  border-radius: 10px;
+  animation: settings-in 0.2s ease;
+}
+
+@keyframes settings-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stegoDecodeResultLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(var(--success-rgb), 0.7);
+  letter-spacing: 0.02em;
+}
+
+.stegoDecodeLink {
+  font-size: 12px;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  color: rgba(var(--accent-rgb), 0.7);
+  word-break: break-all;
+  text-decoration: none;
+  line-height: 1.4;
+  transition: color 0.15s ease;
+}
+
+.stegoDecodeLink:hover {
+  color: rgba(var(--accent-rgb), 0.95);
+}
+
+.stegoDecodeActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.stegoDecodeCopy,
+.stegoDecodeOpen {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.stegoDecodeCopy {
+  color: rgba(var(--fg), 0.5);
+  background: rgba(var(--fg), 0.04);
+  border: 1px solid rgba(var(--fg), 0.08);
+}
+
+.stegoDecodeCopy:hover {
+  background: rgba(var(--fg), 0.08);
+}
+
+.stegoDecodeOpen {
+  color: rgba(var(--accent-rgb), 0.7);
+  background: rgba(var(--accent-rgb), 0.06);
+  border: 1px solid rgba(var(--accent-rgb), 0.15);
+}
+
+.stegoDecodeOpen:hover {
+  background: rgba(var(--accent-rgb), 0.12);
+}
+
+.stegoDecodeError {
+  margin-top: 16px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: rgba(var(--fg), 0.4);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
+  border-radius: 8px;
+  animation: settings-in 0.2s ease;
+}
+
+.stegoDecodeReset {
+  margin-top: 10px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 400;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: rgba(var(--fg), 0.35);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.stegoDecodeReset:hover {
+  color: rgba(var(--fg), 0.6);
 }
 
 /* ---- Responsive ---- */

@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { CreateNote } from './CreateNote';
 import { useTheme } from '@/hooks';
+import { decodeImageStego } from '@/crypto';
 import styles from './LandingShell.module.css';
 
 const PILL_ROWS = [
@@ -178,10 +179,181 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
+type DecodeState =
+  | { status: 'idle' }
+  | { status: 'decoding' }
+  | { status: 'success'; url: string }
+  | { status: 'error'; message: string };
+
+function StegoDecoder() {
+  const [state, setState] = useState<DecodeState>({ status: 'idle' });
+  const [copied, setCopied] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const decodeFile = useCallback((file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setState({ status: 'error', message: 'please upload an image file' });
+      return;
+    }
+
+    setState({ status: 'decoding' });
+
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        setState({ status: 'error', message: 'failed to process image' });
+        return;
+      }
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const result = decodeImageStego(imageData);
+      if (result) {
+        setState({ status: 'success', url: result });
+      } else {
+        setState({ status: 'error', message: 'no hidden data found in this image' });
+      }
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      setState({ status: 'error', message: 'failed to load image' });
+    };
+
+    img.src = objectUrl;
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const file = e.dataTransfer.files[0];
+      if (file) decodeFile(file);
+    },
+    [decodeFile],
+  );
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) decodeFile(file);
+      // Reset so the same file can be re-selected
+      e.target.value = '';
+    },
+    [decodeFile],
+  );
+
+  return (
+    <section className={styles.stegoDecodeSection}>
+      <FadeSection>
+        <h2 className={styles.sectionLabel}>decode a steganographic image</h2>
+      </FadeSection>
+      <FadeSection delay={80}>
+        <p className={styles.stegoDecodeSubtitle}>
+          received a generated image? upload it to extract the hidden link.
+        </p>
+        <div
+          className={`${styles.stegoDropZone} ${dragOver ? styles.stegoDropZoneActive : ''}`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          onClick={() => inputRef.current?.click()}
+          role='button'
+          tabIndex={0}
+        >
+          <input
+            ref={inputRef}
+            type='file'
+            accept='image/*'
+            className={styles.stegoFileInput}
+            onChange={handleFileChange}
+          />
+          <svg width='24' height='24' viewBox='0 0 24 24' fill='none' className={styles.stegoDropIcon}>
+            <rect x='3' y='3' width='18' height='18' rx='3' stroke='currentColor' strokeWidth='1.5' />
+            <circle cx='8.5' cy='8.5' r='2' stroke='currentColor' strokeWidth='1.2' />
+            <path d='M3 16l5-5 3.5 3.5L15 11l6 6' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round' />
+          </svg>
+          <span className={styles.stegoDropText}>
+            {state.status === 'decoding' ? 'decoding...' : 'drop an image or click to upload'}
+          </span>
+        </div>
+
+        {state.status === 'success' && (
+          <div className={styles.stegoDecodeResult}>
+            <span className={styles.stegoDecodeResultLabel}>hidden link found</span>
+            <a
+              href={state.url}
+              className={styles.stegoDecodeLink}
+              target='_blank'
+              rel='noopener noreferrer'
+            >
+              {state.url.length > 100 ? state.url.slice(0, 100) + '...' : state.url}
+            </a>
+            <div className={styles.stegoDecodeActions}>
+              <button
+                type='button'
+                className={styles.stegoDecodeCopy}
+                onClick={() => {
+                  if (state.status === 'success') {
+                    navigator.clipboard.writeText(state.url);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  }
+                }}
+              >
+                {copied ? 'copied' : 'copy link'}
+              </button>
+              <a href={state.url} className={styles.stegoDecodeOpen} target='_blank' rel='noopener noreferrer'>
+                open link
+              </a>
+            </div>
+          </div>
+        )}
+
+        {state.status === 'error' && (
+          <div className={styles.stegoDecodeError}>
+            {state.message}
+          </div>
+        )}
+
+        {(state.status === 'success' || state.status === 'error') && (
+          <button
+            type='button'
+            className={styles.stegoDecodeReset}
+            onClick={() => {
+              setState({ status: 'idle' });
+              setCopied(false);
+            }}
+          >
+            try another image
+          </button>
+        )}
+      </FadeSection>
+    </section>
+  );
+}
+
 const OFFICIAL_HOSTS = ['notefade.com', 'www.notefade.com'];
+
+function useBuildVerified(): boolean {
+  const scripts = document.querySelectorAll('script[integrity]');
+  const links = document.querySelectorAll('link[rel="stylesheet"][integrity]');
+  return scripts.length > 0 || links.length > 0;
+}
 
 function DomainIndicator() {
   const isOfficial = OFFICIAL_HOSTS.includes(window.location.hostname);
+  const buildVerified = useBuildVerified();
 
   return (
     <div
@@ -193,6 +365,14 @@ function DomainIndicator() {
           <span className={styles.domainText}>
             You are on the official notefade.com website
           </span>
+          {buildVerified && (
+            <>
+              <span className={styles.domainSep}>&middot;</span>
+              <a href="/docs#verifying-builds" className={styles.buildBadge}>
+                &#10003; Build Verified
+              </a>
+            </>
+          )}
         </>
       ) : (
         <div className={styles.domainText}>
@@ -321,8 +501,15 @@ export function LandingShell({ children }: { children: ReactNode }) {
       >
         {theme === 'dark' ? (
           <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
-            <circle cx='8' cy='8' r='3.5' stroke='currentColor' strokeWidth='1.3' />
-            <path d='M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1' stroke='currentColor' strokeWidth='1.3' strokeLinecap='round' />
+            <circle cx='8' cy='8' r='3' fill='currentColor' />
+            <line x1='8' y1='1' x2='8' y2='3' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='8' y1='13' x2='8' y2='15' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='1' y1='8' x2='3' y2='8' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='13' y1='8' x2='15' y2='8' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='3.05' y1='3.05' x2='4.46' y2='4.46' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='11.54' y1='11.54' x2='12.95' y2='12.95' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='3.05' y1='12.95' x2='4.46' y2='11.54' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+            <line x1='11.54' y1='4.46' x2='12.95' y2='3.05' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
           </svg>
         ) : (
           <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
@@ -381,6 +568,10 @@ export function LandingShell({ children }: { children: ReactNode }) {
 
       {!noteCreated && (
         <>
+          <StegoDecoder />
+
+          <div className={styles.divider} />
+
           {children}
 
           <div className={styles.divider} />
