@@ -910,14 +910,14 @@
   }
 
   .previewArea {
-    min-height: 126px;
-    max-height: 210px;
+    min-height: 88px;
+    max-height: 147px;
     padding: 20px;
   }
 
   .textarea {
-    min-height: 126px;
-    max-height: 210px;
+    min-height: 88px;
+    max-height: 147px;
     padding: 20px;
     font-size: 18px;
   }
@@ -1417,5 +1417,12 @@
   .decoyInputField {
     font-size: 12px;
     padding: 7px 10px;
+  }
+
+  .timeLockInput {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 12px;
   }
 }
