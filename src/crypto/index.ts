@@ -28,3 +28,4 @@ export {
 } from './crypto'
 export type { SplitResult, NoteMetadata, OpenNoteResult } from './crypto'
 export { encodeZeroWidth, decodeZeroWidth, hasZeroWidthData, encodeImageStego, decodeImageStego, generateStegoImage, generateStegoFilename } from './stego'
+export { generateDecoyMessage } from './decoy-messages'
