@@ -15,9 +15,9 @@ const SHARD_ID_RE = /^[a-f0-9]{8,16}$/
 // --- In-memory rate limiting (per-isolate) ---
 
 const RATE_LIMITS: Record<string, number> = {
-  POST: 10,    // 10 creates/min
+  POST: 20,    // 20 creates/min (worst-case: 10 multi-read + 3 decoys = 13)
   HEAD: 30,    // 30 probes/min
-  GET: 10,     // 10 reads/min
+  GET: 15,     // 15 reads/min (multi-read notes may have several near-simultaneous readers)
   DELETE: 10,  // 10 deletes/min
 }
 const RATE_WINDOW_MS = 60_000

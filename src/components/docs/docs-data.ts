@@ -74,9 +74,9 @@ export const CORS_ORIGINS = [
 ]
 
 export const RATE_LIMITS: RateLimit[] = [
-  { method: 'POST', limit: 10, window: '60s' },
+  { method: 'POST', limit: 20, window: '60s' },
   { method: 'HEAD', limit: 30, window: '60s' },
-  { method: 'GET', limit: 10, window: '60s' },
+  { method: 'GET', limit: 15, window: '60s' },
   { method: 'DELETE', limit: 10, window: '60s' },
 ]
 
