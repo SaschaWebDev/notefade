@@ -108,10 +108,11 @@ interface UseCreateNoteReturn {
   receiptVerification: ReceiptVerification | null
   // Feature 8: Decoy links
   decoyMessages: string[]
-  setDecoyMessages: (msgs: string[]) => void
+  setDecoyMessages: (msgs: string[] | ((prev: string[]) => string[])) => void
   decoyUrls: string[]
   handleCreate: () => Promise<void>
   resetNote: () => void
+  resetExpertSettings: () => void
 }
 
 export function useCreateNote(): UseCreateNoteReturn {
@@ -337,16 +338,6 @@ export function useCreateNote(): UseCreateNoteReturn {
   const handleCreate = async () => {
     if (isEmpty || isOverLimit || loading) return
 
-    // Validate time-lock
-    if (timeLockEnabled && timeLockAt) {
-      const unlockTime = new Date(timeLockAt).getTime()
-      const expiryTime = Date.now() + ttl * 1000
-      if (unlockTime >= expiryTime) {
-        setError('The unlock time must be before the note expires. Increase TTL or choose an earlier time.')
-        return
-      }
-    }
-
     setLoading(true)
     setError(null)
 
@@ -405,6 +396,18 @@ export function useCreateNote(): UseCreateNoteReturn {
     } finally {
       setLoading(false)
     }
+  }
+
+  const resetExpertSettings = () => {
+    setReadCount(1)
+    setBarDuration(300)
+    setTimeLockEnabled(false)
+    setTimeLockAt('')
+    setDeferredMode(false)
+    setReceiptEnabled(false)
+    setDecoyMessages([])
+    setPasswordEnabledState(false)
+    setPasswordState('')
   }
 
   const resetNote = () => {
@@ -474,5 +477,6 @@ export function useCreateNote(): UseCreateNoteReturn {
     decoyUrls,
     handleCreate,
     resetNote,
+    resetExpertSettings,
   }
 }
