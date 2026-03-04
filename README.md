@@ -21,9 +21,15 @@ Notefade splits your encryption key so the server stores only 16 meaningless byt
 - **Auto-expiring links** — 1 hour, 24 hours, or 7 days
 - **Password protection** — optional PBKDF2 layer (600k iterations, SHA-256)
 - **QR code sharing** — generate and export as PNG
+- **Steganographic sharing** — hide your note link inside innocent-looking text (zero-width Unicode) or images (LSB pixel encoding)
 - **Dark / light theme** — auto-detects system preference, manual toggle to override
 - **Rich text editor** — formatting toolbar with bold, italic, headings, lists, code blocks, and links; notes render as markdown
 - **Dead drop mode** — encrypt now, share an inert link, activate later via launch code
+- **Burn-after-reading** — configurable fade timer (30 s, 1 min, 5 min, 15 min) clears the decrypted note from the browser
+- **Multi-read notes** — allow up to 10 reads before the note is gone
+- **Time-lock** — schedule when a note becomes readable with a live countdown
+- **Proof of read** — cryptographic HMAC receipt the sender can verify without knowing who read it
+- **Decoy links** — generate 1–3 extra encrypted notes with plausible alternate content for deniability
 - **7 backend adapters** — Cloudflare KV, Cloudflare D1, Upstash Redis, Vercel KV, Supabase, AWS DynamoDB, or your own API
 - **Self-hostable** — frontend and backend, no vendor lock-in
 - **Reproducible builds** — deterministic Docker builds, SHA-256 build manifests on every release
@@ -78,6 +84,43 @@ We're honest about this. Once someone reads a note, they have the plaintext. Not
 **Security headers:** `no-referrer` policy, `no-store` cache headers, HTTPS-only in production, origin-locked CORS.
 
 For a full technical breakdown, see [notefade.com/docs](https://notefade.com/docs).
+
+## Steganographic Sharing
+
+Two methods to disguise a note link so it doesn't look like a link at all.
+
+### Hide in text (zero-width Unicode)
+
+The URL is converted to binary, then encoded as invisible zero-width characters — `U+200B` (zero-width space) for `0`, `U+200C` (zero-width non-joiner) for `1`, and `U+200D` (zero-width joiner) as a separator — interleaved into cover text you provide.
+
+The result looks like a normal sentence. The link is invisible to human eyes but recoverable by the decode page.
+
+**Limitations:** Some apps strip zero-width characters on paste. If the recipient can't decode, send the link directly. The encoding is invisible to humans but detectable by tools inspecting Unicode codepoints.
+
+### Hide in image (LSB steganography)
+
+URL bits are written into the least-significant bit of each R, G, B channel (alpha is untouched). A 4-byte big-endian length header precedes the UTF-8 payload.
+
+Two modes:
+- **Generate** — creates random abstract art as the cover image
+- **Upload** — use your own image as the cover
+
+The image must have enough pixels to hold the URL data. The LSB changes are visually imperceptible.
+
+### Download formats: PNG vs ZIP
+
+Messengers (WhatsApp, Telegram, Signal, etc.) recompress images by default, which destroys LSB-encoded data.
+
+- **PNG download** — use when sending as a file/document (e.g. WhatsApp's "send as document" or "original quality" mode), or over channels that don't recompress (email attachments, cloud storage links, AirDrop)
+- **ZIP download** — wraps the PNG in a ZIP archive that messengers won't recompress. The recipient extracts the PNG and decodes it. Safest option for messenger sharing.
+
+### Anti-fingerprint filenames
+
+Every download gets a randomized filename from 16 patterns (camera roll, screenshot, casual share, art/creative, social, etc.) using cryptographically random selection. An interceptor seeing the file cannot determine it came from notefade — filenames look like `IMG_20260303_142517.png`, `sunset_v2.png`, `from_alex_painting.png`, etc. No two downloads produce the same filename.
+
+### Decoding
+
+The built-in `/decode` page extracts hidden links from both images and text. Drag-and-drop or file upload for images, paste for text.
 
 ## Self-Hosting
 
@@ -215,6 +258,7 @@ If using Cloudflare Pages automatic builds (connected to GitHub), set `NODE_VERS
 | Frontend   | React 19, TypeScript (strict), CSS Modules |
 | Build      | Vite 6                                     |
 | Encryption | Web Crypto API (AES-256-GCM, PBKDF2, XOR)  |
+| Steganography | LSB image encoding, zero-width Unicode text encoding |
 | Backend    | Cloudflare Workers + KV                    |
 | Validation | Zod                                        |
 | Testing    | Vitest                                     |
@@ -228,7 +272,7 @@ src/
 │   └── adapters/     # cloudflare-kv, d1, upstash, supabase, dynamodb, self-hosted
 ├── components/       # React UI (CreateNote, ReadNote, NoteLink, QrCode, ...)
 │   └── docs/         # Documentation pages
-├── crypto/           # AES-256-GCM encryption, XOR key splitting, PBKDF2
+├── crypto/           # AES-256-GCM, XOR key splitting, PBKDF2, steganography (LSB + zero-width)
 ├── hooks/            # useCreateNote, useReadNote, useHashRoute, ...
 └── styles/           # CSS variables & animations
 
