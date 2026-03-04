@@ -231,34 +231,53 @@
   animation: slideIn 0.2s ease;
 }
 
-.resetBtn {
-  padding: 5px 14px;
-  font-size: 12px;
-  font-weight: 400;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  color: rgba(var(--fg), 0.35);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: color 0.15s ease;
+.actions {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
   align-self: center;
-}
-
-.resetBtn:hover {
-  color: rgba(var(--fg), 0.6);
-}
-
-.backLink {
-  font-size: 13px;
-  color: rgba(var(--fg), 0.3);
-  text-decoration: none;
-  text-align: center;
   margin-top: 8px;
-  transition: color 0.15s ease;
 }
 
-.backLink:hover {
-  color: rgba(var(--fg), 0.6);
+.actionBtn {
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--fg), 0.08);
+  background: rgba(var(--fg), 0.04);
+  color: rgba(var(--fg), 0.5);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.actionBtn:hover {
+  background: rgba(var(--fg), 0.08);
+  border-color: rgba(var(--fg), 0.15);
+}
+
+.actionBtnPrimary {
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.actionBtnPrimary:hover {
+  background: var(--accent-hover);
 }
 
 @media (max-width: 480px) {

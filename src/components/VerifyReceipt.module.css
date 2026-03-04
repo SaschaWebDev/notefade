@@ -212,6 +212,39 @@
   border-color: rgba(var(--fg), 0.15);
 }
 
+.actions {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.actions .actionBtn {
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+}
+
+.actionBtnPrimary {
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.actionBtnPrimary:hover {
+  background: var(--accent-hover);
+}
+
 @media (max-width: 480px) {
   .container {
     padding: 24px 20px;

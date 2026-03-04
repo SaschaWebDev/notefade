@@ -93,9 +93,14 @@ export function VerifyReceipt() {
         <p className={styles.successDesc}>
           the proof matches. the reader had access to the original note.
         </p>
-        <button type="button" className={styles.actionBtn} onClick={handleReset}>
-          verify another
-        </button>
+        <div className={styles.actions}>
+          <button type="button" className={styles.actionBtn} onClick={handleReset}>
+            verify another
+          </button>
+          <a href="/" className={styles.actionBtnPrimary}>
+            back to main
+          </a>
+        </div>
       </div>
     )
   }
@@ -113,9 +118,14 @@ export function VerifyReceipt() {
         <p className={styles.failDesc}>
           the proof does not match. the reader may not have seen the original note.
         </p>
-        <button type="button" className={styles.actionBtn} onClick={handleReset}>
-          try again
-        </button>
+        <div className={styles.actions}>
+          <button type="button" className={styles.actionBtn} onClick={handleReset}>
+            try again
+          </button>
+          <a href="/" className={styles.actionBtnPrimary}>
+            back to main
+          </a>
+        </div>
       </div>
     )
   }
@@ -124,7 +134,7 @@ export function VerifyReceipt() {
     <div className={styles.container}>
       <h2 className={styles.heading}>verify a read receipt</h2>
       <p className={styles.desc}>
-        paste the receipt JSON you downloaded when creating the note,
+        paste the writer's receipt JSON (downloaded when creating the note),
         then paste the proof string the reader shared with you.
       </p>
 
@@ -139,7 +149,7 @@ export function VerifyReceipt() {
           className={styles.textarea}
           value={receiptInput}
           onChange={(e) => { setReceiptInput(e.target.value); setError(null) }}
-          placeholder='{"plaintext":"...","receiptSeed":"..."}'
+          placeholder={'the writer\'s receipt:\n{"plaintext":"...","receiptSeed":"..."}'}
           spellCheck={false}
         />
       </div>

@@ -216,19 +216,20 @@ export function Decode() {
         </div>
       )}
 
-      {(state.status === 'success' || state.status === 'error') && (
-        <button
-          type='button'
-          className={styles.resetBtn}
-          onClick={reset}
-        >
-          try again
-        </button>
-      )}
-
-      <a href='/' className={styles.backLink}>
-        back to main
-      </a>
+      <div className={styles.actions}>
+        {(state.status === 'success' || state.status === 'error') && (
+          <button
+            type='button'
+            className={styles.actionBtn}
+            onClick={reset}
+          >
+            try again
+          </button>
+        )}
+        <a href='/' className={styles.actionBtnPrimary}>
+          back to main
+        </a>
+      </div>
     </div>
   )
 }
