@@ -325,10 +325,11 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
         </svg>
       </button>
       <div
+        ref={innerRef}
         className={styles.faqAnswer}
         style={{ maxHeight: open ? `${height}px` : '0px' }}
       >
-        <div ref={innerRef} className={styles.faqAnswerInner}>
+        <div className={styles.faqAnswerInner}>
           {answer}
         </div>
       </div>
