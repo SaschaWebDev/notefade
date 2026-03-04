@@ -445,8 +445,6 @@ describe('generateStegoFilename', () => {
   })
 
   it('produces different names on subsequent calls', () => {
-    const a = generateStegoFilename()
-    const b = generateStegoFilename()
     // Not strictly guaranteed but overwhelmingly likely
     // Run 10 pairs to make the test robust
     let allSame = true
