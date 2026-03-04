@@ -26,6 +26,164 @@ const PILL_ROWS = [
   ],
 ] as const;
 
+const CTA_CARDS: readonly {
+  href: string;
+  title: string;
+  description: string;
+  icon: ReactNode;
+}[] = [
+  {
+    href: '/activate',
+    title: 'activate a deferred note',
+    description: 'upload a launch code to make a pre-created note live',
+    icon: (
+      <svg
+        width='20'
+        height='20'
+        viewBox='0 0 20 20'
+        fill='none'
+        className={styles.ctaIcon}
+      >
+        <path
+          d='M10 2v6m0 0l3-3m-3 3L7 5'
+          stroke='currentColor'
+          strokeWidth='1.5'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+        />
+        <path
+          d='M3 10a7 7 0 1014 0'
+          stroke='currentColor'
+          strokeWidth='1.5'
+          strokeLinecap='round'
+        />
+      </svg>
+    ),
+  },
+  {
+    href: '/decode',
+    title: 'decode steganography',
+    description: 'extract a hidden link from an image or text',
+    icon: (
+      <svg
+        width='20'
+        height='20'
+        viewBox='0 0 20 20'
+        fill='none'
+        className={styles.ctaIcon}
+      >
+        <rect
+          x='2'
+          y='2'
+          width='16'
+          height='16'
+          rx='3'
+          stroke='currentColor'
+          strokeWidth='1.5'
+        />
+        <circle
+          cx='7'
+          cy='7'
+          r='1.5'
+          stroke='currentColor'
+          strokeWidth='1.2'
+        />
+        <path
+          d='M2 14l4.5-4.5 3 3L13 9l5 5'
+          stroke='currentColor'
+          strokeWidth='1.2'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+        />
+      </svg>
+    ),
+  },
+  {
+    href: '/verify',
+    title: 'verify proof of read',
+    description:
+      'confirm that a reader actually opened your note with a receipt',
+    icon: (
+      <svg
+        width='20'
+        height='20'
+        viewBox='0 0 20 20'
+        fill='none'
+        className={styles.ctaIcon}
+      >
+        <path
+          d='M10 1.5L3 5v5c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V5l-7-3.5z'
+          stroke='currentColor'
+          strokeWidth='1.5'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+        />
+        <path
+          d='M7 10.5l2 2 4-4.5'
+          stroke='currentColor'
+          strokeWidth='1.5'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+        />
+      </svg>
+    ),
+  },
+  {
+    href: '/docs',
+    title: 'documentation',
+    description: 'how it works, API reference, and self-hosting guide',
+    icon: (
+      <svg
+        width='20'
+        height='20'
+        viewBox='0 0 20 20'
+        fill='none'
+        className={styles.ctaIcon}
+      >
+        <path
+          d='M4 3.5h8l4 4V16a.5.5 0 01-.5.5H4a.5.5 0 01-.5-.5V4a.5.5 0 01.5-.5z'
+          stroke='currentColor'
+          strokeWidth='1.5'
+          strokeLinejoin='round'
+        />
+        <path
+          d='M12 3.5V7.5h4'
+          stroke='currentColor'
+          strokeWidth='1.5'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+        />
+        <path
+          d='M7 11h6M7 13.5h4'
+          stroke='currentColor'
+          strokeWidth='1.5'
+          strokeLinecap='round'
+        />
+      </svg>
+    ),
+  },
+];
+
+function CtaCard({
+  href,
+  title,
+  description,
+  icon,
+}: {
+  href: string;
+  title: string;
+  description: string;
+  icon: ReactNode;
+}) {
+  return (
+    <a href={href} className={styles.ctaCard}>
+      {icon}
+      <span className={styles.ctaTitle}>{title}</span>
+      <span className={styles.ctaDesc}>{description}</span>
+    </a>
+  );
+}
+
 export function FadeSection({
   children,
   className,
@@ -481,142 +639,11 @@ export function LandingShell({ children }: { children: ReactNode }) {
               <h2 className={styles.sectionLabel}>tools</h2>
             </FadeSection>
             <div className={styles.ctaCards}>
-              <FadeSection delay={80}>
-                <a href='/activate' className={styles.ctaCard}>
-                  <svg
-                    width='20'
-                    height='20'
-                    viewBox='0 0 20 20'
-                    fill='none'
-                    className={styles.ctaIcon}
-                  >
-                    <path
-                      d='M10 2v6m0 0l3-3m-3 3L7 5'
-                      stroke='currentColor'
-                      strokeWidth='1.5'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                    <path
-                      d='M3 10a7 7 0 1014 0'
-                      stroke='currentColor'
-                      strokeWidth='1.5'
-                      strokeLinecap='round'
-                    />
-                  </svg>
-                  <span className={styles.ctaTitle}>
-                    activate a deferred note
-                  </span>
-                  <span className={styles.ctaDesc}>
-                    upload a launch code to make a pre-created note live
-                  </span>
-                </a>
-              </FadeSection>
-              <FadeSection delay={160}>
-                <a href='/decode' className={styles.ctaCard}>
-                  <svg
-                    width='20'
-                    height='20'
-                    viewBox='0 0 20 20'
-                    fill='none'
-                    className={styles.ctaIcon}
-                  >
-                    <rect
-                      x='2'
-                      y='2'
-                      width='16'
-                      height='16'
-                      rx='3'
-                      stroke='currentColor'
-                      strokeWidth='1.5'
-                    />
-                    <circle
-                      cx='7'
-                      cy='7'
-                      r='1.5'
-                      stroke='currentColor'
-                      strokeWidth='1.2'
-                    />
-                    <path
-                      d='M2 14l4.5-4.5 3 3L13 9l5 5'
-                      stroke='currentColor'
-                      strokeWidth='1.2'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                  </svg>
-                  <span className={styles.ctaTitle}>decode steganography</span>
-                  <span className={styles.ctaDesc}>
-                    extract a hidden link from an image or text
-                  </span>
-                </a>
-              </FadeSection>
-              <FadeSection delay={240}>
-                <a href='/verify' className={styles.ctaCard}>
-                  <svg
-                    width='20'
-                    height='20'
-                    viewBox='0 0 20 20'
-                    fill='none'
-                    className={styles.ctaIcon}
-                  >
-                    <path
-                      d='M10 1.5L3 5v5c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V5l-7-3.5z'
-                      stroke='currentColor'
-                      strokeWidth='1.5'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                    <path
-                      d='M7 10.5l2 2 4-4.5'
-                      stroke='currentColor'
-                      strokeWidth='1.5'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                  </svg>
-                  <span className={styles.ctaTitle}>verify proof of read</span>
-                  <span className={styles.ctaDesc}>
-                    confirm that a reader actually opened your note with a
-                    receipt
-                  </span>
-                </a>
-              </FadeSection>
-              <FadeSection delay={320}>
-                <a href='/docs' className={styles.ctaCard}>
-                  <svg
-                    width='20'
-                    height='20'
-                    viewBox='0 0 20 20'
-                    fill='none'
-                    className={styles.ctaIcon}
-                  >
-                    <path
-                      d='M4 3.5h8l4 4V16a.5.5 0 01-.5.5H4a.5.5 0 01-.5-.5V4a.5.5 0 01.5-.5z'
-                      stroke='currentColor'
-                      strokeWidth='1.5'
-                      strokeLinejoin='round'
-                    />
-                    <path
-                      d='M12 3.5V7.5h4'
-                      stroke='currentColor'
-                      strokeWidth='1.5'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                    <path
-                      d='M7 11h6M7 13.5h4'
-                      stroke='currentColor'
-                      strokeWidth='1.5'
-                      strokeLinecap='round'
-                    />
-                  </svg>
-                  <span className={styles.ctaTitle}>documentation</span>
-                  <span className={styles.ctaDesc}>
-                    how it works, API reference, and self-hosting guide
-                  </span>
-                </a>
-              </FadeSection>
+              {CTA_CARDS.map((card, i) => (
+                <FadeSection key={card.href} delay={(i + 1) * 80}>
+                  <CtaCard {...card} />
+                </FadeSection>
+              ))}
             </div>
           </section>
 
