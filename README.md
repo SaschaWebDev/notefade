@@ -2,7 +2,7 @@
 
 **Private notes that fade.**
 
-[![Build & Verify](https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml/badge.svg)](https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](https://www.typescriptlang.org/) [![Zero Crypto Dependencies](https://img.shields.io/badge/crypto_deps-zero-green.svg)](#security-model) [![Cloudflare Workers](https://img.shields.io/badge/backend-Cloudflare_Workers-orange.svg)](https://workers.cloudflare.com/)
+[![Build & Verify](https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml/badge.svg)](https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml) [![Tests](https://github.com/SaschaWebDev/notefade/actions/workflows/test.yml/badge.svg)](https://github.com/SaschaWebDev/notefade/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](https://www.typescriptlang.org/) [![Zero Crypto Dependencies](https://img.shields.io/badge/crypto_deps-zero-green.svg)](#security-model) [![Cloudflare Workers](https://img.shields.io/badge/backend-Cloudflare_Workers-orange.svg)](https://workers.cloudflare.com/)
 
 <!-- Add a screenshot or animated gif here -->
 
