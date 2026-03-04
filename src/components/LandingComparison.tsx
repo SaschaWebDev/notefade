@@ -56,7 +56,7 @@ function Some() {
   );
 }
 
-function No() {
+function No({ children }: { children?: ReactNode }) {
   return (
     <span className={styles.checkNo}>
       <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
@@ -67,7 +67,7 @@ function No() {
           strokeLinecap='round'
         />
       </svg>
-      No
+      {children ?? 'No'}
     </span>
   );
 }
@@ -171,19 +171,7 @@ const COMPARISON: readonly ComparisonRow[] = [
         </span>
       </>
     ),
-    typical: (
-      <span className={styles.checkNo}>
-        <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-          <path
-            d='M4 5.5l6 6M10 5.5l-6 6'
-            stroke='#f87171'
-            strokeWidth='1.5'
-            strokeLinecap='round'
-          />
-        </svg>
-        Server-side (trust in provider)
-      </span>
-    ),
+    typical: <No>Server-side (trust in provider)</No>,
   },
   {
     label: 'Zero crypto dependencies',
@@ -214,19 +202,7 @@ const COMPARISON: readonly ComparisonRow[] = [
         <span className={styles.dimDetail}>(16-byte shard)</span>
       </Check>
     ),
-    typical: (
-      <span className={styles.checkNo}>
-        <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-          <path
-            d='M4 5.5l6 6M10 5.5l-6 6'
-            stroke='#f87171'
-            strokeWidth='1.5'
-            strokeLinecap='round'
-          />
-        </svg>
-        Full encrypted message (with metadata)
-      </span>
-    ),
+    typical: <No>Full encrypted message (with metadata)</No>,
   },
   {
     label: 'Secret note never reaches server',
@@ -235,19 +211,7 @@ const COMPARISON: readonly ComparisonRow[] = [
         <span className={styles.greenText}>Never</span>
       </Check>
     ),
-    typical: (
-      <span className={styles.checkNo}>
-        <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-          <path
-            d='M4 5.5l6 6M10 5.5l-6 6'
-            stroke='#f87171'
-            strokeWidth='1.5'
-            strokeLinecap='round'
-          />
-        </svg>
-        Stored on server
-      </span>
-    ),
+    typical: <No>Stored on server</No>,
   },
   {
     label: 'Data breach proof',
@@ -298,19 +262,7 @@ const COMPARISON: readonly ComparisonRow[] = [
         <span className={styles.dimDetail}>(code &amp; docs)</span>
       </Check>
     ),
-    typical: (
-      <span className={styles.checkNo}>
-        <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-          <path
-            d='M4 5.5l6 6M10 5.5l-6 6'
-            stroke='#f87171'
-            strokeWidth='1.5'
-            strokeLinecap='round'
-          />
-        </svg>
-        Usually not
-      </span>
-    ),
+    typical: <No>Usually not</No>,
   },
   {
     label: 'Reproducible, verifiable builds',
