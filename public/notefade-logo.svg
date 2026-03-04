@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Gradient specifically tuned for the top-right folded corner -->
+    <linearGradient id="cornerGrad" gradientUnits="userSpaceOnUse" x1="285" y1="140" x2="345" y2="200">
+      <stop offset="0%" stop-color="#2563EB" /> <!-- Rich Blue (top-left) -->
+      <stop offset="100%" stop-color="#06B6D4" /> <!-- Bright Cyan (bottom-right) -->
+    </linearGradient>
+
+    <!-- Gradient specifically tuned for the fading dashes -->
+    <!-- Coordinates map to the rotated local space of the dashes -->
+    <linearGradient id="dashesGrad" gradientUnits="userSpaceOnUse" x1="150" y1="340" x2="285" y2="380">
+      <stop offset="0%" stop-color="#2563EB" /> <!-- Rich Blue (closest to document) -->
+      <stop offset="100%" stop-color="#06B6D4" /> <!-- Bright Cyan (furthest away) -->
+    </linearGradient>
+  </defs>
+
+  <!-- Group to perfectly center the composition in the 500x500 canvas -->
+  <g transform="translate(17.5, -13)">
+
+    <!-- 
+      Main Dark Document Shape
+      Constructed with precise geometric curves. 
+      The bottom diagonal cut is a mathematically perfect straight line.
+      The bottom-left swoop uses a cubic bezier curve to match the sharp aerodynamic feel.
+    -->
+    <path d="M 160 170
+             A 30 30 0 0 1 190 140
+             L 273 140
+             L 273 180
+             A 32 32 0 0 0 305 212
+             L 345 212
+             L 345 245
+             L 120 320
+             C 135 315, 160 290, 160 270
+             Z"
+          fill="#111827" /> <!-- Deep Slate Gray / Black -->
+
+    <!-- 
+      Top Right Folded Corner 
+      A standalone triangle with a perfectly rounded bottom-left corner.
+      It sits with a uniform, consistent mathematical gap (12px) from the main body.
+    -->
+    <path d="M 285 140
+             L 285 180
+             A 20 20 0 0 0 305 200
+             L 345 200
+             Z"
+          fill="url(#cornerGrad)" />
+
+    <!-- 
+      Fading "Dissolve" Pills (Dashes)
+      The entire group is rotated by exactly -18.435 degrees so that standard horizontal 
+      lines align flawlessly parallel to the diagonal cut of the document shape above.
+    -->
+    <g transform="rotate(-18.435, 120, 320)"
+       stroke="url(#dashesGrad)"
+       stroke-width="12"
+       stroke-linecap="round">
+       
+      <!-- Row 1: Closest to the document -->
+      <line x1="150" y1="340" x2="250" y2="340" />
+      <line x1="265" y1="340" x2="285" y2="340" />
+      
+      <!-- Row 2: Middle fade -->
+      <line x1="190" y1="360" x2="235" y2="360" />
+      <line x1="250" y1="360" x2="270" y2="360" />
+      
+      <!-- Row 3: Final smallest particle -->
+      <line x1="225" y1="380" x2="245" y2="380" />
+    </g>
+
+  </g>
+</svg>
