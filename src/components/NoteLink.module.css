@@ -56,24 +56,6 @@
   flex-wrap: wrap;
 }
 
-.settingsPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 8px 12px;
-  font-size: 11px;
-  font-weight: 500;
-  color: rgba(var(--fg), 0.35);
-  background: rgba(var(--fg), 0.03);
-  border: 1px solid rgba(var(--fg), 0.06);
-  border-radius: 8px;
-  white-space: nowrap;
-}
-
-.settingsPillIcon {
-  color: rgba(var(--fg), 0.25);
-}
-
 .passwordDisplay {
   display: inline-flex;
   align-items: center;
@@ -980,17 +962,18 @@
     display: inline;
   }
   .metaRow {
-    justify-content: center;
+    justify-content: flex-start;
     gap: 6px;
   }
 
   .expiryBadge {
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .shareRow {
     flex-wrap: wrap;
     justify-content: center;
+    margin-top: 16px;
   }
 
   .passwordDisplay {

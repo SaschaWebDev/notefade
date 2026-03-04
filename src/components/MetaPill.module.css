@@ -1,0 +1,29 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(var(--fg), 0.35);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.pillIcon {
+  color: rgba(var(--fg), 0.25);
+}
+
+a.pill {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+a.pill:hover {
+  border-color: rgba(var(--fg), 0.15);
+}
+

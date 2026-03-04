@@ -9,6 +9,7 @@ import {
 import type { ProviderConfig } from '@/api/provider-types';
 import type { ReceiptVerification } from '@/hooks/use-create-note';
 import { QrCode } from './QrCode';
+import { MetaPill } from './MetaPill';
 import styles from './NoteLink.module.css';
 
 const QR_EXPORT_SIZE = 512;
@@ -580,49 +581,45 @@ export function NoteLink({
           </div>
 
           {barDurationLabel && (
-            <span className={styles.settingsPill}>
-              <svg
-                className={styles.settingsPillIcon}
-                width='12'
-                height='12'
-                viewBox='0 0 12 12'
-                fill='none'
-              >
-                <path
-                  d='M6 1v2M6 9v2M1 6h2M9 6h2M2.5 2.5l1.4 1.4M8.1 8.1l1.4 1.4M9.5 2.5L8.1 3.9M3.9 8.1L2.5 9.5'
-                  stroke='currentColor'
-                  strokeWidth='1.1'
-                  strokeLinecap='round'
-                />
-              </svg>
+            <MetaPill
+              href="/docs#auto-expiring"
+              icon={
+                <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
+                  <path
+                    d='M6 1v2M6 9v2M1 6h2M9 6h2M2.5 2.5l1.4 1.4M8.1 8.1l1.4 1.4M9.5 2.5L8.1 3.9M3.9 8.1L2.5 9.5'
+                    stroke='currentColor'
+                    strokeWidth='1.1'
+                    strokeLinecap='round'
+                  />
+                </svg>
+              }
+            >
               fades after {barDurationLabel}
-            </span>
+            </MetaPill>
           )}
           {timeLockAt && (
-            <span className={styles.settingsPill}>
-              <svg
-                className={styles.settingsPillIcon}
-                width='12'
-                height='12'
-                viewBox='0 0 12 12'
-                fill='none'
-              >
-                <rect
-                  x='2'
-                  y='5'
-                  width='8'
-                  height='6'
-                  rx='1.5'
-                  stroke='currentColor'
-                  strokeWidth='1.1'
-                />
-                <path
-                  d='M4 5V3.5a2 2 0 014 0V5'
-                  stroke='currentColor'
-                  strokeWidth='1.1'
-                  strokeLinecap='round'
-                />
-              </svg>
+            <MetaPill
+              href="/docs#time-lock"
+              icon={
+                <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
+                  <rect
+                    x='2'
+                    y='5'
+                    width='8'
+                    height='6'
+                    rx='1.5'
+                    stroke='currentColor'
+                    strokeWidth='1.1'
+                  />
+                  <path
+                    d='M4 5V3.5a2 2 0 014 0V5'
+                    stroke='currentColor'
+                    strokeWidth='1.1'
+                    strokeLinecap='round'
+                  />
+                </svg>
+              }
+            >
               unlocks{' '}
               {new Date(timeLockAt).toLocaleDateString([], {
                 month: 'short',
@@ -630,91 +627,85 @@ export function NoteLink({
                 hour: 'numeric',
                 minute: '2-digit',
               })}
-            </span>
+            </MetaPill>
           )}
           {readCount > 1 && (
-            <span className={styles.settingsPill}>
-              <svg
-                className={styles.settingsPillIcon}
-                width='12'
-                height='12'
-                viewBox='0 0 12 12'
-                fill='none'
-              >
-                <rect
-                  x='1.5'
-                  y='3'
-                  width='9'
-                  height='6'
-                  rx='1'
-                  stroke='currentColor'
-                  strokeWidth='1.1'
-                />
-                <rect
-                  x='2.5'
-                  y='1.5'
-                  width='7'
-                  height='4'
-                  rx='1'
-                  stroke='currentColor'
-                  strokeWidth='0.8'
-                  opacity='0.4'
-                />
-              </svg>
+            <MetaPill
+              href="/docs#one-time-read"
+              icon={
+                <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
+                  <rect
+                    x='1.5'
+                    y='3'
+                    width='9'
+                    height='6'
+                    rx='1'
+                    stroke='currentColor'
+                    strokeWidth='1.1'
+                  />
+                  <rect
+                    x='2.5'
+                    y='1.5'
+                    width='7'
+                    height='4'
+                    rx='1'
+                    stroke='currentColor'
+                    strokeWidth='0.8'
+                    opacity='0.4'
+                  />
+                </svg>
+              }
+            >
               {readCount}&times; reads
-            </span>
+            </MetaPill>
           )}
           {receiptVerification && (
-            <span className={styles.settingsPill}>
-              <svg
-                className={styles.settingsPillIcon}
-                width='12'
-                height='12'
-                viewBox='0 0 12 12'
-                fill='none'
-              >
-                <path
-                  d='M6 1L1.5 3v3.5c0 2.5 2 4.5 4.5 5 2.5-.5 4.5-2.5 4.5-5V3L6 1z'
-                  stroke='currentColor'
-                  strokeWidth='1.1'
-                  strokeLinejoin='round'
-                />
-                <path
-                  d='M4 6l1.5 1.5L8 5'
-                  stroke='currentColor'
-                  strokeWidth='1.1'
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                />
-              </svg>
+            <MetaPill
+              href="/docs#proof-of-read"
+              icon={
+                <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
+                  <path
+                    d='M6 1L1.5 3v3.5c0 2.5 2 4.5 4.5 5 2.5-.5 4.5-2.5 4.5-5V3L6 1z'
+                    stroke='currentColor'
+                    strokeWidth='1.1'
+                    strokeLinejoin='round'
+                  />
+                  <path
+                    d='M4 6l1.5 1.5L8 5'
+                    stroke='currentColor'
+                    strokeWidth='1.1'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                  />
+                </svg>
+              }
+            >
               proof of read
-            </span>
+            </MetaPill>
           )}
           {decoyUrls.length > 0 && (
-            <span className={styles.settingsPill}>
-              <svg
-                className={styles.settingsPillIcon}
-                width='12'
-                height='12'
-                viewBox='0 0 12 12'
-                fill='none'
-              >
-                <path
-                  d='M2 4h8M2 8h8M4 2v8M8 2v8'
-                  stroke='currentColor'
-                  strokeWidth='1.1'
-                  strokeLinecap='round'
-                  opacity='0.6'
-                />
-                <path
-                  d='M1 6h10'
-                  stroke='currentColor'
-                  strokeWidth='1.1'
-                  strokeLinecap='round'
-                />
-              </svg>
+            <MetaPill
+              href="/docs#decoy-links"
+              icon={
+                <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
+                  <path
+                    d='M2 4h8M2 8h8M4 2v8M8 2v8'
+                    stroke='currentColor'
+                    strokeWidth='1.1'
+                    strokeLinecap='round'
+                    opacity='0.6'
+                  />
+                  <path
+                    d='M1 6h10'
+                    stroke='currentColor'
+                    strokeWidth='1.1'
+                    strokeLinecap='round'
+                  />
+                </svg>
+              }
+            >
               {decoyUrls.length} decoy link{decoyUrls.length > 1 ? 's' : ''}
-            </span>
+            </MetaPill>
           )}
         </div>
       )}
