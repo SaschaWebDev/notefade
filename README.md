@@ -1,6 +1,9 @@
 <h1 align="center">
-  <img src="public/notefade-logo-transparent.png" alt="notefade logo" width="64" style="vertical-align: middle;" />
-  &nbsp;notefade.com - <em>Private notes that fade</em>
+  <br />
+  <img src="public/notefade-logo-transparent.png" alt="notefade logo" width="64" />
+  <br />
+  notefade.com - <em>Private notes that fade</em>
+  <br />
 </h1>
 
 <p align="center">
