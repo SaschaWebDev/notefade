@@ -512,8 +512,9 @@ download (7).png            (generic download)`}
           flow, gets its own server shard, and produces its own unique link.
         </p>
         <p className={styles.p}>
-          Decoy content is auto-generated from 80 plausible message templates
-          across four categories — logistics, social, work, and casual. Each
+          Decoy content is auto-generated from 80 everyday text messages
+          across four categories — past events, plans, reactions, and daily
+          life. Each
           decoy has its own regenerate button to shuffle to a different message,
           and you can edit the text directly if you want something specific.
         </p>
