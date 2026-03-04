@@ -362,6 +362,57 @@ const COMPARISON: readonly ComparisonRow[] = [
     ),
     typical: <No />,
   },
+  // --- Advanced features ---
+  {
+    label: 'Steganographic sharing',
+    notefade: (
+      <Check>
+        <span className={styles.greenText}>Yes</span>{' '}
+        <span className={styles.dimDetail}>(text + image)</span>
+      </Check>
+    ),
+    typical: <No />,
+  },
+  {
+    label: 'Decoy links',
+    notefade: <Yes />,
+    typical: <No />,
+  },
+  {
+    label: 'Proof of read',
+    notefade: <Yes />,
+    typical: <No />,
+  },
+  {
+    label: 'Fade after reading',
+    notefade: (
+      <Check>
+        <span className={styles.greenText}>Yes</span>{' '}
+        <span className={styles.dimDetail}>(30s–15m)</span>
+      </Check>
+    ),
+    typical: <No />,
+  },
+  {
+    label: 'Time-lock notes',
+    notefade: <Yes />,
+    typical: <No />,
+  },
+  {
+    label: 'Dead drop mode',
+    notefade: <Yes />,
+    typical: <No />,
+  },
+  {
+    label: 'Multi-read notes',
+    notefade: (
+      <Check>
+        <span className={styles.greenText}>Yes</span>{' '}
+        <span className={styles.dimDetail}>(up to 10)</span>
+      </Check>
+    ),
+    typical: <Some />,
+  },
 ];
 
 export function LandingComparisonContent() {
