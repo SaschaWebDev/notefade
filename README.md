@@ -1,8 +1,8 @@
-# notefade
+# 🔏 notefade
 
 **Private notes that fade.**
 
-[![Build & Verify](https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml/badge.svg)](https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml) [![Tests](https://github.com/SaschaWebDev/notefade/actions/workflows/test.yml/badge.svg)](https://github.com/SaschaWebDev/notefade/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](https://www.typescriptlang.org/) [![Zero Crypto Dependencies](https://img.shields.io/badge/crypto_deps-zero-green.svg)](#security-model) [![Cloudflare Workers](https://img.shields.io/badge/backend-Cloudflare_Workers-orange.svg)](https://workers.cloudflare.com/)
+[![Build & Verify](https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml/badge.svg)](https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml) [![Tests](https://github.com/SaschaWebDev/notefade/actions/workflows/test.yml/badge.svg)](https://github.com/SaschaWebDev/notefade/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](https://www.typescriptlang.org/) [![Zero Crypto Dependencies](https://img.shields.io/badge/crypto_deps-zero-green.svg)](#-security-model) [![Cloudflare Workers](https://img.shields.io/badge/backend-Cloudflare_Workers-orange.svg)](https://workers.cloudflare.com/)
 
 <!-- Add a screenshot or animated gif here -->
 
@@ -12,32 +12,32 @@ Self-destructing secret notes with zero-knowledge encryption. Create an encrypte
 
 Notefade splits your encryption key so the server stores only 16 meaningless bytes. Everything else lives in the URL fragment, which browsers never send to the server. No accounts. No cookies. No tracking. Just end-to-end encrypted, one-time-read secret sharing that you can self-host anywhere.
 
-## Features
+## ✨ Features
 
-- **AES-256-GCM encryption** — Web Crypto API only, zero external crypto dependencies
-- **XOR key splitting** — server stores just 16 bytes; each shard alone is an information-theoretic one-time pad, making reconstruction without both halves mathematically impossible regardless of computational power
-- **URL fragment architecture** — `#fragment` is never sent to the server, by design
-- **One-time read** — shard is deleted the moment it's served
-- **Auto-expiring links** — 1 hour, 24 hours, or 7 days
-- **Password protection** — optional PBKDF2 layer (600k iterations, SHA-256)
-- **QR code sharing** — generate and export as PNG
-- **Steganographic sharing** — hide your note link inside innocent-looking text (zero-width Unicode) or images (LSB pixel encoding)
-- **Dark / light theme** — auto-detects system preference, manual toggle to override
-- **Rich text editor** — formatting toolbar with bold, italic, headings, lists, code blocks, and links; notes render as markdown
-- **Dead drop mode** — encrypt now, share an inert link, activate later via launch code
-- **Burn-after-reading** — configurable fade timer (30 s, 1 min, 5 min, 15 min) clears the decrypted note from the browser
-- **Multi-read notes** — allow up to 10 reads before the note is gone
-- **Time-lock** — schedule when a note becomes readable with a live countdown
-- **Proof of read** — cryptographic HMAC receipt the sender can verify without knowing who read it
-- **Decoy links** — generate 1–3 extra encrypted notes with plausible alternate content for deniability
-- **7 backend adapters** — Cloudflare KV, Cloudflare D1, Upstash Redis, Vercel KV, Supabase, AWS DynamoDB, or your own API
-- **Self-hostable** — frontend and backend, no vendor lock-in
-- **Reproducible builds** — deterministic Docker builds, SHA-256 build manifests on every release
-- **Subresource Integrity** — every script and stylesheet in production includes `integrity` attributes
-- **No accounts, no cookies, no tracking** — anonymous by default
-- **Open source** — MIT licensed
+- 🔐 **AES-256-GCM encryption** — Web Crypto API only, zero external crypto dependencies
+- 🔑 **XOR key splitting** — server stores just 16 bytes; each shard alone is an information-theoretic one-time pad, making reconstruction without both halves mathematically impossible regardless of computational power
+- 🔗 **URL fragment architecture** — `#fragment` is never sent to the server, by design
+- 💥 **One-time read** — shard is deleted the moment it's served
+- ⏳ **Auto-expiring links** — 1 hour, 24 hours, or 7 days
+- 🗝️ **Password protection** — optional PBKDF2 layer (600k iterations, SHA-256)
+- 📱 **QR code sharing** — generate and export as PNG
+- 🕵️ **Steganographic sharing** — hide your note link inside innocent-looking text (zero-width Unicode) or images (LSB pixel encoding)
+- 🌗 **Dark / light theme** — auto-detects system preference, manual toggle to override
+- ✍️ **Rich text editor** — formatting toolbar with bold, italic, headings, lists, code blocks, and links; notes render as markdown
+- 📬 **Dead drop mode** — encrypt now, share an inert link, activate later via launch code
+- 🕯️ **Burn-after-reading** — configurable fade timer (30 s, 1 min, 5 min, 15 min) clears the decrypted note from the browser
+- 👁️ **Multi-read notes** — allow up to 10 reads before the note is gone
+- 🔒 **Time-lock** — schedule when a note becomes readable with a live countdown
+- 🧾 **Proof of read** — cryptographic HMAC receipt the sender can verify without knowing who read it
+- 🃏 **Decoy links** — generate 1–3 extra encrypted notes with plausible alternate content for deniability
+- 🧩 **7 backend adapters** — Cloudflare KV, Cloudflare D1, Upstash Redis, Vercel KV, Supabase, AWS DynamoDB, or your own API
+- 🏠 **Self-hostable** — frontend and backend, no vendor lock-in
+- 🔁 **Reproducible builds** — deterministic Docker builds, SHA-256 build manifests on every release
+- 🛡️ **Subresource Integrity** — every script and stylesheet in production includes `integrity` attributes
+- 👻 **No accounts, no cookies, no tracking** — anonymous by default
+- 📖 **Open source** — MIT licensed
 
-## How It Works
+## ⚙️ How It Works
 
 1. You write a note
 2. The client encrypts it with AES-256-GCM (Web Crypto API)
@@ -60,24 +60,24 @@ Server KV:
 
 The server never has enough information to decrypt anything. Even if it's compromised, seized, or subpoenaed — there's nothing useful to hand over.
 
-## Security Model
+## 🛡️ Security Model
 
 Notefade is designed so the server is never trusted with secrets.
 
 **What the architecture protects against:**
 
-- Server compromise — the shard alone can't decrypt anything
-- Data breaches — no content is ever stored server-side
-- Subpoenas / legal requests — there's nothing meaningful to produce
-- Network surveillance — the URL fragment never leaves the browser
-- URL length analysis — all links are padded to a fixed length regardless of message size
-- Link reuse — the shard is deleted after a single read
+- 🖥️ Server compromise — the shard alone can't decrypt anything
+- 💾 Data breaches — no content is ever stored server-side
+- ⚖️ Subpoenas / legal requests — there's nothing meaningful to produce
+- 📡 Network surveillance — the URL fragment never leaves the browser
+- 📏 URL length analysis — all links are padded to a fixed length regardless of message size
+- ♻️ Link reuse — the shard is deleted after a single read
 
 **What it does not protect against:**
 
-- Screenshots or copy-paste by the recipient
-- Compromised devices (keyloggers, screen capture malware)
-- A recipient intentionally saving the content
+- 📸 Screenshots or copy-paste by the recipient
+- 🦠 Compromised devices (keyloggers, screen capture malware)
+- 💾 A recipient intentionally saving the content
 
 We're honest about this. Once someone reads a note, they have the plaintext. Notefade ensures only _one_ person reads it, and that the server is never in a position to.
 
@@ -85,11 +85,11 @@ We're honest about this. Once someone reads a note, they have the plaintext. Not
 
 For a full technical breakdown, see [notefade.com/docs](https://notefade.com/docs).
 
-## Steganographic Sharing
+## 🕵️ Steganographic Sharing
 
 Two methods to disguise a note link so it doesn't look like a link at all.
 
-### Hide in text (zero-width Unicode)
+### 📝 Hide in text (zero-width Unicode)
 
 The URL is converted to binary, then encoded as invisible zero-width characters — `U+200B` (zero-width space) for `0`, `U+200C` (zero-width non-joiner) for `1`, and `U+200D` (zero-width joiner) as a separator — interleaved into cover text you provide.
 
@@ -97,7 +97,7 @@ The result looks like a normal sentence. The link is invisible to human eyes but
 
 **Limitations:** Some apps strip zero-width characters on paste. If the recipient can't decode, send the link directly. The encoding is invisible to humans but detectable by tools inspecting Unicode codepoints.
 
-### Hide in image (LSB steganography)
+### 🖼️ Hide in image (LSB steganography)
 
 URL bits are written into the least-significant bit of each R, G, B channel (alpha is untouched). A 4-byte big-endian length header precedes the UTF-8 payload.
 
@@ -107,24 +107,24 @@ Two modes:
 
 The image must have enough pixels to hold the URL data. The LSB changes are visually imperceptible.
 
-### Download formats: PNG vs ZIP
+### 📦 Download formats: PNG vs ZIP
 
 Messengers (WhatsApp, Telegram, Signal, etc.) recompress images by default, which destroys LSB-encoded data.
 
 - **PNG download** — use when sending as a file/document (e.g. WhatsApp's "send as document" or "original quality" mode), or over channels that don't recompress (email attachments, cloud storage links, AirDrop)
 - **ZIP download** — wraps the PNG in a ZIP archive that messengers won't recompress. The recipient extracts the PNG and decodes it. Safest option for messenger sharing.
 
-### Anti-fingerprint filenames
+### 🎭 Anti-fingerprint filenames
 
 Every download gets a randomized filename from 16 patterns (camera roll, screenshot, casual share, art/creative, social, etc.) using cryptographically random selection. An interceptor seeing the file cannot determine it came from notefade — filenames look like `IMG_20260303_142517.png`, `sunset_v2.png`, `from_alex_painting.png`, etc. No two downloads produce the same filename.
 
-### Decoding
+### 🔍 Decoding
 
 The built-in `/decode` page extracts hidden links from both images and text. Drag-and-drop or file upload for images, paste for text.
 
-## Self-Hosting
+## 🏠 Self-Hosting
 
-### Frontend
+### 🌐 Frontend
 
 ```bash
 yarn build
@@ -132,7 +132,7 @@ yarn build
 
 Serve the `dist/` directory from any static host — Cloudflare Pages, Vercel, Netlify, Nginx, or a simple file server.
 
-### Backend
+### ⚡ Backend
 
 The default backend is a Cloudflare Worker with KV storage. Deploy your own:
 
@@ -152,7 +152,7 @@ Or use any of the 7 supported shard storage providers:
 | **AWS DynamoDB**    | `dynamodb` | Via API Gateway.                                  |
 | **Self-hosted API** | `self`     | Any server implementing the ShardStore interface. |
 
-### ShardStore Interface
+### 🔌 ShardStore Interface
 
 Implement this interface and you can use any storage backend:
 
@@ -169,14 +169,14 @@ The `get` method must delete the shard after returning it (one-time read semanti
 
 When someone opens a note stored on a non-default server, notefade displays which provider holds the shard so users know what they're trusting.
 
-## Getting Started
+## 🚀 Getting Started
 
-### Prerequisites
+### 📋 Prerequisites
 
 - Node.js 22.14.0 (see `.nvmrc`)
 - Yarn
 
-### Development
+### 💻 Development
 
 ```bash
 # Clone the repo
@@ -195,7 +195,7 @@ yarn worker:dev
 
 The dev server proxies `/shard` requests to the local worker on port 8787.
 
-### Build & Test
+### 🔨 Build & Test
 
 ```bash
 # Type-check and build
@@ -208,11 +208,11 @@ yarn test
 yarn test:watch
 ```
 
-### Testing
+### 🧪 Testing
 
 The project has **418 tests** across 23 test suites covering cryptography, steganography, key splitting, receipt verification, URL encoding, and decoy generation.
 
-### Production Build
+### 📦 Production Build
 
 ```bash
 yarn build:prod
@@ -220,7 +220,7 @@ yarn build:prod
 
 Runs four steps: type-check → Vite build → SRI injection → build manifest generation. The output `dist/build-manifest.json` contains SHA-256 hashes of every file.
 
-### Verifying Builds
+### ✅ Verifying Builds
 
 You can verify that the code running on notefade.com matches this repository.
 
@@ -243,7 +243,7 @@ node scripts/verify-build.cjs
 
 The verify script fetches the build manifest from notefade.com, downloads every listed file, and compares SHA-256 hashes for self-consistency. It also verifies SRI integrity attributes on script and stylesheet tags. If a local build exists, it warns when Node versions or commits differ between local and remote. Tagged releases on GitHub include `build-manifest.json` as an artifact.
 
-### Deploy
+### 🚢 Deploy
 
 ```bash
 # Deploy frontend to Cloudflare Pages
@@ -255,7 +255,7 @@ yarn worker:deploy
 
 If using Cloudflare Pages automatic builds (connected to GitHub), set `NODE_VERSION` to `22.14.0` in your Pages project settings (Settings → Environment variables). This ensures Cloudflare builds with the same Node version pinned in `.nvmrc`, which is required for reproducible builds and matching SRI hashes.
 
-## Tech Stack
+## 🧰 Tech Stack
 
 | Layer      | Technology                                 |
 | ---------- | ------------------------------------------ |
@@ -268,7 +268,7 @@ If using Cloudflare Pages automatic builds (connected to GitHub), set `NODE_VERS
 | Testing    | Vitest                                     |
 | QR Codes   | qrcode-generator                           |
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 src/
@@ -284,7 +284,7 @@ worker/
 └── index.ts          # Cloudflare Worker (shard CRUD + rate limiting)
 ```
 
-## API
+## 📡 API
 
 Six endpoints. That's the entire backend.
 
@@ -299,6 +299,6 @@ Six endpoints. That's the entire backend.
 
 Rate limited per IP. Max request body: 1 KB. Full API docs at [notefade.com/docs](https://notefade.com/docs).
 
-## License
+## 📄 License
 
 MIT — Sascha Majewsky
