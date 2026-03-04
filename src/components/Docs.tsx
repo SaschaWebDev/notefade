@@ -40,6 +40,19 @@ export function Docs() {
         &larr; back to notefade
       </a>
 
+      <div className={styles.heroRow}>
+        <div className={styles.hero}>
+          <img
+            src="/notefade-logo-transparent.png"
+            alt="notefade logo"
+            className={styles.heroLogo}
+          />
+          <span className={styles.heroText}>
+            notefade.com — <em>Private notes that fade</em>
+          </span>
+        </div>
+      </div>
+
       <h1 className={styles.title}>documentation</h1>
       <p className={styles.intro}>
         Technical reference for notefade's encryption, architecture, API, and
