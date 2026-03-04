@@ -649,7 +649,15 @@
   font-size: 11px;
   font-weight: 500;
   color: rgba(var(--fg), 0.5);
+  margin: 0 0 2px;
+}
+
+.stegoDescription {
+  font-size: 10px;
+  font-weight: 400;
+  color: rgba(var(--fg), 0.25);
   margin: 0 0 6px;
+  line-height: 1.45;
 }
 
 .stegoSection {
@@ -688,11 +696,21 @@
   border-color: rgba(var(--accent-rgb), 0.4);
 }
 
+.stegoImageBtnRow {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.stegoFileInput {
+  display: none;
+}
+
 .stegoImageBtn {
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 100%;
+  flex: 1;
   justify-content: center;
   padding: 8px 14px;
   font-size: 12px;
@@ -727,6 +745,12 @@
   max-width: 180px;
   border-radius: 6px;
   border: 1px solid rgba(var(--fg), 0.08);
+}
+
+.stegoDownloadRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
 }
 
 .stegoDownloadBtn {
@@ -888,7 +912,7 @@
   font-size: 11px;
   font-weight: 600;
   color: rgba(var(--fg), 0.25);
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.05em;
   margin-bottom: 6px;
 }
@@ -902,15 +926,42 @@
   border-radius: 6px;
   padding: 6px 10px;
   margin-bottom: 4px;
-  word-break: break-all;
   cursor: pointer;
-  transition: border-color 0.15s ease;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .decoyUrl:hover {
   border-color: rgba(var(--fg), 0.12);
+  background: rgba(var(--fg), 0.05);
+}
+
+.decoyUrlText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.decoyUrlHint {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(var(--fg), 0.2);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.decoyUrlCopied {
+  border-color: rgba(var(--success-rgb), 0.3);
+  background: rgba(var(--success-rgb), 0.04);
+}
+
+.decoyUrlCopied .decoyUrlHint {
+  color: var(--success);
 }
 
 .mobileOnly {

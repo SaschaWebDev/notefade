@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { deleteShard, createAdapter } from '@/api';
-import { encodeZeroWidth, generateStegoImage, generateStegoFilename } from '@/crypto';
+import { encodeZeroWidth, encodeImageStego, generateStegoImage, generateStegoFilename } from '@/crypto';
 import type { ProviderConfig } from '@/api/provider-types';
 import type { ReceiptVerification } from '@/hooks/use-create-note';
 import { QrCode } from './QrCode';
@@ -86,6 +86,8 @@ export function NoteLink({
   const [stegoImage, setStegoImage] = useState<string | null>(null);
   const [stegoImageLoading, setStegoImageLoading] = useState(false);
   const [verificationCopied, setVerificationCopied] = useState(false);
+  const [copiedDecoyIndex, setCopiedDecoyIndex] = useState<number | null>(null);
+  const [receiptDownloaded, setReceiptDownloaded] = useState(false);
   const [hasCopied, setHasCopied] = useState(false);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -186,6 +188,7 @@ export function NoteLink({
   };
 
   const copied = copyState !== 'idle';
+  const needsReceipt = Boolean(receiptVerification) && !receiptDownloaded;
 
   const baseUrlInputRef = useRef<HTMLInputElement>(null);
   const linkBoxInnerRef = useRef<HTMLDivElement>(null);
@@ -263,11 +266,48 @@ export function NoteLink({
   }, [stegoImage]);
 
   const stegoImageBlobRef = useRef<Blob | null>(null);
+  const stegoFileRef = useRef<HTMLInputElement>(null);
 
   const handleGenerateStegoImage = useCallback(async () => {
     setStegoImageLoading(true);
     try {
       const blob = await generateStegoImage(displayUrl);
+      stegoImageBlobRef.current = blob;
+      if (stegoImage) URL.revokeObjectURL(stegoImage);
+      setStegoImage(URL.createObjectURL(blob));
+    } catch {
+      // silently fail
+    } finally {
+      setStegoImageLoading(false);
+    }
+  }, [displayUrl, stegoImage]);
+
+  const handleUploadStegoImage = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    setStegoImageLoading(true);
+    try {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = objectUrl;
+      });
+      URL.revokeObjectURL(objectUrl);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('No canvas context');
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      encodeImageStego(imageData, displayUrl);
+      ctx.putImageData(imageData, 0, 0);
+
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
+      });
       stegoImageBlobRef.current = blob;
       if (stegoImage) URL.revokeObjectURL(stegoImage);
       setStegoImage(URL.createObjectURL(blob));
@@ -284,6 +324,88 @@ export function NoteLink({
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = generateStegoFilename();
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }, []);
+
+  const handleDownloadStegoZip = useCallback(async () => {
+    const blob = stegoImageBlobRef.current;
+    if (!blob) return;
+    const pngName = generateStegoFilename();
+    const pngBytes = new Uint8Array(await blob.arrayBuffer());
+    // Build a minimal ZIP (store, no compression) for a single file
+    const nameBytes = new TextEncoder().encode(pngName);
+    const nameLen = nameBytes.length;
+    const fileSize = pngBytes.length;
+    const now = new Date();
+    const dosTime =
+      ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xffff;
+    const dosDate =
+      ((((now.getFullYear() - 1980) & 0x7f) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xffff;
+    // CRC-32
+    let crc = 0xffffffff;
+    for (let i = 0; i < fileSize; i++) {
+      crc ^= pngBytes[i];
+      for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+    }
+    crc ^= 0xffffffff;
+
+    const localHeaderSize = 30 + nameLen;
+    const centralHeaderSize = 46 + nameLen;
+    const eocdSize = 22;
+    const totalSize = localHeaderSize + fileSize + centralHeaderSize + eocdSize;
+    const buf = new ArrayBuffer(totalSize);
+    const view = new DataView(buf);
+    const bytes = new Uint8Array(buf);
+    let offset = 0;
+    // Local file header
+    view.setUint32(offset, 0x04034b50, true); offset += 4;
+    view.setUint16(offset, 20, true); offset += 2; // version needed
+    view.setUint16(offset, 0, true); offset += 2;  // flags
+    view.setUint16(offset, 0, true); offset += 2;  // compression: store
+    view.setUint16(offset, dosTime, true); offset += 2;
+    view.setUint16(offset, dosDate, true); offset += 2;
+    view.setUint32(offset, crc >>> 0, true); offset += 4;
+    view.setUint32(offset, fileSize, true); offset += 4; // compressed
+    view.setUint32(offset, fileSize, true); offset += 4; // uncompressed
+    view.setUint16(offset, nameLen, true); offset += 2;
+    view.setUint16(offset, 0, true); offset += 2; // extra field len
+    bytes.set(nameBytes, offset); offset += nameLen;
+    bytes.set(pngBytes, offset); offset += fileSize;
+    // Central directory
+    const centralOffset = offset;
+    view.setUint32(offset, 0x02014b50, true); offset += 4;
+    view.setUint16(offset, 20, true); offset += 2; // version made by
+    view.setUint16(offset, 20, true); offset += 2; // version needed
+    view.setUint16(offset, 0, true); offset += 2;  // flags
+    view.setUint16(offset, 0, true); offset += 2;  // compression
+    view.setUint16(offset, dosTime, true); offset += 2;
+    view.setUint16(offset, dosDate, true); offset += 2;
+    view.setUint32(offset, crc >>> 0, true); offset += 4;
+    view.setUint32(offset, fileSize, true); offset += 4;
+    view.setUint32(offset, fileSize, true); offset += 4;
+    view.setUint16(offset, nameLen, true); offset += 2;
+    view.setUint16(offset, 0, true); offset += 2; // extra
+    view.setUint16(offset, 0, true); offset += 2; // comment
+    view.setUint16(offset, 0, true); offset += 2; // disk start
+    view.setUint16(offset, 0, true); offset += 2; // internal attrs
+    view.setUint32(offset, 0, true); offset += 4;  // external attrs
+    view.setUint32(offset, 0, true); offset += 4;  // local header offset
+    bytes.set(nameBytes, offset); offset += nameLen;
+    // End of central directory
+    view.setUint32(offset, 0x06054b50, true); offset += 4;
+    view.setUint16(offset, 0, true); offset += 2; // disk number
+    view.setUint16(offset, 0, true); offset += 2; // central dir disk
+    view.setUint16(offset, 1, true); offset += 2; // entries on disk
+    view.setUint16(offset, 1, true); offset += 2; // total entries
+    view.setUint32(offset, centralHeaderSize, true); offset += 4;
+    view.setUint32(offset, centralOffset, true); offset += 4;
+    view.setUint16(offset, 0, true); // comment length
+
+    const zipBlob = new Blob([buf], { type: 'application/zip' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(zipBlob);
+    a.download = pngName.replace(/\.png$/, '.zip');
     a.click();
     URL.revokeObjectURL(a.href);
   }, []);
@@ -665,6 +787,9 @@ export function NoteLink({
             <div className={styles.stegoColumn}>
               <div className={styles.stegoSection}>
                 <p className={styles.stegoColumnLabel}>hide in text</p>
+                <p className={styles.stegoDescription}>
+                  some apps strip zero-width characters when pasting — if the recipient can't decode it, send the link directly instead
+                </p>
                 <div className={styles.stegoToggle}>
                   <input
                     type='text'
@@ -718,19 +843,47 @@ export function NoteLink({
             <div className={styles.stegoColumn}>
               <div className={styles.stegoImageSection}>
                 <p className={styles.stegoColumnLabel}>hide in image</p>
-                <button
-                  type='button'
-                  className={styles.stegoImageBtn}
-                  onClick={handleGenerateStegoImage}
-                  disabled={stegoImageLoading}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
-                    <circle cx="5.5" cy="5.5" r="1.25" stroke="currentColor" strokeWidth="1" />
-                    <path d="M2 11l3.5-3.5L8 10l2.5-3L14 11" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {stegoImageLoading ? 'generating...' : stegoImage ? 'regenerate image' : 'generate image'}
-                </button>
+                <p className={styles.stegoDescription}>
+                  messengers like WhatsApp compress images and destroy hidden data — send as a ZIP file, or use your messenger's "send as document" / "original quality" mode to preserve the PNG intact
+                </p>
+                <div className={styles.stegoImageBtnRow}>
+                  <button
+                    type='button'
+                    className={styles.stegoImageBtn}
+                    onClick={handleGenerateStegoImage}
+                    disabled={stegoImageLoading}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
+                      <circle cx="5.5" cy="5.5" r="1.25" stroke="currentColor" strokeWidth="1" />
+                      <path d="M2 11l3.5-3.5L8 10l2.5-3L14 11" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {stegoImageLoading ? 'generating...' : 'generate image'}
+                  </button>
+                  <button
+                    type='button'
+                    className={styles.stegoImageBtn}
+                    onClick={() => stegoFileRef.current?.click()}
+                    disabled={stegoImageLoading}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M8 10V3M5.5 5.5L8 3l2.5 2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M2.5 10v2.5a1 1 0 001 1h9a1 1 0 001-1V10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    upload image
+                  </button>
+                </div>
+                <input
+                  ref={stegoFileRef}
+                  type='file'
+                  accept='image/*'
+                  className={styles.stegoFileInput}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleUploadStegoImage(file);
+                    e.target.value = '';
+                  }}
+                />
                 {stegoImage && (
                   <div className={styles.stegoPreview}>
                     <img
@@ -738,28 +891,52 @@ export function NoteLink({
                       alt='steganographic image preview'
                       className={styles.stegoPreviewImg}
                     />
-                    <button
-                      type='button'
-                      className={styles.stegoDownloadBtn}
-                      onClick={handleDownloadStegoImage}
-                    >
-                      <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
-                        <path
-                          d='M6 1.5v6M3.5 5L6 7.5 8.5 5'
-                          stroke='currentColor'
-                          strokeWidth='1.2'
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                        />
-                        <path
-                          d='M2 9.5h8'
-                          stroke='currentColor'
-                          strokeWidth='1.2'
-                          strokeLinecap='round'
-                        />
-                      </svg>
-                      download PNG
-                    </button>
+                    <div className={styles.stegoDownloadRow}>
+                      <button
+                        type='button'
+                        className={styles.stegoDownloadBtn}
+                        onClick={handleDownloadStegoImage}
+                      >
+                        <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
+                          <path
+                            d='M6 1.5v6M3.5 5L6 7.5 8.5 5'
+                            stroke='currentColor'
+                            strokeWidth='1.2'
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                          />
+                          <path
+                            d='M2 9.5h8'
+                            stroke='currentColor'
+                            strokeWidth='1.2'
+                            strokeLinecap='round'
+                          />
+                        </svg>
+                        download PNG
+                      </button>
+                      <button
+                        type='button'
+                        className={styles.stegoDownloadBtn}
+                        onClick={handleDownloadStegoZip}
+                      >
+                        <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
+                          <path
+                            d='M6 1.5v6M3.5 5L6 7.5 8.5 5'
+                            stroke='currentColor'
+                            strokeWidth='1.2'
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                          />
+                          <path
+                            d='M2 9.5h8'
+                            stroke='currentColor'
+                            strokeWidth='1.2'
+                            strokeLinecap='round'
+                          />
+                        </svg>
+                        download ZIP
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -780,6 +957,7 @@ export function NoteLink({
                   a.download = 'notefade-receipt-verification.json';
                   a.click();
                   URL.revokeObjectURL(u);
+                  setReceiptDownloaded(true);
                   setVerificationCopied(true);
                   setTimeout(() => setVerificationCopied(false), 1500);
                 }}
@@ -806,11 +984,18 @@ export function NoteLink({
               {decoyUrls.map((dUrl, i) => (
                 <div
                   key={i}
-                  className={styles.decoyUrl}
-                  onClick={() => navigator.clipboard.writeText(dUrl)}
+                  className={`${styles.decoyUrl} ${copiedDecoyIndex === i ? styles.decoyUrlCopied : ''}`}
+                  onClick={() => {
+                    navigator.clipboard.writeText(dUrl)
+                    setCopiedDecoyIndex(i)
+                    setTimeout(() => setCopiedDecoyIndex(null), 1500)
+                  }}
                   title='click to copy'
                 >
-                  {dUrl.slice(0, 80)}...
+                  <span className={styles.decoyUrlText}>{dUrl}</span>
+                  <span className={styles.decoyUrlHint}>
+                    {copiedDecoyIndex === i ? 'copied' : 'click to copy'}
+                  </span>
                 </div>
               ))}
             </div>
@@ -875,7 +1060,9 @@ export function NoteLink({
 
       {confirmingLeave && (
         <div className={styles.confirmBanner}>
-          you haven't copied the link yet — it can't be recovered
+          {!hasCopied && 'you haven\'t copied the link yet — it can\'t be recovered'}
+          {!hasCopied && needsReceipt && <br />}
+          {needsReceipt && 'you haven\'t downloaded the receipt — you won\'t be able to verify proof of read without it'}
         </div>
       )}
 
@@ -886,7 +1073,7 @@ export function NoteLink({
         }
         onClick={(e) => {
           e.preventDefault();
-          if (!hasCopied && !confirmingLeave && destroyState !== 'destroyed') {
+          if (destroyState !== 'destroyed' && !confirmingLeave && (!hasCopied || needsReceipt)) {
             setConfirmingLeave(true);
             return;
           }
