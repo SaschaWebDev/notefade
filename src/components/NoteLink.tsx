@@ -1,6 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { deleteShard, createAdapter } from '@/api';
-import { encodeZeroWidth, encodeImageStego, generateStegoImage, generateStegoFilename } from '@/crypto';
+import {
+  encodeZeroWidth,
+  encodeImageStego,
+  generateStegoImage,
+  generateStegoFilename,
+} from '@/crypto';
 import type { ProviderConfig } from '@/api/provider-types';
 import type { ReceiptVerification } from '@/hooks/use-create-note';
 import { QrCode } from './QrCode';
@@ -23,6 +28,8 @@ interface NoteLinkProps {
   readCount?: number;
   receiptVerification?: ReceiptVerification | null;
   decoyUrls?: string[];
+  barDurationLabel?: string;
+  timeLockAt?: string;
 }
 
 function formatCountdown(diff: number): string {
@@ -75,6 +82,8 @@ export function NoteLink({
   readCount = 1,
   receiptVerification,
   decoyUrls = [],
+  barDurationLabel,
+  timeLockAt,
 }: NoteLinkProps) {
   const remaining = useCountdown(expiresAt);
   const [copyState, setCopyState] = useState<'idle' | 'shown' | 'fading'>(
@@ -165,7 +174,9 @@ export function NoteLink({
   const qrValue = (() => {
     if (!compactUrl) return displayUrl;
     // Apply custom base URL to the compact URL's fragment
-    const compactFragment = compactUrl.includes('#') ? compactUrl.slice(compactUrl.indexOf('#')) : '';
+    const compactFragment = compactUrl.includes('#')
+      ? compactUrl.slice(compactUrl.indexOf('#'))
+      : '';
     if (customBase) {
       return customBase.replace(/\/+$/, '') + '/' + compactFragment;
     }
@@ -223,7 +234,9 @@ export function NoteLink({
       else if (fill.includes('--qr-module')) rect.setAttribute('fill', qrMod);
     });
     const svgData = new XMLSerializer().serializeToString(clone);
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const svgBlob = new Blob([svgData], {
+      type: 'image/svg+xml;charset=utf-8',
+    });
     const svgUrl = URL.createObjectURL(svgBlob);
     const img = new Image();
     img.onload = () => {
@@ -282,41 +295,47 @@ export function NoteLink({
     }
   }, [displayUrl, stegoImage]);
 
-  const handleUploadStegoImage = useCallback(async (file: File) => {
-    if (!file.type.startsWith('image/')) return;
-    setStegoImageLoading(true);
-    try {
-      const img = new Image();
-      const objectUrl = URL.createObjectURL(file);
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = objectUrl;
-      });
-      URL.revokeObjectURL(objectUrl);
+  const handleUploadStegoImage = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith('image/')) return;
+      setStegoImageLoading(true);
+      try {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error('Failed to load image'));
+          img.src = objectUrl;
+        });
+        URL.revokeObjectURL(objectUrl);
 
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('No canvas context');
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      encodeImageStego(imageData, displayUrl);
-      ctx.putImageData(imageData, 0, 0);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('No canvas context');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        encodeImageStego(imageData, displayUrl);
+        ctx.putImageData(imageData, 0, 0);
 
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((b) => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
-      });
-      stegoImageBlobRef.current = blob;
-      if (stegoImage) URL.revokeObjectURL(stegoImage);
-      setStegoImage(URL.createObjectURL(blob));
-    } catch {
-      // silently fail
-    } finally {
-      setStegoImageLoading(false);
-    }
-  }, [displayUrl, stegoImage]);
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob(
+            (b) => (b ? resolve(b) : reject(new Error('toBlob failed'))),
+            'image/png',
+          );
+        });
+        stegoImageBlobRef.current = blob;
+        if (stegoImage) URL.revokeObjectURL(stegoImage);
+        setStegoImage(URL.createObjectURL(blob));
+      } catch {
+        // silently fail
+      } finally {
+        setStegoImageLoading(false);
+      }
+    },
+    [displayUrl, stegoImage],
+  );
 
   const handleDownloadStegoImage = useCallback(() => {
     const blob = stegoImageBlobRef.current;
@@ -339,14 +358,21 @@ export function NoteLink({
     const fileSize = pngBytes.length;
     const now = new Date();
     const dosTime =
-      ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xffff;
+      ((now.getHours() << 11) |
+        (now.getMinutes() << 5) |
+        (now.getSeconds() >> 1)) &
+      0xffff;
     const dosDate =
-      ((((now.getFullYear() - 1980) & 0x7f) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xffff;
+      ((((now.getFullYear() - 1980) & 0x7f) << 9) |
+        ((now.getMonth() + 1) << 5) |
+        now.getDate()) &
+      0xffff;
     // CRC-32
     let crc = 0xffffffff;
     for (let i = 0; i < fileSize; i++) {
-      crc ^= pngBytes[i];
-      for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+      crc ^= pngBytes[i]!;
+      for (let j = 0; j < 8; j++)
+        crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
     }
     crc ^= 0xffffffff;
 
@@ -359,47 +385,85 @@ export function NoteLink({
     const bytes = new Uint8Array(buf);
     let offset = 0;
     // Local file header
-    view.setUint32(offset, 0x04034b50, true); offset += 4;
-    view.setUint16(offset, 20, true); offset += 2; // version needed
-    view.setUint16(offset, 0, true); offset += 2;  // flags
-    view.setUint16(offset, 0, true); offset += 2;  // compression: store
-    view.setUint16(offset, dosTime, true); offset += 2;
-    view.setUint16(offset, dosDate, true); offset += 2;
-    view.setUint32(offset, crc >>> 0, true); offset += 4;
-    view.setUint32(offset, fileSize, true); offset += 4; // compressed
-    view.setUint32(offset, fileSize, true); offset += 4; // uncompressed
-    view.setUint16(offset, nameLen, true); offset += 2;
-    view.setUint16(offset, 0, true); offset += 2; // extra field len
-    bytes.set(nameBytes, offset); offset += nameLen;
-    bytes.set(pngBytes, offset); offset += fileSize;
+    view.setUint32(offset, 0x04034b50, true);
+    offset += 4;
+    view.setUint16(offset, 20, true);
+    offset += 2; // version needed
+    view.setUint16(offset, 0, true);
+    offset += 2; // flags
+    view.setUint16(offset, 0, true);
+    offset += 2; // compression: store
+    view.setUint16(offset, dosTime, true);
+    offset += 2;
+    view.setUint16(offset, dosDate, true);
+    offset += 2;
+    view.setUint32(offset, crc >>> 0, true);
+    offset += 4;
+    view.setUint32(offset, fileSize, true);
+    offset += 4; // compressed
+    view.setUint32(offset, fileSize, true);
+    offset += 4; // uncompressed
+    view.setUint16(offset, nameLen, true);
+    offset += 2;
+    view.setUint16(offset, 0, true);
+    offset += 2; // extra field len
+    bytes.set(nameBytes, offset);
+    offset += nameLen;
+    bytes.set(pngBytes, offset);
+    offset += fileSize;
     // Central directory
     const centralOffset = offset;
-    view.setUint32(offset, 0x02014b50, true); offset += 4;
-    view.setUint16(offset, 20, true); offset += 2; // version made by
-    view.setUint16(offset, 20, true); offset += 2; // version needed
-    view.setUint16(offset, 0, true); offset += 2;  // flags
-    view.setUint16(offset, 0, true); offset += 2;  // compression
-    view.setUint16(offset, dosTime, true); offset += 2;
-    view.setUint16(offset, dosDate, true); offset += 2;
-    view.setUint32(offset, crc >>> 0, true); offset += 4;
-    view.setUint32(offset, fileSize, true); offset += 4;
-    view.setUint32(offset, fileSize, true); offset += 4;
-    view.setUint16(offset, nameLen, true); offset += 2;
-    view.setUint16(offset, 0, true); offset += 2; // extra
-    view.setUint16(offset, 0, true); offset += 2; // comment
-    view.setUint16(offset, 0, true); offset += 2; // disk start
-    view.setUint16(offset, 0, true); offset += 2; // internal attrs
-    view.setUint32(offset, 0, true); offset += 4;  // external attrs
-    view.setUint32(offset, 0, true); offset += 4;  // local header offset
-    bytes.set(nameBytes, offset); offset += nameLen;
+    view.setUint32(offset, 0x02014b50, true);
+    offset += 4;
+    view.setUint16(offset, 20, true);
+    offset += 2; // version made by
+    view.setUint16(offset, 20, true);
+    offset += 2; // version needed
+    view.setUint16(offset, 0, true);
+    offset += 2; // flags
+    view.setUint16(offset, 0, true);
+    offset += 2; // compression
+    view.setUint16(offset, dosTime, true);
+    offset += 2;
+    view.setUint16(offset, dosDate, true);
+    offset += 2;
+    view.setUint32(offset, crc >>> 0, true);
+    offset += 4;
+    view.setUint32(offset, fileSize, true);
+    offset += 4;
+    view.setUint32(offset, fileSize, true);
+    offset += 4;
+    view.setUint16(offset, nameLen, true);
+    offset += 2;
+    view.setUint16(offset, 0, true);
+    offset += 2; // extra
+    view.setUint16(offset, 0, true);
+    offset += 2; // comment
+    view.setUint16(offset, 0, true);
+    offset += 2; // disk start
+    view.setUint16(offset, 0, true);
+    offset += 2; // internal attrs
+    view.setUint32(offset, 0, true);
+    offset += 4; // external attrs
+    view.setUint32(offset, 0, true);
+    offset += 4; // local header offset
+    bytes.set(nameBytes, offset);
+    offset += nameLen;
     // End of central directory
-    view.setUint32(offset, 0x06054b50, true); offset += 4;
-    view.setUint16(offset, 0, true); offset += 2; // disk number
-    view.setUint16(offset, 0, true); offset += 2; // central dir disk
-    view.setUint16(offset, 1, true); offset += 2; // entries on disk
-    view.setUint16(offset, 1, true); offset += 2; // total entries
-    view.setUint32(offset, centralHeaderSize, true); offset += 4;
-    view.setUint32(offset, centralOffset, true); offset += 4;
+    view.setUint32(offset, 0x06054b50, true);
+    offset += 4;
+    view.setUint16(offset, 0, true);
+    offset += 2; // disk number
+    view.setUint16(offset, 0, true);
+    offset += 2; // central dir disk
+    view.setUint16(offset, 1, true);
+    offset += 2; // entries on disk
+    view.setUint16(offset, 1, true);
+    offset += 2; // total entries
+    view.setUint32(offset, centralHeaderSize, true);
+    offset += 4;
+    view.setUint32(offset, centralOffset, true);
+    offset += 4;
     view.setUint16(offset, 0, true); // comment length
 
     const zipBlob = new Blob([buf], { type: 'application/zip' });
@@ -443,14 +507,20 @@ export function NoteLink({
             </svg>
           )}
         </span>
-        {destroyState === 'destroyed'
-          ? 'note securely destroyed'
-          : fragment.startsWith('#protected:')
-            ? <>
-                <span className={styles.desktopOnly}>encrypted password protected note ready</span>
-                <span className={styles.mobileOnly}>encrypted password note ready</span>
-              </>
-            : 'encrypted note ready'}
+        {destroyState === 'destroyed' ? (
+          'note securely destroyed'
+        ) : fragment.startsWith('#protected:') ? (
+          <>
+            <span className={styles.desktopOnly}>
+              encrypted password protected note ready
+            </span>
+            <span className={styles.mobileOnly}>
+              encrypted password note ready
+            </span>
+          </>
+        ) : (
+          'encrypted note ready'
+        )}
       </h2>
       <p className={styles.description}>
         {destroyState === 'destroyed'
@@ -465,7 +535,9 @@ export function NoteLink({
           <div
             className={styles.expiryBadge}
             onClick={() =>
-              navigator.clipboard.writeText(String(Math.floor(expiresAt / 1000)))
+              navigator.clipboard.writeText(
+                String(Math.floor(expiresAt / 1000)),
+              )
             }
             role='button'
             tabIndex={0}
@@ -498,102 +570,151 @@ export function NoteLink({
               'expired'
             ) : (
               <span className={styles.expiryText}>
-                self-destructs in (<span className={styles.countdown}>{formatCountdown(remaining)}</span>) at {formatDate(expiresAt)}
+                self-destructs in (
+                <span className={styles.countdown}>
+                  {formatCountdown(remaining)}
+                </span>
+                ) at {formatDate(expiresAt)}
               </span>
             )}
           </div>
 
-          {fragment.startsWith('#protected:') && password.length > 0 && (
-            <div className={styles.passwordDisplay}>
-              <span className={styles.passwordLabel}>password</span>
-              <span className={styles.passwordText}>
-                {showPw ? password : '\u2022'.repeat(Math.min(password.length, 20))}
-              </span>
-              <button
-                type='button'
-                className={styles.passwordAction}
-                onClick={() => {
-                  if (pwCopied !== 'idle') return;
-                  navigator.clipboard.writeText(password);
-                  setShowPw(false);
-                  setPwCopied('shown');
-                  setTimeout(() => setPwCopied('fading'), 1200);
-                  setTimeout(() => setPwCopied('idle'), 1600);
-                }}
-                title={pwCopied !== 'idle' ? 'copied' : 'copy password'}
+          {barDurationLabel && (
+            <span className={styles.settingsPill}>
+              <svg
+                className={styles.settingsPillIcon}
+                width='12'
+                height='12'
+                viewBox='0 0 12 12'
+                fill='none'
               >
-                {pwCopied !== 'idle' ? (
-                  <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                    <path
-                      d='M3 7.5L5.5 10L11 4.5'
-                      stroke='#22c55e'
-                      strokeWidth='1.5'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                  </svg>
-                ) : (
-                  <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                    <rect
-                      x='4.5'
-                      y='4.5'
-                      width='7'
-                      height='7'
-                      rx='1.5'
-                      stroke='currentColor'
-                      strokeWidth='1.2'
-                    />
-                    <path
-                      d='M9.5 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v5A1.5 1.5 0 003 9.5h1.5'
-                      stroke='currentColor'
-                      strokeWidth='1.2'
-                    />
-                  </svg>
-                )}
-              </button>
-              <button
-                type='button'
-                className={styles.passwordAction}
-                onClick={() => setShowPw((prev) => !prev)}
-                title={showPw ? 'hide password' : 'reveal password'}
+                <path
+                  d='M6 1v2M6 9v2M1 6h2M9 6h2M2.5 2.5l1.4 1.4M8.1 8.1l1.4 1.4M9.5 2.5L8.1 3.9M3.9 8.1L2.5 9.5'
+                  stroke='currentColor'
+                  strokeWidth='1.1'
+                  strokeLinecap='round'
+                />
+              </svg>
+              fades after {barDurationLabel}
+            </span>
+          )}
+          {timeLockAt && (
+            <span className={styles.settingsPill}>
+              <svg
+                className={styles.settingsPillIcon}
+                width='12'
+                height='12'
+                viewBox='0 0 12 12'
+                fill='none'
               >
-                {showPw ? (
-                  <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                    <path
-                      d='M1.5 7s2.2-3.5 5.5-3.5S12.5 7 12.5 7s-2.2 3.5-5.5 3.5S1.5 7 1.5 7z'
-                      stroke='currentColor'
-                      strokeWidth='1.2'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                    <circle
-                      cx='7'
-                      cy='7'
-                      r='1.8'
-                      stroke='currentColor'
-                      strokeWidth='1.2'
-                    />
-                  </svg>
-                ) : (
-                  <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                    <path
-                      d='M2 2l10 10M5.6 5.7a1.8 1.8 0 002.7 2.6'
-                      stroke='currentColor'
-                      strokeWidth='1.2'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                    <path
-                      d='M4 4.3C2.7 5.2 1.5 7 1.5 7s2.2 3.5 5.5 3.5c1 0 1.9-.3 2.7-.8M9.5 9.2c1.5-1 2.9-2.7 3-2.7s-2.2-3.5-5.5-3.5c-.6 0-1.2.1-1.7.3'
-                      stroke='currentColor'
-                      strokeWidth='1.2'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                  </svg>
-                )}
-              </button>
-            </div>
+                <rect
+                  x='2'
+                  y='5'
+                  width='8'
+                  height='6'
+                  rx='1.5'
+                  stroke='currentColor'
+                  strokeWidth='1.1'
+                />
+                <path
+                  d='M4 5V3.5a2 2 0 014 0V5'
+                  stroke='currentColor'
+                  strokeWidth='1.1'
+                  strokeLinecap='round'
+                />
+              </svg>
+              unlocks{' '}
+              {new Date(timeLockAt).toLocaleDateString([], {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+              })}
+            </span>
+          )}
+          {readCount > 1 && (
+            <span className={styles.settingsPill}>
+              <svg
+                className={styles.settingsPillIcon}
+                width='12'
+                height='12'
+                viewBox='0 0 12 12'
+                fill='none'
+              >
+                <rect
+                  x='1.5'
+                  y='3'
+                  width='9'
+                  height='6'
+                  rx='1'
+                  stroke='currentColor'
+                  strokeWidth='1.1'
+                />
+                <rect
+                  x='2.5'
+                  y='1.5'
+                  width='7'
+                  height='4'
+                  rx='1'
+                  stroke='currentColor'
+                  strokeWidth='0.8'
+                  opacity='0.4'
+                />
+              </svg>
+              {readCount}&times; reads
+            </span>
+          )}
+          {receiptVerification && (
+            <span className={styles.settingsPill}>
+              <svg
+                className={styles.settingsPillIcon}
+                width='12'
+                height='12'
+                viewBox='0 0 12 12'
+                fill='none'
+              >
+                <path
+                  d='M6 1L1.5 3v3.5c0 2.5 2 4.5 4.5 5 2.5-.5 4.5-2.5 4.5-5V3L6 1z'
+                  stroke='currentColor'
+                  strokeWidth='1.1'
+                  strokeLinejoin='round'
+                />
+                <path
+                  d='M4 6l1.5 1.5L8 5'
+                  stroke='currentColor'
+                  strokeWidth='1.1'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                />
+              </svg>
+              proof of read
+            </span>
+          )}
+          {decoyUrls.length > 0 && (
+            <span className={styles.settingsPill}>
+              <svg
+                className={styles.settingsPillIcon}
+                width='12'
+                height='12'
+                viewBox='0 0 12 12'
+                fill='none'
+              >
+                <path
+                  d='M2 4h8M2 8h8M4 2v8M8 2v8'
+                  stroke='currentColor'
+                  strokeWidth='1.1'
+                  strokeLinecap='round'
+                  opacity='0.6'
+                />
+                <path
+                  d='M1 6h10'
+                  stroke='currentColor'
+                  strokeWidth='1.1'
+                  strokeLinecap='round'
+                />
+              </svg>
+              {decoyUrls.length} decoy link{decoyUrls.length > 1 ? 's' : ''}
+            </span>
           )}
         </div>
       )}
@@ -692,7 +813,10 @@ export function NoteLink({
             </div>
 
             {qrValue.length <= 2950 && (
-              <div className={styles.qrSection} style={qrSize ? { width: qrSize, height: qrSize } : undefined}>
+              <div
+                className={styles.qrSection}
+                style={qrSize ? { width: qrSize, height: qrSize } : undefined}
+              >
                 <QrCode ref={qrRef} value={qrValue} className={styles.qrSvg} />
                 <div className={styles.qrFooter}>
                   <span className={styles.qrLabel}>scan to open</span>
@@ -734,7 +858,10 @@ export function NoteLink({
                 title='share via WhatsApp'
               >
                 <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
-                  <path d='M13.6 2.3A7.4 7.4 0 002.3 12.3L1 15l2.8-1.3a7.4 7.4 0 009.8-9.4zM8 14a6 6 0 01-3.2-.9l-.2-.1-2.2 1 1-2.1-.2-.3A6 6 0 118 14zm3.3-4.5c-.2-.1-1-.5-1.2-.6s-.3-.1-.4.1-.5.6-.6.7-.2.1-.4 0a5.4 5.4 0 01-2.5-2.2c-.2-.3.2-.3.5-1 0-.1 0-.2 0-.3l-.5-1c-.1-.3-.3-.2-.4-.2h-.3a.7.7 0 00-.5.2 1.9 1.9 0 00-.6 1.4c0 .9.6 1.7.7 1.8s1.2 1.9 3 2.6a9 9 0 001 .4 2.4 2.4 0 001.1.1c.3-.1 1-.4 1.2-.8s.1-.7.1-.8l-.4-.2z' fill='currentColor'/>
+                  <path
+                    d='M13.6 2.3A7.4 7.4 0 002.3 12.3L1 15l2.8-1.3a7.4 7.4 0 009.8-9.4zM8 14a6 6 0 01-3.2-.9l-.2-.1-2.2 1 1-2.1-.2-.3A6 6 0 118 14zm3.3-4.5c-.2-.1-1-.5-1.2-.6s-.3-.1-.4.1-.5.6-.6.7-.2.1-.4 0a5.4 5.4 0 01-2.5-2.2c-.2-.3.2-.3.5-1 0-.1 0-.2 0-.3l-.5-1c-.1-.3-.3-.2-.4-.2h-.3a.7.7 0 00-.5.2 1.9 1.9 0 00-.6 1.4c0 .9.6 1.7.7 1.8s1.2 1.9 3 2.6a9 9 0 001 .4 2.4 2.4 0 001.1.1c.3-.1 1-.4 1.2-.8s.1-.7.1-.8l-.4-.2z'
+                    fill='currentColor'
+                  />
                 </svg>
               </a>
               <a
@@ -745,7 +872,10 @@ export function NoteLink({
                 title='share via Telegram'
               >
                 <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
-                  <path d='M14.3 1.7L1.4 6.8c-.5.2-.5.6 0 .7l3.3 1 1.3 4c.1.4.2.5.5.5s.3-.1.4-.2l1.8-1.8 3.3 2.4c.4.2.7.1.8-.4L14.9 2.5c.1-.6-.2-.9-.6-.8zM5.3 8.2l6.3-3.9-4.8 4.4-.2 2.1-1.3-2.6z' fill='currentColor'/>
+                  <path
+                    d='M14.3 1.7L1.4 6.8c-.5.2-.5.6 0 .7l3.3 1 1.3 4c.1.4.2.5.5.5s.3-.1.4-.2l1.8-1.8 3.3 2.4c.4.2.7.1.8-.4L14.9 2.5c.1-.6-.2-.9-.6-.8zM5.3 8.2l6.3-3.9-4.8 4.4-.2 2.1-1.3-2.6z'
+                    fill='currentColor'
+                  />
                 </svg>
               </a>
               <a
@@ -754,8 +884,22 @@ export function NoteLink({
                 title='share via email'
               >
                 <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
-                  <rect x='2' y='3.5' width='12' height='9' rx='1.5' stroke='currentColor' strokeWidth='1.2' />
-                  <path d='M2.5 4L8 8.5 13.5 4' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round' />
+                  <rect
+                    x='2'
+                    y='3.5'
+                    width='12'
+                    height='9'
+                    rx='1.5'
+                    stroke='currentColor'
+                    strokeWidth='1.2'
+                  />
+                  <path
+                    d='M2.5 4L8 8.5 13.5 4'
+                    stroke='currentColor'
+                    strokeWidth='1.2'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                  />
                 </svg>
               </a>
               {typeof navigator.share === 'function' && (
@@ -763,7 +907,9 @@ export function NoteLink({
                   type='button'
                   className={styles.shareIcon}
                   onClick={() => {
-                    navigator.share({ title: 'notefade', url: displayUrl }).catch(() => {});
+                    navigator
+                      .share({ title: 'notefade', url: displayUrl })
+                      .catch(() => {});
                   }}
                   title='share link'
                 >
@@ -779,16 +925,116 @@ export function NoteLink({
                 </button>
               )}
             </div>
+
+            {fragment.startsWith('#protected:') && password.length > 0 && (
+              <div className={styles.passwordDisplay}>
+                <span className={styles.passwordLabel}>password</span>
+                <span className={styles.passwordText}>
+                  {showPw
+                    ? password
+                    : '\u2022'.repeat(Math.min(password.length, 20))}
+                </span>
+                <button
+                  type='button'
+                  className={styles.passwordAction}
+                  onClick={() => {
+                    if (pwCopied !== 'idle') return;
+                    navigator.clipboard.writeText(password);
+                    setShowPw(false);
+                    setPwCopied('shown');
+                    setTimeout(() => setPwCopied('fading'), 1200);
+                    setTimeout(() => setPwCopied('idle'), 1600);
+                  }}
+                  title={pwCopied !== 'idle' ? 'copied' : 'copy password'}
+                >
+                  {pwCopied !== 'idle' ? (
+                    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                      <path
+                        d='M3 7.5L5.5 10L11 4.5'
+                        stroke='#22c55e'
+                        strokeWidth='1.5'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                    </svg>
+                  ) : (
+                    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                      <rect
+                        x='4.5'
+                        y='4.5'
+                        width='7'
+                        height='7'
+                        rx='1.5'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                      />
+                      <path
+                        d='M9.5 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v5A1.5 1.5 0 003 9.5h1.5'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                      />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  type='button'
+                  className={styles.passwordAction}
+                  onClick={() => setShowPw((prev) => !prev)}
+                  title={showPw ? 'hide password' : 'reveal password'}
+                >
+                  {showPw ? (
+                    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                      <path
+                        d='M1.5 7s2.2-3.5 5.5-3.5S12.5 7 12.5 7s-2.2 3.5-5.5 3.5S1.5 7 1.5 7z'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                      <circle
+                        cx='7'
+                        cy='7'
+                        r='1.8'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                      />
+                    </svg>
+                  ) : (
+                    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                      <path
+                        d='M2 2l10 10M5.6 5.7a1.8 1.8 0 002.7 2.6'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                      <path
+                        d='M4 4.3C2.7 5.2 1.5 7 1.5 7s2.2 3.5 5.5 3.5c1 0 1.9-.3 2.7-.8M9.5 9.2c1.5-1 2.9-2.7 3-2.7s-2.2-3.5-5.5-3.5c-.6 0-1.2.1-1.7.3'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Steganographic sharing (Feature 7) */}
-          <p className={styles.stegoLabel}>disguise your link with steganography</p>
+          <p className={styles.stegoLabel}>
+            disguise your link with steganography
+          </p>
           <div className={styles.stegoColumns}>
             <div className={styles.stegoColumn}>
               <div className={styles.stegoSection}>
                 <p className={styles.stegoColumnLabel}>hide in text</p>
                 <p className={styles.stegoDescription}>
-                  some apps strip zero-width characters when pasting — if the recipient can't decode it, send the link directly instead
+                  your link will be hidden in zero-width characters, it will
+                  look short but is long, some apps strip zero-width characters
+                  when pasting — if the recipient can't decode it, send the link
+                  directly instead
                 </p>
                 <div className={styles.stegoToggle}>
                   <input
@@ -829,9 +1075,13 @@ export function NoteLink({
                       setTimeout(() => setStegoCopied(false), 1500);
                     }}
                   >
-                    <span>{stegoResult.replace(/[\u200B\u200C\u200D]/g, '')}</span>
+                    <span>
+                      {stegoResult.replace(/[\u200B\u200C\u200D]/g, '')}
+                    </span>
                     <span className={styles.stegoHint}>
-                      {stegoCopied ? 'copied' : 'click to copy — link is hidden in zero-width chars'}
+                      {stegoCopied
+                        ? 'copied'
+                        : 'click to copy — link is hidden in zero-width chars'}
                     </span>
                   </div>
                 )}
@@ -844,7 +1094,9 @@ export function NoteLink({
               <div className={styles.stegoImageSection}>
                 <p className={styles.stegoColumnLabel}>hide in image</p>
                 <p className={styles.stegoDescription}>
-                  messengers like WhatsApp compress images and destroy hidden data — send as a ZIP file, or use your messenger's "send as document" / "original quality" mode to preserve the PNG intact
+                  messengers like WhatsApp compress images and destroy hidden
+                  data — send as a ZIP file, or use your messenger's "send as
+                  document" / "original quality" mode to preserve the PNG intact
                 </p>
                 <div className={styles.stegoImageBtnRow}>
                   <button
@@ -853,10 +1105,30 @@ export function NoteLink({
                     onClick={handleGenerateStegoImage}
                     disabled={stegoImageLoading}
                   >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
-                      <circle cx="5.5" cy="5.5" r="1.25" stroke="currentColor" strokeWidth="1" />
-                      <path d="M2 11l3.5-3.5L8 10l2.5-3L14 11" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+                    <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
+                      <rect
+                        x='2'
+                        y='2'
+                        width='12'
+                        height='12'
+                        rx='2'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                      />
+                      <circle
+                        cx='5.5'
+                        cy='5.5'
+                        r='1.25'
+                        stroke='currentColor'
+                        strokeWidth='1'
+                      />
+                      <path
+                        d='M2 11l3.5-3.5L8 10l2.5-3L14 11'
+                        stroke='currentColor'
+                        strokeWidth='1'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
                     </svg>
                     {stegoImageLoading ? 'generating...' : 'generate image'}
                   </button>
@@ -866,9 +1138,21 @@ export function NoteLink({
                     onClick={() => stegoFileRef.current?.click()}
                     disabled={stegoImageLoading}
                   >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M8 10V3M5.5 5.5L8 3l2.5 2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M2.5 10v2.5a1 1 0 001 1h9a1 1 0 001-1V10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                    <svg width='16' height='16' viewBox='0 0 16 16' fill='none'>
+                      <path
+                        d='M8 10V3M5.5 5.5L8 3l2.5 2.5'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                      <path
+                        d='M2.5 10v2.5a1 1 0 001 1h9a1 1 0 001-1V10'
+                        stroke='currentColor'
+                        strokeWidth='1.2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
                     </svg>
                     upload image
                   </button>
@@ -897,7 +1181,12 @@ export function NoteLink({
                         className={styles.stegoDownloadBtn}
                         onClick={handleDownloadStegoImage}
                       >
-                        <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
+                        <svg
+                          width='12'
+                          height='12'
+                          viewBox='0 0 12 12'
+                          fill='none'
+                        >
                           <path
                             d='M6 1.5v6M3.5 5L6 7.5 8.5 5'
                             stroke='currentColor'
@@ -919,7 +1208,12 @@ export function NoteLink({
                         className={styles.stegoDownloadBtn}
                         onClick={handleDownloadStegoZip}
                       >
-                        <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
+                        <svg
+                          width='12'
+                          height='12'
+                          viewBox='0 0 12 12'
+                          fill='none'
+                        >
                           <path
                             d='M6 1.5v6M3.5 5L6 7.5 8.5 5'
                             stroke='currentColor'
@@ -950,7 +1244,10 @@ export function NoteLink({
                 type='button'
                 className={styles.receiptDownload}
                 onClick={() => {
-                  const blob = new Blob([JSON.stringify(receiptVerification, null, 2)], { type: 'application/json' });
+                  const blob = new Blob(
+                    [JSON.stringify(receiptVerification, null, 2)],
+                    { type: 'application/json' },
+                  );
                   const u = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = u;
@@ -962,18 +1259,13 @@ export function NoteLink({
                   setTimeout(() => setVerificationCopied(false), 1500);
                 }}
               >
-                {verificationCopied ? 'downloaded' : 'download receipt verification file'}
+                {verificationCopied
+                  ? 'downloaded'
+                  : 'download receipt verification file'}
               </button>
               <span className={styles.receiptHint}>
                 keep this file to verify proof of read later
               </span>
-            </div>
-          )}
-
-          {/* Multi-read indicator */}
-          {readCount > 1 && (
-            <div className={styles.multiReadBadge}>
-              this note can be read {readCount} times before it self-destructs
             </div>
           )}
 
@@ -986,9 +1278,9 @@ export function NoteLink({
                   key={i}
                   className={`${styles.decoyUrl} ${copiedDecoyIndex === i ? styles.decoyUrlCopied : ''}`}
                   onClick={() => {
-                    navigator.clipboard.writeText(dUrl)
-                    setCopiedDecoyIndex(i)
-                    setTimeout(() => setCopiedDecoyIndex(null), 1500)
+                    navigator.clipboard.writeText(dUrl);
+                    setCopiedDecoyIndex(i);
+                    setTimeout(() => setCopiedDecoyIndex(null), 1500);
                   }}
                   title='click to copy'
                 >
@@ -1060,9 +1352,11 @@ export function NoteLink({
 
       {confirmingLeave && (
         <div className={styles.confirmBanner}>
-          {!hasCopied && 'you haven\'t copied the link yet — it can\'t be recovered'}
+          {!hasCopied &&
+            "you haven't copied the link yet — it can't be recovered"}
           {!hasCopied && needsReceipt && <br />}
-          {needsReceipt && 'you haven\'t downloaded the receipt — you won\'t be able to verify proof of read without it'}
+          {needsReceipt &&
+            "you haven't downloaded the receipt — you won't be able to verify proof of read without it"}
         </div>
       )}
 
@@ -1073,7 +1367,11 @@ export function NoteLink({
         }
         onClick={(e) => {
           e.preventDefault();
-          if (destroyState !== 'destroyed' && !confirmingLeave && (!hasCopied || needsReceipt)) {
+          if (
+            destroyState !== 'destroyed' &&
+            !confirmingLeave &&
+            (!hasCopied || needsReceipt)
+          ) {
             setConfirmingLeave(true);
             return;
           }
