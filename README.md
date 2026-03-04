@@ -1,10 +1,20 @@
-# 🔏 notefade
+<h1 align="center">
+  <img src="public/notefade-logo-transparent.png" alt="notefade logo" width="64" style="vertical-align: middle;" />
+  &nbsp;notefade.com - <em>Private notes that fade</em>
+</h1>
 
-**Private notes that fade.**
+<p align="center">
+  <a href="https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml"><img src="https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml/badge.svg" alt="Build & Verify" /></a>
+  <a href="https://github.com/SaschaWebDev/notefade/actions/workflows/test.yml"><img src="https://github.com/SaschaWebDev/notefade/actions/workflows/test.yml/badge.svg" alt="Tests" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-strict-blue.svg" alt="TypeScript" /></a>
+  <a href="#-security-model"><img src="https://img.shields.io/badge/crypto_deps-zero-green.svg" alt="Zero Crypto Dependencies" /></a>
+  <a href="https://workers.cloudflare.com/"><img src="https://img.shields.io/badge/backend-Cloudflare_Workers-orange.svg" alt="Cloudflare Workers" /></a>
+</p>
 
-[![Build & Verify](https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml/badge.svg)](https://github.com/SaschaWebDev/notefade/actions/workflows/build.yml) [![Tests](https://github.com/SaschaWebDev/notefade/actions/workflows/test.yml/badge.svg)](https://github.com/SaschaWebDev/notefade/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](https://www.typescriptlang.org/) [![Zero Crypto Dependencies](https://img.shields.io/badge/crypto_deps-zero-green.svg)](#-security-model) [![Cloudflare Workers](https://img.shields.io/badge/backend-Cloudflare_Workers-orange.svg)](https://workers.cloudflare.com/)
-
-<!-- Add a screenshot or animated gif here -->
+<p align="center">
+  <img src="docs/notefade-video.gif" alt="notefade demo" width="750" />
+</p>
 
 ---
 
@@ -102,6 +112,7 @@ The result looks like a normal sentence. The link is invisible to human eyes but
 URL bits are written into the least-significant bit of each R, G, B channel (alpha is untouched). A 4-byte big-endian length header precedes the UTF-8 payload.
 
 Two modes:
+
 - **Generate** — creates random abstract art as the cover image
 - **Upload** — use your own image as the cover
 
@@ -257,16 +268,16 @@ If using Cloudflare Pages automatic builds (connected to GitHub), set `NODE_VERS
 
 ## 🧰 Tech Stack
 
-| Layer      | Technology                                 |
-| ---------- | ------------------------------------------ |
-| Frontend   | React 19, TypeScript (strict), CSS Modules |
-| Build      | Vite 6                                     |
-| Encryption | Web Crypto API (AES-256-GCM, PBKDF2, XOR)  |
+| Layer         | Technology                                           |
+| ------------- | ---------------------------------------------------- |
+| Frontend      | React 19, TypeScript (strict), CSS Modules           |
+| Build         | Vite 6                                               |
+| Encryption    | Web Crypto API (AES-256-GCM, PBKDF2, XOR)            |
 | Steganography | LSB image encoding, zero-width Unicode text encoding |
-| Backend    | Cloudflare Workers + KV                    |
-| Validation | Zod                                        |
-| Testing    | Vitest                                     |
-| QR Codes   | qrcode-generator                           |
+| Backend       | Cloudflare Workers + KV                              |
+| Validation    | Zod                                                  |
+| Testing       | Vitest                                               |
+| QR Codes      | qrcode-generator                                     |
 
 ## 📁 Project Structure
 
@@ -288,14 +299,14 @@ worker/
 
 Six endpoints. That's the entire backend.
 
-| Method   | Endpoint           | Description                              |
-| -------- | ------------------ | ---------------------------------------- |
-| `POST`   | `/shard`           | Store a shard (returns ID)               |
-| `HEAD`   | `/shard/:id`       | Check if a shard exists                  |
-| `GET`    | `/shard/:id`       | Fetch and delete a shard                 |
-| `DELETE` | `/shard/:id`       | Destroy a shard without reading          |
-| `POST`   | `/shard/defer`     | Create a defer token (dead drop)         |
-| `POST`   | `/shard/activate`  | Activate a deferred note                 |
+| Method   | Endpoint          | Description                      |
+| -------- | ----------------- | -------------------------------- |
+| `POST`   | `/shard`          | Store a shard (returns ID)       |
+| `HEAD`   | `/shard/:id`      | Check if a shard exists          |
+| `GET`    | `/shard/:id`      | Fetch and delete a shard         |
+| `DELETE` | `/shard/:id`      | Destroy a shard without reading  |
+| `POST`   | `/shard/defer`    | Create a defer token (dead drop) |
+| `POST`   | `/shard/activate` | Activate a deferred note         |
 
 Rate limited per IP. Max request body: 1 KB. Full API docs at [notefade.com/docs](https://notefade.com/docs).
 
