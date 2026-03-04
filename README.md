@@ -208,6 +208,10 @@ yarn test
 yarn test:watch
 ```
 
+### Testing
+
+The project has **418 tests** across 23 test suites covering cryptography, steganography, key splitting, receipt verification, URL encoding, and decoy generation.
+
 ### Production Build
 
 ```bash
