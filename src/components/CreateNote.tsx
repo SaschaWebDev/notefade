@@ -6,6 +6,7 @@ import type { ProviderConfig, ProviderType } from '@/api/provider-types';
 import { ContentFade } from './ContentFade';
 import { NoteLink } from './NoteLink';
 import { NoteMarkdown, hasMarkdownPatterns } from './NoteMarkdown';
+import { generateDecoyMessage } from '@/crypto';
 import styles from './CreateNote.module.css';
 
 const BYOS_PROVIDER_TYPES = PROVIDERS.map((p) => p.type);
@@ -134,9 +135,12 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
     receiptEnabled,
     setReceiptEnabled,
     receiptVerification,
+    decoyMessages,
+    setDecoyMessages,
     decoyUrls,
     handleCreate,
     resetNote,
+    resetExpertSettings,
   } = useCreateNote();
   const [focused, setFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -152,6 +156,8 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   );
   const [viewMode, setViewMode] = useState<'write' | 'preview'>('write');
   const [hasSelection, setHasSelection] = useState(false);
+  const [decoyEnabled, setDecoyEnabled] = useState(false);
+  const [decoyCount, setDecoyCount] = useState(1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const closeExpertPanel = useCallback(() => {
     if (expertOpen) {
@@ -353,6 +359,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
     });
   }, [message, setMessage]);
 
+  /** Prevent toolbar buttons from stealing focus from the textarea on mobile */
+  const keepFocus = useCallback((e: React.MouseEvent) => { e.preventDefault(); }, []);
+
   const currentProviderType = providerType ?? 'self';
   const currentEntry = getProviderEntry(currentProviderType);
 
@@ -383,10 +392,62 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
     setProviderConfig(updated);
   };
 
+  const handleDecoyToggle = () => {
+    if (!decoyEnabled) {
+      setDecoyEnabled(true);
+      setDecoyMessages([generateDecoyMessage()]);
+      setDecoyCount(1);
+    } else {
+      setDecoyEnabled(false);
+      setDecoyMessages([]);
+      setDecoyCount(1);
+    }
+  };
+
+  const handleDecoyCountChange = (n: number) => {
+    setDecoyCount(n);
+    setDecoyMessages((prev: string[]) => {
+      if (n > prev.length) {
+        const added = Array.from({ length: n - prev.length }, () => generateDecoyMessage());
+        return [...prev, ...added];
+      }
+      return prev.slice(0, n);
+    });
+  };
+
+  const handleDecoyMessageChange = (index: number, value: string) => {
+    setDecoyMessages((prev: string[]) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  const handleDecoyRegenerate = (index: number) => {
+    setDecoyMessages((prev: string[]) => {
+      const next = [...prev];
+      next[index] = generateDecoyMessage();
+      return next;
+    });
+  };
+
   const handleReset = () => {
+    resetExpertSettings();
     resetProvider();
     setByosMode('default');
+    setDecoyEnabled(false);
+    setDecoyCount(1);
+    closeExpertPanel();
   };
+
+  const hasExpertChanges =
+    readCount !== 1 ||
+    barDuration !== 300 ||
+    timeLockEnabled ||
+    deferredMode ||
+    receiptEnabled ||
+    decoyMessages.length > 0 ||
+    isCustomServer;
 
   // Deferred activation requires a server-side worker (default API or self-hosted API).
   // BYOS adapters that connect directly to storage from the browser (cf-kv, cf-d1, etc.)
@@ -471,7 +532,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
         </a>
         <span className={styles.sentenceText}> and </span>
         <a
-          href='/docs#one-time-read'
+          href='/docs#proof-of-read'
           target='_blank'
           rel='noopener noreferrer'
           className={styles.sentenceLink}
@@ -501,13 +562,28 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
       <span key='receipt'>
         <span className={styles.sentenceText}>uses </span>
         <a
-          href='/docs#one-time-read'
+          href='/docs#proof-of-read'
           target='_blank'
           rel='noopener noreferrer'
           className={styles.sentenceLink}
           onClick={() => closeExpertPanel()}
         >
           proof of read
+        </a>
+      </span>,
+    );
+  if (decoyMessages.length > 0)
+    expertClauses.push(
+      <span key='decoys'>
+        <span className={styles.sentenceText}>includes </span>
+        <a
+          href='/docs#decoy-links'
+          target='_blank'
+          rel='noopener noreferrer'
+          className={styles.sentenceLink}
+          onClick={() => closeExpertPanel()}
+        >
+          {decoyMessages.length} decoy {decoyMessages.length === 1 ? 'link' : 'links'}
         </a>
       </span>,
     );
@@ -686,6 +762,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 type='button'
                 className={styles.toolbarBtn}
                 onClick={() => wrapSelection('**', '**')}
+                onMouseDown={keepFocus}
                 title='Bold'
                 tabIndex={-1}
                 disabled={!hasSelection}
@@ -696,6 +773,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 type='button'
                 className={`${styles.toolbarBtn} ${styles.toolbarBtnItalic}`}
                 onClick={() => wrapSelection('*', '*')}
+                onMouseDown={keepFocus}
                 title='Italic'
                 tabIndex={-1}
                 disabled={!hasSelection}
@@ -707,6 +785,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 type='button'
                 className={styles.toolbarBtnHeading}
                 onClick={() => insertHeading(1)}
+                onMouseDown={keepFocus}
                 title='Heading 1'
                 tabIndex={-1}
               >
@@ -716,6 +795,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 type='button'
                 className={styles.toolbarBtnHeading}
                 onClick={() => insertHeading(2)}
+                onMouseDown={keepFocus}
                 title='Heading 2'
                 tabIndex={-1}
               >
@@ -725,6 +805,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 type='button'
                 className={styles.toolbarBtnHeading}
                 onClick={() => insertHeading(3)}
+                onMouseDown={keepFocus}
                 title='Heading 3'
                 tabIndex={-1}
               >
@@ -735,6 +816,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 type='button'
                 className={styles.toolbarBtn}
                 onClick={insertBullet}
+                onMouseDown={keepFocus}
                 title='Bullet list'
                 tabIndex={-1}
               >
@@ -775,6 +857,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 type='button'
                 className={styles.toolbarBtn}
                 onClick={insertNumberedList}
+                onMouseDown={keepFocus}
                 title='Numbered list'
                 tabIndex={-1}
               >
@@ -842,6 +925,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 type='button'
                 className={styles.toolbarBtn}
                 onClick={insertToggle}
+                onMouseDown={keepFocus}
                 title='Toggle item'
                 tabIndex={-1}
               >
@@ -895,6 +979,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 type='button'
                 className={styles.toolbarBtn}
                 onClick={insertQuote}
+                onMouseDown={keepFocus}
                 title='Quote'
                 tabIndex={-1}
               >
@@ -914,6 +999,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 type='button'
                 className={styles.toolbarBtn}
                 onClick={insertDivider}
+                onMouseDown={keepFocus}
                 title='Horizontal rule'
                 tabIndex={-1}
               >
@@ -938,6 +1024,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                     type='button'
                     className={`${styles.formatToggleBtn} ${viewMode === 'write' ? styles.formatToggleActive : ''}`}
                     onClick={() => setViewMode('write')}
+                    onMouseDown={keepFocus}
                   >
                     raw
                   </button>
@@ -945,6 +1032,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                     type='button'
                     className={`${styles.formatToggleBtn} ${viewMode === 'preview' ? styles.formatToggleActive : styles.formatTogglePulse}`}
                     onClick={() => setViewMode('preview')}
+                    onMouseDown={keepFocus}
                   >
                     rendered
                   </button>
@@ -989,6 +1077,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                     type='button'
                     className={`${styles.formatToggleBtn} ${viewMode === 'write' ? styles.formatToggleActive : ''}`}
                     onClick={() => setViewMode('write')}
+                    onMouseDown={keepFocus}
                   >
                     raw
                   </button>
@@ -996,6 +1085,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                     type='button'
                     className={`${styles.formatToggleBtn} ${viewMode === 'preview' ? styles.formatToggleActive : styles.formatTogglePulse}`}
                     onClick={() => setViewMode('preview')}
+                    onMouseDown={keepFocus}
                   >
                     rendered
                   </button>
@@ -1112,6 +1202,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                         min={new Date(Date.now() + 60000)
                           .toISOString()
                           .slice(0, 16)}
+                        max={new Date(Date.now() + ttl * 1000)
+                          .toISOString()
+                          .slice(0, 16)}
                         disabled={loading}
                       />
                     )}
@@ -1159,6 +1252,74 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                     )}
                   </div>
                 </div>
+              </div>
+
+              <div className={styles.expertDivider} />
+
+              {/* — plausible deniability — */}
+              <div className={styles.expertSection}>
+                <span className={styles.expertSectionHeader}>plausible deniability</span>
+                <div className={styles.advancedRow}>
+                  <span className={styles.advancedLabel}>decoy links</span>
+                  <OnOffToggle
+                    enabled={decoyEnabled}
+                    onToggle={handleDecoyToggle}
+                    disabled={loading}
+                    small
+                  />
+                </div>
+                {decoyEnabled && (
+                  <>
+                    <div className={styles.advancedRow}>
+                      <span className={styles.advancedLabel}>count</span>
+                      <div className={styles.sliderGroup}>
+                        <input
+                          type='range'
+                          className={styles.rangeSlider}
+                          value={decoyCount}
+                          onChange={(e) => handleDecoyCountChange(Number(e.target.value))}
+                          min={1}
+                          max={3}
+                          step={1}
+                          disabled={loading}
+                        />
+                        <span className={styles.sliderValue}>{decoyCount}</span>
+                      </div>
+                    </div>
+                    <div className={styles.decoyInputList}>
+                      {decoyMessages.map((msg, i) => (
+                        <div key={i} className={styles.decoyInputRow}>
+                          <input
+                            type='text'
+                            className={styles.decoyInputField}
+                            value={msg}
+                            onChange={(e) => handleDecoyMessageChange(i, e.target.value)}
+                            placeholder={`decoy message ${i + 1}`}
+                            maxLength={1800}
+                            disabled={loading}
+                          />
+                          <button
+                            type='button'
+                            className={styles.decoyRegenerateBtn}
+                            onClick={() => handleDecoyRegenerate(i)}
+                            disabled={loading}
+                            title='regenerate message'
+                          >
+                            <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+                              <path d='M2.5 7a4.5 4.5 0 018.3-2.4' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                              <path d='M11.5 7a4.5 4.5 0 01-8.3 2.4' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+                              <path d='M10.2 2.2l.6 2.4-2.4-.6' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round' />
+                              <path d='M3.8 11.8l-.6-2.4 2.4.6' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round' />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <span className={styles.advancedHint}>
+                      real encrypted notes with alternate content, sent alongside your actual link
+                    </span>
+                  </>
+                )}
               </div>
 
               <div className={styles.expertDivider} />
@@ -1253,40 +1414,41 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                         </div>
                       ))}
 
-                      {isCustomServer && (
-                        <button
-                          type='button'
-                          className={styles.byosResetButton}
-                          onClick={handleReset}
-                        >
-                          <svg
-                            width='14'
-                            height='14'
-                            viewBox='0 0 14 14'
-                            fill='none'
-                          >
-                            <path
-                              d='M1.5 1.5v4h4'
-                              stroke='currentColor'
-                              strokeWidth='1.3'
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                            />
-                            <path
-                              d='M2.1 8.5a5 5 0 108.4-4.6A5 5 0 002.1 5.5L1.5 5.5'
-                              stroke='currentColor'
-                              strokeWidth='1.3'
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                            />
-                          </svg>
-                          reset
-                        </button>
-                      )}
                     </div>
                   )}
                 </div>
               </div>
+
+              {hasExpertChanges && (
+                <button
+                  type='button'
+                  className={styles.byosResetButton}
+                  onClick={handleReset}
+                >
+                  <svg
+                    width='14'
+                    height='14'
+                    viewBox='0 0 14 14'
+                    fill='none'
+                  >
+                    <path
+                      d='M1.5 1.5v4h4'
+                      stroke='currentColor'
+                      strokeWidth='1.3'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    />
+                    <path
+                      d='M2.1 8.5a5 5 0 108.4-4.6A5 5 0 002.1 5.5L1.5 5.5'
+                      stroke='currentColor'
+                      strokeWidth='1.3'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    />
+                  </svg>
+                  reset all
+                </button>
+              )}
             </div>
           )}
 
@@ -1336,7 +1498,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
 
               <span className={styles.sentenceLine}>
                 <span className={styles.sentenceText}>
-                  {' '}is {passwordEnabled ? '' : 'not '}
+                  {' '}{expertClauses.length === 0 && <span className={styles.desktopOnly}>and </span>}is {passwordEnabled ? '' : 'not '}
                 </span>
                 <a
                   href='/docs#encryption'

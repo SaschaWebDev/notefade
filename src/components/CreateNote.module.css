@@ -851,6 +851,7 @@
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   margin-top: 4px;
+  align-self: flex-start;
 }
 
 .byosResetButton:hover {
@@ -866,9 +867,17 @@
   border-top: 1px solid rgba(248, 113, 113, 0.1);
 }
 
+.desktopOnly {
+  display: inline;
+}
+
 @media (max-width: 480px) {
+  .desktopOnly {
+    display: none;
+  }
+
   .toolbar {
-    padding: 6px 20px 0;
+    padding: 6px 20px 4px;
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -897,7 +906,7 @@
   }
 
   .textareaWrap {
-    max-height: 210px;
+    max-height: none;
   }
 
   .previewArea {
@@ -1308,6 +1317,68 @@
   flex-shrink: 0;
 }
 
+.decoyInputList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: byos-in 0.2s ease;
+}
+
+.decoyInputRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.decoyInputField {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: var(--text-primary);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.decoyInputField:focus {
+  border-color: rgba(var(--accent-rgb), 0.4);
+}
+
+.decoyInputField::placeholder {
+  color: rgba(var(--fg), 0.2);
+}
+
+.decoyRegenerateBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid rgba(var(--fg), 0.06);
+  border-radius: 6px;
+  color: rgba(var(--fg), 0.25);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.decoyRegenerateBtn:hover {
+  color: rgba(var(--fg), 0.5);
+  background: rgba(var(--fg), 0.04);
+  border-color: rgba(var(--fg), 0.12);
+}
+
+.decoyRegenerateBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 @media (max-width: 480px) {
   .expertPanel {
     padding: 12px 20px 16px;
@@ -1341,5 +1412,10 @@
 
   .decoySection {
     padding: 12px 20px;
+  }
+
+  .decoyInputField {
+    font-size: 12px;
+    padding: 7px 10px;
   }
 }
