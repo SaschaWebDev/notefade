@@ -375,6 +375,170 @@ No metadata. No timestamps. No IP logs. No content.`}
         </DocsCallout>
       </DocsSection>
 
+      <DocsSection id="steganography" title="steganographic sharing">
+        <p className={styles.p}>
+          Two methods to disguise a note link so it doesn't look like a link at
+          all: hide it in text or hide it in an image. Both are zero-dependency
+          — built with vanilla JS and the Canvas API.
+        </p>
+
+        <h3 className={styles.h3}>Hide in text (zero-width Unicode)</h3>
+        <p className={styles.p}>
+          The URL is converted to binary and encoded as invisible zero-width
+          Unicode characters, interleaved between the letters of innocent cover
+          text. The result looks like a normal sentence — the hidden link is
+          completely invisible.
+        </p>
+        <DocsCodeBlock
+          language="text"
+          code={`U+200B (zero-width space)      = 0
+U+200C (zero-width non-joiner) = 1
+U+200D (zero-width joiner)     = byte separator`}
+        />
+        <DocsCallout variant="caveat">
+          Some apps strip zero-width characters on paste. Not all text channels
+          preserve them. If the recipient can't decode, send the link directly.
+        </DocsCallout>
+
+        <h3 className={styles.h3}>Hide in image (LSB steganography)</h3>
+        <p className={styles.p}>
+          The URL bits are written into the least-significant bit of each R, G,
+          and B channel in the image pixels. Alpha is left untouched. A 4-byte
+          big-endian length header precedes the UTF-8 payload.
+        </p>
+        <DocsCodeBlock
+          language="text"
+          code={`pixel data (RGBA):
+  R → LSB carries 1 payload bit
+  G → LSB carries 1 payload bit
+  B → LSB carries 1 payload bit
+  A → untouched
+
+payload = [length: 4 bytes big-endian] [URL: UTF-8 bytes]
+capacity = width × height × 3 bits`}
+        />
+        <p className={styles.p}>
+          Two modes: generate random abstract art, or upload your own image.
+          The change is visually imperceptible — a 1-bit change per channel is
+          invisible to the human eye.
+        </p>
+
+        <h3 className={styles.h3}>PNG vs ZIP downloads</h3>
+        <p className={styles.p}>
+          Messengers recompress images by default, which destroys the LSB data.
+          Choose the right format for how you're sending:
+        </p>
+        <ul className={styles.list}>
+          <li>
+            <strong>PNG</strong> — use when sending as a file or document
+            (WhatsApp "send as document", email attachments, cloud storage,
+            AirDrop)
+          </li>
+          <li>
+            <strong>ZIP</strong> — wraps the PNG so messengers won't
+            recompress it; safest option for messenger sharing
+          </li>
+        </ul>
+        <DocsCallout variant="warning">
+          Never send a steganographic image as a regular photo in a messenger.
+          Use "send as document", "original quality", or wrap it in a ZIP.
+        </DocsCallout>
+
+        <h3 className={styles.h3}>Anti-fingerprint filenames</h3>
+        <p className={styles.p}>
+          Every download gets a randomized filename from 16 patterns using{' '}
+          <code className={styles.code}>crypto.getRandomValues()</code>. No
+          recognizable app signature — an interceptor cannot determine the file
+          came from notefade.
+        </p>
+        <DocsCodeBlock
+          language="text"
+          code={`IMG_20260303_142517.png     (camera roll)
+Screenshot_2026-03-03-...   (screenshot)
+sunset_v2.png               (art/creative)
+from_alex_painting.png      (shared by person)
+download (7).png            (generic download)`}
+        />
+
+        <h3 className={styles.h3}>Decoding</h3>
+        <p className={styles.p}>
+          The{' '}
+          <a href="/decode" className={styles.link}>
+            notefade.com/decode
+          </a>{' '}
+          page extracts hidden links from both images and text. Drag-and-drop
+          or upload an image, or paste text into the text area to reveal the
+          embedded link.
+        </p>
+      </DocsSection>
+
+      <DocsSection id="proof-of-read" title="proof of read">
+        <p className={styles.p}>
+          An optional receipt mechanism that lets the note creator verify
+          someone decrypted their note — without knowing who.
+        </p>
+        <h3 className={styles.h3}>How it works</h3>
+        <ol className={styles.list}>
+          <li>The creator enables "proof of read" when writing the note. A 32-byte random seed is generated and embedded in the encrypted metadata.</li>
+          <li>When the recipient decrypts the note, the client computes HMAC-SHA256 of the plaintext hash using the seed as the key. This is the proof.</li>
+          <li>The creator pastes the proof into the <a href="/verify" className={styles.link}>verification page</a> along with their seed and the original plaintext. If the HMAC matches, the note was read.</li>
+        </ol>
+        <h3 className={styles.h3}>What it proves</h3>
+        <p className={styles.p}>
+          The proof demonstrates that someone had access to the decrypted
+          content. It does not prove <em>who</em> accessed it — notefade has
+          no accounts, so there is no identity to bind the proof to. The
+          receipt is a cryptographic fact ("this plaintext was seen"), not an
+          identity claim.
+        </p>
+        <DocsCallout variant="caveat">
+          A receipt proves access to decrypted content, not who accessed it.
+          The reader could also forward the proof to someone else. Treat it
+          as a signal, not a legal instrument.
+        </DocsCallout>
+      </DocsSection>
+
+      <DocsSection id="decoy-links" title="decoy links">
+        <p className={styles.p}>
+          Generate extra encrypted notes with plausible alternate content
+          and share multiple links. An observer cannot tell which link
+          carries the real message.
+        </p>
+        <h3 className={styles.h3}>How it works</h3>
+        <p className={styles.p}>
+          When creating a note, enable decoy links and choose how many to
+          generate (1–3). Each decoy is a fully valid encrypted note — not
+          a fake or empty placeholder. It goes through the same encryption
+          flow, gets its own server shard, and produces its own unique link.
+        </p>
+        <p className={styles.p}>
+          Decoy content is auto-generated from 80 plausible message templates
+          across four categories — logistics, social, work, and casual. Each
+          decoy has its own regenerate button to shuffle to a different message,
+          and you can edit the text directly if you want something specific.
+        </p>
+        <DocsCallout variant="note">
+          Decoy notes are created without optional features — no password
+          protection, time-lock, fade timer, proof of read, or multi-read.
+          They are simple one-time-read notes with a single shard. This keeps
+          decoys lightweight and indistinguishable from a basic note.
+        </DocsCallout>
+        <h3 className={styles.h3}>Use case</h3>
+        <p className={styles.p}>
+          When sharing under surveillance or in an environment where link
+          access is monitored, sending multiple plausible links provides
+          deniability. An observer sees several notefade links but cannot
+          determine which one contains the intended message — all links
+          look identical from the outside, and all are padded to the same
+          length.
+        </p>
+        <DocsCallout variant="note">
+          Decoy notes are real notes. They consume server shards, respect
+          TTL, and self-destruct on read just like any other note. The
+          server has no way to distinguish a decoy from a real note.
+        </DocsCallout>
+      </DocsSection>
+
       <DocsSection id="no-tracking" title="no tracking">
         <p className={styles.p}>
           notefade loads zero third-party scripts. No analytics, no tracking
@@ -468,9 +632,13 @@ No metadata. No timestamps. No IP logs. No content.`}
           privacy model.
         </p>
         <DocsCallout variant="caveat">
-          No accounts means no "sent notes" history, no delivery receipts, and
-          no way to recover a link you've lost. If the link is gone, the note is
-          gone.
+          No accounts means no "sent notes" history and no way to recover a
+          link you've lost. If the link is gone, the note is gone. Opt-in{' '}
+          <a href="#proof-of-read" className={styles.link}>
+            proof-of-read receipts
+          </a>{' '}
+          are available without accounts — they prove someone decrypted the
+          note, not who.
         </DocsCallout>
       </DocsSection>
 
