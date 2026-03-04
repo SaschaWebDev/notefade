@@ -360,7 +360,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   }, [message, setMessage]);
 
   /** Prevent toolbar buttons from stealing focus from the textarea on mobile */
-  const keepFocus = useCallback((e: React.MouseEvent) => { e.preventDefault(); }, []);
+  const keepFocus = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+  }, []);
 
   const currentProviderType = providerType ?? 'self';
   const currentEntry = getProviderEntry(currentProviderType);
@@ -397,6 +399,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
       setDecoyEnabled(true);
       setDecoyMessages([generateDecoyMessage()]);
       setDecoyCount(1);
+      setDeferredMode(false);
     } else {
       setDecoyEnabled(false);
       setDecoyMessages([]);
@@ -408,7 +411,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
     setDecoyCount(n);
     setDecoyMessages((prev: string[]) => {
       if (n > prev.length) {
-        const added = Array.from({ length: n - prev.length }, () => generateDecoyMessage());
+        const added = Array.from({ length: n - prev.length }, () =>
+          generateDecoyMessage(),
+        );
         return [...prev, ...added];
       }
       return prev.slice(0, n);
@@ -583,7 +588,8 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
           className={styles.sentenceLink}
           onClick={() => closeExpertPanel()}
         >
-          {decoyMessages.length} decoy {decoyMessages.length === 1 ? 'link' : 'links'}
+          {decoyMessages.length} decoy{' '}
+          {decoyMessages.length === 1 ? 'link' : 'links'}
         </a>
       </span>,
     );
@@ -596,7 +602,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
           <div className={styles.launchCodePanel}>
             <h3 className={styles.launchCodeHeading}>deferred note created</h3>
             <p className={styles.launchCodeDesc}>
-              <strong style={{ color: 'var(--accent)' }}>save both the note link and the launch code below</strong>
+              <strong style={{ color: 'var(--accent)' }}>
+                save both the note link and the launch code below
+              </strong>
               <br />
               you won't see them again. if either is lost, the note is
               unrecoverable.
@@ -751,6 +759,8 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
           readCount={readCount}
           receiptVerification={receiptVerification}
           decoyUrls={decoyUrls}
+          barDurationLabel={barDuration !== 300 ? (barOptions.find((o) => o.value === barDuration)?.label ?? `${barDuration}s`) : undefined}
+          timeLockAt={timeLockEnabled && timeLockAt ? timeLockAt : undefined}
         />
       ) : (
         <div className={styles.container}>
@@ -1136,7 +1146,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                       </div>
                     </div>
                     {readCount === 1 && (
-                      <span className={styles.advancedHint}>(one-time read)</span>
+                      <span className={styles.advancedHint}>
+                        (one-time read)
+                      </span>
                     )}
                   </div>
                   <div className={styles.advancedRow}>
@@ -1210,17 +1222,28 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                     )}
                     {timeLockEnabled && (
                       <span className={styles.advancedHint}>
-                        client-enforced, not cryptographic
+                        client-enforced, not cryptographic, bound to
+                        self-destruct time
                       </span>
                     )}
                   </div>
                   <div className={styles.advancedRowWrap}>
                     <div className={styles.advancedRow}>
-                      <span className={styles.advancedLabel}>dead drop mode</span>
+                      <span className={styles.advancedLabel}>
+                        dead drop mode
+                      </span>
                       <OnOffToggle
                         enabled={deferredMode}
-                        onToggle={() => setDeferredMode(!deferredMode)}
-                        disabled={loading || !canDefer}
+                        onToggle={() => {
+                          const next = !deferredMode;
+                          setDeferredMode(next);
+                          if (next) {
+                            setDecoyEnabled(false);
+                            setDecoyMessages([]);
+                            setDecoyCount(1);
+                          }
+                        }}
+                        disabled={loading || !canDefer || decoyEnabled}
                         small
                       />
                     </div>
@@ -1234,10 +1257,17 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                         encrypt now, activate later via launch code
                       </span>
                     )}
+                    {decoyEnabled && canDefer && (
+                      <span className={styles.advancedHint}>
+                        not available with decoy links
+                      </span>
+                    )}
                   </div>
                   <div className={styles.advancedRowWrap}>
                     <div className={styles.advancedRow}>
-                      <span className={styles.advancedLabel}>proof of read</span>
+                      <span className={styles.advancedLabel}>
+                        proof of read
+                      </span>
                       <OnOffToggle
                         enabled={receiptEnabled}
                         onToggle={() => setReceiptEnabled(!receiptEnabled)}
@@ -1258,16 +1288,23 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
 
               {/* — plausible deniability — */}
               <div className={styles.expertSection}>
-                <span className={styles.expertSectionHeader}>plausible deniability</span>
+                <span className={styles.expertSectionHeader}>
+                  plausible deniability
+                </span>
                 <div className={styles.advancedRow}>
                   <span className={styles.advancedLabel}>decoy links</span>
                   <OnOffToggle
                     enabled={decoyEnabled}
                     onToggle={handleDecoyToggle}
-                    disabled={loading}
+                    disabled={loading || deferredMode}
                     small
                   />
                 </div>
+                {deferredMode && (
+                  <span className={styles.advancedHint}>
+                    not available with dead drop mode
+                  </span>
+                )}
                 {decoyEnabled && (
                   <>
                     <div className={styles.advancedRow}>
@@ -1277,7 +1314,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                           type='range'
                           className={styles.rangeSlider}
                           value={decoyCount}
-                          onChange={(e) => handleDecoyCountChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            handleDecoyCountChange(Number(e.target.value))
+                          }
                           min={1}
                           max={3}
                           step={1}
@@ -1293,7 +1332,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                             type='text'
                             className={styles.decoyInputField}
                             value={msg}
-                            onChange={(e) => handleDecoyMessageChange(i, e.target.value)}
+                            onChange={(e) =>
+                              handleDecoyMessageChange(i, e.target.value)
+                            }
                             placeholder={`decoy message ${i + 1}`}
                             maxLength={1800}
                             disabled={loading}
@@ -1305,18 +1346,46 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                             disabled={loading}
                             title='regenerate message'
                           >
-                            <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                              <path d='M2.5 7a4.5 4.5 0 018.3-2.4' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
-                              <path d='M11.5 7a4.5 4.5 0 01-8.3 2.4' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
-                              <path d='M10.2 2.2l.6 2.4-2.4-.6' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round' />
-                              <path d='M3.8 11.8l-.6-2.4 2.4.6' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round' />
+                            <svg
+                              width='14'
+                              height='14'
+                              viewBox='0 0 14 14'
+                              fill='none'
+                            >
+                              <path
+                                d='M2.5 7a4.5 4.5 0 018.3-2.4'
+                                stroke='currentColor'
+                                strokeWidth='1.2'
+                                strokeLinecap='round'
+                              />
+                              <path
+                                d='M11.5 7a4.5 4.5 0 01-8.3 2.4'
+                                stroke='currentColor'
+                                strokeWidth='1.2'
+                                strokeLinecap='round'
+                              />
+                              <path
+                                d='M10.2 2.2l.6 2.4-2.4-.6'
+                                stroke='currentColor'
+                                strokeWidth='1.2'
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                              />
+                              <path
+                                d='M3.8 11.8l-.6-2.4 2.4.6'
+                                stroke='currentColor'
+                                strokeWidth='1.2'
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                              />
                             </svg>
                           </button>
                         </div>
                       ))}
                     </div>
                     <span className={styles.advancedHint}>
-                      real encrypted notes with alternate content, sent alongside your actual link
+                      real encrypted notes with alternate content, sent
+                      alongside your actual link
                     </span>
                   </>
                 )}
@@ -1413,7 +1482,6 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                           />
                         </div>
                       ))}
-
                     </div>
                   )}
                 </div>
@@ -1425,12 +1493,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                   className={styles.byosResetButton}
                   onClick={handleReset}
                 >
-                  <svg
-                    width='14'
-                    height='14'
-                    viewBox='0 0 14 14'
-                    fill='none'
-                  >
+                  <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
                     <path
                       d='M1.5 1.5v4h4'
                       stroke='currentColor'
@@ -1498,7 +1561,11 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
 
               <span className={styles.sentenceLine}>
                 <span className={styles.sentenceText}>
-                  {' '}{expertClauses.length === 0 && <span className={styles.desktopOnly}>and </span>}is {passwordEnabled ? '' : 'not '}
+                  {' '}
+                  {expertClauses.length === 0 && (
+                    <span className={styles.desktopOnly}>and </span>
+                  )}
+                  is {passwordEnabled ? '' : 'not '}
                 </span>
                 <a
                   href='/docs#encryption'
@@ -1530,7 +1597,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                       <input
                         type={showPassword ? 'text' : 'password'}
                         className={styles.passwordInlineInput}
-                        style={{ width: `${Math.max(14, password.length + 1)}ch` }}
+                        style={{
+                          width: `${Math.max(14, password.length + 1)}ch`,
+                        }}
                         value={password}
                         onChange={(e) =>
                           setPassword(e.target.value.slice(0, 24))
@@ -1739,7 +1808,10 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 className={`${styles.gearButton} ${expertOpen ? styles.gearButtonActive : ''}`}
                 onClick={() => {
                   if (expertOpen) {
-                    if (isCustomServer && !isProviderConfigComplete(providerConfig)) {
+                    if (
+                      isCustomServer &&
+                      !isProviderConfigComplete(providerConfig)
+                    ) {
                       handleReset();
                     }
                     closeExpertPanel();
