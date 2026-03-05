@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Send private notes that self-destruct after one read. Zero-knowledge encryption, no accounts, nothing stored. Free, open-source secure note sharing." />
+    <meta name="description" content="Self-destructing encrypted notes. Share one-time secret links with zero-knowledge encryption — nothing stored on the server, ever. Free and open source." />
     <meta name="theme-color" content="#0a0a0a" />
     <meta name="referrer" content="no-referrer" />
 
@@ -11,7 +11,7 @@
 
     <!-- Open Graph -->
     <meta property="og:title" content="notefade — Self-Destructing Encrypted Notes" />
-    <meta property="og:description" content="Send private notes that self-destruct after one read. Zero-knowledge encryption, no accounts, nothing stored. Free, open-source secure note sharing." />
+    <meta property="og:description" content="Self-destructing encrypted notes. Share one-time secret links with zero-knowledge encryption — nothing stored on the server, ever. Free and open source." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://notefade.com" />
     <meta property="og:image" content="https://notefade.com/og-image.png" />
@@ -22,10 +22,12 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="notefade — Self-Destructing Encrypted Notes" />
-    <meta name="twitter:description" content="Send private notes that self-destruct after one read. Zero-knowledge encryption, no accounts, nothing stored. Free, open-source secure note sharing." />
+    <meta name="twitter:description" content="Self-destructing encrypted notes. Share one-time secret links with zero-knowledge encryption — nothing stored on the server, ever. Free and open source." />
     <meta name="twitter:image" content="https://notefade.com/og-image.png" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
     <title>notefade — Self-Destructing Encrypted Notes</title>
 
     <script type="application/ld+json">
@@ -42,6 +44,7 @@
         "price": "0",
         "priceCurrency": "USD"
       },
+      "sameAs": "https://github.com/SaschaWebDev/notefade",
       "browserRequirements": "Requires a modern browser with Web Crypto API support",
       "featureList": [
         "AES-256-GCM encryption",
@@ -158,7 +161,7 @@
     <noscript>
       <div style="max-width:600px;margin:40px auto;padding:0 20px;font-family:system-ui,sans-serif;color:#e0e0e0;background:#0a0a0a;">
         <h1>notefade — Self-Destructing Encrypted Notes</h1>
-        <p>Send private notes that self-destruct after one read. Zero-knowledge encryption means we never see your content.</p>
+        <p>Self-destructing encrypted notes. Share one-time secret links with zero-knowledge encryption — nothing stored on the server, ever. Free and open source.</p>
         <h2>How it works</h2>
         <ol>
           <li>Write your private note</li>
