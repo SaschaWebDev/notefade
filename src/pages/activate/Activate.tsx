@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { activateShard } from '@/api'
 import type { LaunchCode } from '@/hooks/use-create-note'
 import { COPY_FEEDBACK_MS } from '@/constants'
-import { IconCheckCircle } from '../../ui/icons'
+import { IconCheckCircle } from '@/components/ui/icons'
 import styles from './Activate.module.css'
 
 function validateLaunchCode(data: unknown): data is LaunchCode {
@@ -15,6 +15,19 @@ function validateLaunchCode(data: unknown): data is LaunchCode {
 }
 
 export function Activate() {
+  useEffect(() => {
+    document.title = 'activate deferred note — notefade'
+    const meta = document.querySelector('meta[name="description"]')
+    const prev = meta?.getAttribute('content') ?? ''
+    if (meta) {
+      meta.setAttribute('content', 'Upload a launch code to make a pre-created encrypted note live. Part of notefade\'s dead-drop mode.')
+    }
+    return () => {
+      document.title = 'notefade — Self-Destructing Encrypted Notes'
+      if (meta) meta.setAttribute('content', prev)
+    }
+  }, [])
+
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

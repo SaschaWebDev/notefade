@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { decodeImageStego, decodeZeroWidth } from '@/crypto'
 import { COPY_FEEDBACK_MS } from '@/constants'
-import { IconImagePlaceholder } from '../../ui/icons'
+import { IconImagePlaceholder } from '@/components/ui/icons'
 import styles from './Decode.module.css'
 
 const URL_DISPLAY_TRUNCATE = 100
@@ -15,6 +15,19 @@ type DecodeState =
 type Mode = 'image' | 'text'
 
 export function Decode() {
+  useEffect(() => {
+    document.title = 'decode steganography — notefade'
+    const meta = document.querySelector('meta[name="description"]')
+    const prev = meta?.getAttribute('content') ?? ''
+    if (meta) {
+      meta.setAttribute('content', 'Extract a hidden notefade link from an image or text. Supports LSB image steganography and zero-width Unicode decoding.')
+    }
+    return () => {
+      document.title = 'notefade — Self-Destructing Encrypted Notes'
+      if (meta) meta.setAttribute('content', prev)
+    }
+  }, [])
+
   const [mode, setMode] = useState<Mode>('image')
   const [state, setState] = useState<DecodeState>({ status: 'idle' })
   const [copied, setCopied] = useState(false)

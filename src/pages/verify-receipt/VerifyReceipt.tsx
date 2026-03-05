@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { verifyReceiptProof } from '@/crypto'
-import { IconCheckCircle, IconXCircleOutlined } from '../../ui/icons'
+import { IconCheckCircle, IconXCircleOutlined } from '@/components/ui/icons'
 import styles from './VerifyReceipt.module.css'
 
 interface ReceiptData {
@@ -20,6 +20,19 @@ function validateReceipt(data: unknown): data is ReceiptData {
 type Result = { kind: 'verified' } | { kind: 'failed' }
 
 export function VerifyReceipt() {
+  useEffect(() => {
+    document.title = 'verify read receipt — notefade'
+    const meta = document.querySelector('meta[name="description"]')
+    const prev = meta?.getAttribute('content') ?? ''
+    if (meta) {
+      meta.setAttribute('content', 'Verify a cryptographic proof-of-read receipt for a notefade note. HMAC-based verification without knowing who read it.')
+    }
+    return () => {
+      document.title = 'notefade — Self-Destructing Encrypted Notes'
+      if (meta) meta.setAttribute('content', prev)
+    }
+  }, [])
+
   const [receiptInput, setReceiptInput] = useState('')
   const [proofInput, setProofInput] = useState('')
   const [loading, setLoading] = useState(false)
