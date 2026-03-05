@@ -20,9 +20,11 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@worker/*": ["worker/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "tests"],
+  "exclude": ["tests/worker", "worker"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

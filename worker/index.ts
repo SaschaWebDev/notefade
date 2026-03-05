@@ -27,11 +27,13 @@ interface RateEntry {
   resetAt: number
 }
 
+const CLEANUP_INTERVAL = 500
+
 const rateCounts = new Map<string, RateEntry>()
 let requestCount = 0
 
 function cleanupRateCounts(): void {
-  if (++requestCount % 500 !== 0) return
+  if (++requestCount % CLEANUP_INTERVAL !== 0) return
   const now = Date.now()
   for (const [key, entry] of rateCounts) {
     if (now >= entry.resetAt) rateCounts.delete(key)
@@ -98,6 +100,10 @@ const MAX_TOKEN_AGE_MS = 30 * 24 * 60 * 60 * 1000
 
 /** Activation marker TTL: 31 days (outlives max token age, then auto-expires) */
 const ACTIVATED_MARKER_TTL = 31 * 24 * 60 * 60
+
+function generateShardId(): string {
+  return crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+}
 
 function corsHeaders(origin: string): Record<string, string> {
   return {
@@ -166,7 +172,7 @@ async function handleRequest(
       )
     }
 
-    const id = crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+    const id = generateShardId()
     await store.put(id, parsed.data.shard, parsed.data.ttl)
     return Response.json({ id }, { status: 201, headers })
   }
@@ -259,7 +265,7 @@ async function handleRequest(
       )
     }
 
-    const id = crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+    const id = generateShardId()
     const token = await createDeferToken(env.DEFER_SECRET, {
       id,
       shard: parsed.data.shard,

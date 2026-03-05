@@ -1,13 +1,4 @@
-/** Cryptographically random integer in [0, max) */
-function randInt(max: number): number {
-  const arr = new Uint32Array(1)
-  crypto.getRandomValues(arr)
-  return arr[0]! % max
-}
-
-function pick<T>(pool: readonly T[]): T {
-  return pool[randInt(pool.length)]!
-}
+import { pick } from '@/utils/random'
 
 const PAST: readonly string[] = [
   'Ran into your neighbor at the store, small world',

@@ -1,0 +1,24 @@
+{
+  "name": "notefade",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "forwardPorts": [5173, 8787],
+  "portsAttributes": {
+    "5173": { "label": "Vite Dev Server", "onAutoForward": "notify" },
+    "8787": { "label": "Wrangler Worker", "onAutoForward": "silent" }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "containerEnv": {
+    "VITE_API_URL": "http://localhost:8787"
+  },
+  "remoteUser": "node",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "vitest.explorer",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

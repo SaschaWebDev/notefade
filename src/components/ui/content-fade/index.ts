@@ -1,0 +1,1 @@
+export { ContentFade } from './ContentFade'

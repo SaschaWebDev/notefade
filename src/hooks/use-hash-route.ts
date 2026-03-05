@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { stringFromBase64Url, unpadPayload, extractTimeLock } from '@/crypto'
 import { decodeProviderConfig } from '@/api/provider-config'
 import type { ProviderConfig } from '@/api/provider-types'
+import { PROTECTED_PREFIX, TIME_LOCK_PREFIX } from '@/constants'
 
 interface CreateRoute {
   mode: 'create'
@@ -79,8 +80,8 @@ export function parseFragment(fragment: string): ParsedFragment | null {
   let timeLockAt: number | null = null
 
   // Check for time-lock prefix: tl:<unix_timestamp>:
-  if (working.startsWith('tl:')) {
-    const tlRest = working.slice(3)
+  if (working.startsWith(TIME_LOCK_PREFIX)) {
+    const tlRest = working.slice(TIME_LOCK_PREFIX.length)
     const tlColon = tlRest.indexOf(':')
     if (tlColon === -1) return null
     const timestamp = parseInt(tlRest.slice(0, tlColon), 10)
@@ -139,8 +140,8 @@ function parseHash(): HashRoute {
   }
 
   // Check for password-protected fragment
-  if (hash.startsWith('protected:')) {
-    const protectedData = hash.slice('protected:'.length)
+  if (hash.startsWith(PROTECTED_PREFIX)) {
+    const protectedData = hash.slice(PROTECTED_PREFIX.length)
     if (protectedData) {
       return { mode: 'protected', protectedData }
     }

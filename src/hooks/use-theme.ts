@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
+import { STORAGE_KEYS } from '@/constants'
 
 type Theme = 'dark' | 'light'
-
-const STORAGE_KEY = 'notefade-theme'
 
 function getSystemTheme(): Theme {
   if (typeof window === 'undefined') return 'dark'
@@ -13,7 +12,7 @@ function getSystemTheme(): Theme {
 
 function getInitialTheme(): Theme {
   if (typeof window === 'undefined') return 'dark'
-  const stored = localStorage.getItem(STORAGE_KEY)
+  const stored = localStorage.getItem(STORAGE_KEYS.THEME)
   if (stored === 'light' || stored === 'dark') return stored
   return getSystemTheme()
 }
@@ -31,7 +30,7 @@ export function useTheme() {
 
   // Listen for system preference changes when no manual override
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(STORAGE_KEYS.THEME)
     if (stored) return // user has a manual override, don't listen
 
     const mq = window.matchMedia('(prefers-color-scheme: light)')
@@ -46,7 +45,7 @@ export function useTheme() {
   const toggleTheme = useCallback(() => {
     setTheme((prev) => {
       const next = prev === 'dark' ? 'light' : 'dark'
-      localStorage.setItem(STORAGE_KEY, next)
+      localStorage.setItem(STORAGE_KEYS.THEME, next)
       return next
     })
   }, [])

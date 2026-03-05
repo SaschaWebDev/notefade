@@ -224,7 +224,15 @@ yarn test:watch
 
 ### 🧪 Testing
 
-The project has **418 tests** across 23 test suites covering cryptography, steganography, key splitting, receipt verification, URL encoding, and decoy generation.
+**468 unit tests** across 26 test suites (Vitest) covering cryptography, steganography, key splitting, receipt verification, URL encoding, decoy generation, ZIP building, time formatting, and random utilities. **9 end-to-end tests** (Playwright, Chromium) covering page routing, the create-note flow, full create-to-read roundtrip decryption, note-gone states, and password gate rendering.
+
+```bash
+# Run unit tests
+yarn test
+
+# Run E2E tests (auto-starts Vite dev server)
+yarn test:e2e
+```
 
 ### 📦 Production Build
 
@@ -279,7 +287,7 @@ If using Cloudflare Pages automatic builds (connected to GitHub), set `NODE_VERS
 | Steganography | LSB image encoding, zero-width Unicode text encoding |
 | Backend       | Cloudflare Workers + KV                              |
 | Validation    | Zod                                                  |
-| Testing       | Vitest                                               |
+| Testing       | Vitest, Playwright                                   |
 | QR Codes      | qrcode-generator                                     |
 
 ## 📁 Project Structure

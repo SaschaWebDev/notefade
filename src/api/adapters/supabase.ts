@@ -1,5 +1,8 @@
 import type { ProviderAdapter, SupabaseConfig } from '../provider-types'
 import { generateShardId } from '../shard-id'
+import { ttlToISOExpiry } from '@/utils/time'
+
+const SHARDS_PATH = '/rest/v1/shards'
 
 function headers(config: SupabaseConfig): Record<string, string> {
   return {
@@ -16,8 +19,8 @@ export function createSupabaseAdapter(config: SupabaseConfig): ProviderAdapter {
   return {
     async store(shard, ttl) {
       const id = generateShardId()
-      const expiresAt = new Date(Date.now() + ttl * 1000).toISOString()
-      const res = await fetch(`${baseUrl}/rest/v1/shards`, {
+      const expiresAt = ttlToISOExpiry(ttl)
+      const res = await fetch(`${baseUrl}${SHARDS_PATH}`, {
         method: 'POST',
         headers: headers(config),
         body: JSON.stringify({ id, shard, expires_at: expiresAt }),
@@ -31,7 +34,7 @@ export function createSupabaseAdapter(config: SupabaseConfig): ProviderAdapter {
     async check(id) {
       const now = new Date().toISOString()
       const res = await fetch(
-        `${baseUrl}/rest/v1/shards?id=eq.${encodeURIComponent(id)}&expires_at=gt.${encodeURIComponent(now)}&select=id`,
+        `${baseUrl}${SHARDS_PATH}?id=eq.${encodeURIComponent(id)}&expires_at=gt.${encodeURIComponent(now)}&select=id`,
         { headers: headers(config) },
       )
       if (!res.ok) return false
@@ -42,7 +45,7 @@ export function createSupabaseAdapter(config: SupabaseConfig): ProviderAdapter {
     async fetch(id) {
       const now = new Date().toISOString()
       const res = await fetch(
-        `${baseUrl}/rest/v1/shards?id=eq.${encodeURIComponent(id)}&expires_at=gt.${encodeURIComponent(now)}&select=shard`,
+        `${baseUrl}${SHARDS_PATH}?id=eq.${encodeURIComponent(id)}&expires_at=gt.${encodeURIComponent(now)}&select=shard`,
         { headers: headers(config) },
       )
       if (!res.ok) {
@@ -56,7 +59,7 @@ export function createSupabaseAdapter(config: SupabaseConfig): ProviderAdapter {
 
       // Delete after read
       await fetch(
-        `${baseUrl}/rest/v1/shards?id=eq.${encodeURIComponent(id)}`,
+        `${baseUrl}${SHARDS_PATH}?id=eq.${encodeURIComponent(id)}`,
         { method: 'DELETE', headers: headers(config) },
       )
 
@@ -66,7 +69,7 @@ export function createSupabaseAdapter(config: SupabaseConfig): ProviderAdapter {
     async delete(id) {
       const now = new Date().toISOString()
       const checkRes = await fetch(
-        `${baseUrl}/rest/v1/shards?id=eq.${encodeURIComponent(id)}&expires_at=gt.${encodeURIComponent(now)}&select=id`,
+        `${baseUrl}${SHARDS_PATH}?id=eq.${encodeURIComponent(id)}&expires_at=gt.${encodeURIComponent(now)}&select=id`,
         { headers: headers(config) },
       )
       if (!checkRes.ok) return false
@@ -74,7 +77,7 @@ export function createSupabaseAdapter(config: SupabaseConfig): ProviderAdapter {
       if (!Array.isArray(checkData) || checkData.length === 0) return false
 
       await fetch(
-        `${baseUrl}/rest/v1/shards?id=eq.${encodeURIComponent(id)}`,
+        `${baseUrl}${SHARDS_PATH}?id=eq.${encodeURIComponent(id)}`,
         { method: 'DELETE', headers: headers(config) },
       )
       return true

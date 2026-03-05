@@ -18,7 +18,9 @@
     "build:manifest": "node scripts/build-manifest.cjs",
     "build:prod": "tsc --noEmit && vite build && node scripts/inject-sri.cjs && node scripts/build-manifest.cjs",
     "build:docker": "docker build -f Dockerfile.build --output type=local,dest=./dist-verify .",
-    "deploy": "yarn build && wrangler pages deploy dist/"
+    "deploy": "yarn build && wrangler pages deploy dist/",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "qrcode-generator": "^2.0.4",
@@ -37,6 +39,7 @@
     "typescript": "^5.7.0",
     "vite": "~6.1.0",
     "vitest": "~2.1.0",
+    "@playwright/test": "^1.50.0",
     "wrangler": "^3.109.0"
   }
 }

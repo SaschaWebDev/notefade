@@ -1,12 +1,6 @@
 import { useHashRoute } from '@/hooks'
-import { Layout } from '@/components/Layout'
-import { Landing } from '@/components/Landing'
-import { ReadNote } from '@/components/ReadNote'
-import { PasswordGate } from '@/components/PasswordGate'
-import { Docs } from '@/components/Docs'
-import { Activate } from '@/components/Activate'
-import { Decode } from '@/components/Decode'
-import { VerifyReceipt } from '@/components/VerifyReceipt'
+import { Layout } from '@/components'
+import { Landing, ReadNote, PasswordGate, Docs, Activate, Decode, VerifyReceipt } from '@/pages'
 
 export function App() {
   const route = useHashRoute()

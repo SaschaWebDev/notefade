@@ -1,8 +1,10 @@
 import type { ProviderAdapter, CloudflareKVConfig } from '../provider-types'
 import { generateShardId } from '../shard-id'
 
+const CF_API_BASE = 'https://api.cloudflare.com/client/v4'
+
 function kvUrl(config: CloudflareKVConfig, key: string): string {
-  return `https://api.cloudflare.com/client/v4/accounts/${config.a}/storage/kv/namespaces/${config.n}/values/${key}`
+  return `${CF_API_BASE}/accounts/${config.a}/storage/kv/namespaces/${config.n}/values/${key}`
 }
 
 function headers(config: CloudflareKVConfig): Record<string, string> {

@@ -3,6 +3,19 @@
  * Handles AES-256-GCM encryption, XOR key splitting, and URL encoding.
  */
 
+const KEY_BYTES = 32
+const URL_SHARE_BYTES = 48
+const SERVER_SHARD_BYTES = 16
+const IV_BYTES = 12
+const CIPHERTEXT_OFFSET = URL_SHARE_BYTES + IV_BYTES // 60
+const CHUNK_SIZE = 8192
+
+const FNV_OFFSET_BASIS = 0x811c9dc5
+const FNV_PRIME = 0x01000193
+
+const MIN_TIMESTAMP = 1704067200 // 2024-01-01 UTC
+const MAX_TIMESTAMP = 4102444800 // 2100-01-01 UTC
+
 export interface SplitResult {
   /** Base64url-encoded payload for the URL fragment */
   urlPayload: string
@@ -36,16 +49,16 @@ export function splitKey(key: Uint8Array): {
   urlShare: Uint8Array
   serverShard: Uint8Array
 } {
-  const mask = crypto.getRandomValues(new Uint8Array(32))
+  const mask = crypto.getRandomValues(new Uint8Array(KEY_BYTES))
   const xorShare = key.map((b, i) => b ^ (mask[i] ?? 0))
 
   // URL gets: mask (32) + xorShare second half (16) = 48 bytes
-  const urlShare = new Uint8Array(48)
+  const urlShare = new Uint8Array(URL_SHARE_BYTES)
   urlShare.set(mask, 0)
-  urlShare.set(xorShare.slice(16), 32)
+  urlShare.set(xorShare.slice(SERVER_SHARD_BYTES), KEY_BYTES)
 
   // Server stores only first 16 bytes of xorShare
-  const serverShard = xorShare.slice(0, 16)
+  const serverShard = xorShare.slice(0, SERVER_SHARD_BYTES)
 
   // Zero intermediate values (best-effort)
   mask.fill(0)
@@ -58,12 +71,12 @@ export function reconstructKey(
   urlShare: Uint8Array,
   serverShard: Uint8Array,
 ): Uint8Array {
-  const mask = urlShare.slice(0, 32)
-  const xorShareSecondHalf = urlShare.slice(32, 48)
+  const mask = urlShare.slice(0, KEY_BYTES)
+  const xorShareSecondHalf = urlShare.slice(KEY_BYTES, URL_SHARE_BYTES)
 
-  const xorShare = new Uint8Array(32)
+  const xorShare = new Uint8Array(KEY_BYTES)
   xorShare.set(serverShard, 0)
-  xorShare.set(xorShareSecondHalf, 16)
+  xorShare.set(xorShareSecondHalf, SERVER_SHARD_BYTES)
 
   return mask.map((b, i) => b ^ (xorShare[i] ?? 0))
 }
@@ -90,8 +103,8 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
 }
 
 export async function encrypt(message: string): Promise<EncryptedNote> {
-  const key = crypto.getRandomValues(new Uint8Array(32))
-  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const key = crypto.getRandomValues(new Uint8Array(KEY_BYTES))
+  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES))
   const encoded = new TextEncoder().encode(message)
 
   const cryptoKey = await crypto.subtle.importKey(
@@ -149,9 +162,8 @@ export async function decrypt(
 export function toBase64Url(bytes: Uint8Array): string {
   // Chunk to avoid call stack overflow on large arrays
   const chunks: string[] = []
-  const chunkSize = 8192
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const slice = bytes.slice(i, i + chunkSize)
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    const slice = bytes.slice(i, i + CHUNK_SIZE)
     chunks.push(String.fromCharCode(...slice))
   }
   return btoa(chunks.join(''))
@@ -184,10 +196,10 @@ export function stringFromBase64Url(encoded: string): string {
 
 /** Compute a 4-byte FNV-1a hash of a string, returned as base64url (~6 chars) */
 export function computeCheck(payload: string): string {
-  let hash = 0x811c9dc5
+  let hash = FNV_OFFSET_BASIS
   for (let i = 0; i < payload.length; i++) {
     hash ^= payload.charCodeAt(i)
-    hash = Math.imul(hash, 0x01000193)
+    hash = Math.imul(hash, FNV_PRIME)
   }
   const bytes = new Uint8Array(4)
   bytes[0] = (hash >>> 24) & 0xff
@@ -278,7 +290,7 @@ export function decodeMetadata(plaintext: string): OpenNoteResult {
 
 /** Generate a 32-byte random receipt seed */
 export function generateReceiptSeed(): string {
-  const seed = crypto.getRandomValues(new Uint8Array(32))
+  const seed = crypto.getRandomValues(new Uint8Array(KEY_BYTES))
   return toBase64Url(seed)
 }
 
@@ -333,10 +345,10 @@ function xorshift32(state: number): number {
 
 /** FNV-1a hash of raw bytes, returned as unsigned 32-bit */
 function fnv1aBytes(bytes: Uint8Array): number {
-  let hash = 0x811c9dc5
+  let hash = FNV_OFFSET_BASIS
   for (let i = 0; i < bytes.length; i++) {
     hash ^= bytes[i]!
-    hash = Math.imul(hash, 0x01000193)
+    hash = Math.imul(hash, FNV_PRIME)
   }
   return hash >>> 0
 }
@@ -352,10 +364,10 @@ export function deriveTimeLockPositions(
   fillLength: number,
 ): number[] {
   // Seed PRNG with FNV-1a of check string
-  let state = 0x811c9dc5
+  let state = FNV_OFFSET_BASIS
   for (let i = 0; i < check.length; i++) {
     state ^= check.charCodeAt(i)
-    state = Math.imul(state, 0x01000193)
+    state = Math.imul(state, FNV_PRIME)
   }
   state = state >>> 0
 
@@ -468,9 +480,7 @@ export function extractTimeLock(
   if (expectedHash16 !== actualHash16) return null
 
   // Validate timestamp range: 2024-01-01 to 2100-01-01
-  const MIN_TS = 1704067200
-  const MAX_TS = 4102444800
-  if (timestamp < MIN_TS || timestamp > MAX_TS) return null
+  if (timestamp < MIN_TIMESTAMP || timestamp > MAX_TIMESTAMP) return null
 
   return timestamp
 }
@@ -487,10 +497,10 @@ export async function createNote(
   const { urlShare, serverShard } = splitKey(key)
 
   // URL payload: urlShare (48) + iv (12) + ciphertext (variable + 16 GCM tag)
-  const urlBytes = new Uint8Array(48 + 12 + ciphertext.length)
+  const urlBytes = new Uint8Array(URL_SHARE_BYTES + IV_BYTES + ciphertext.length)
   urlBytes.set(urlShare, 0)
-  urlBytes.set(iv, 48)
-  urlBytes.set(ciphertext, 60)
+  urlBytes.set(iv, URL_SHARE_BYTES)
+  urlBytes.set(ciphertext, CIPHERTEXT_OFFSET)
 
   // Zero the raw key (best-effort)
   key.fill(0)
@@ -512,7 +522,7 @@ export async function protectFragment(
   password: string,
 ): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(PROTECTION_SALT_BYTES))
-  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES))
 
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -545,9 +555,9 @@ export async function protectFragment(
   )
 
   // Blob = IV (12) + ciphertext (variable, includes 16-byte GCM tag)
-  const blob = new Uint8Array(12 + ciphertext.length)
+  const blob = new Uint8Array(IV_BYTES + ciphertext.length)
   blob.set(iv, 0)
-  blob.set(ciphertext, 12)
+  blob.set(ciphertext, IV_BYTES)
 
   return toBase64Url(salt) + ':' + toBase64Url(blob)
 }
@@ -565,8 +575,8 @@ export async function unprotectFragment(
   const salt = fromBase64Url(protectedData.slice(0, colonIndex))
   const blob = fromBase64Url(protectedData.slice(colonIndex + 1))
 
-  const iv = blob.slice(0, 12)
-  const ciphertext = blob.slice(12)
+  const iv = blob.slice(0, IV_BYTES)
+  const ciphertext = blob.slice(IV_BYTES)
 
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -608,9 +618,9 @@ export async function openNote(
   const urlBytes = fromBase64Url(realPayload)
   const shard = fromBase64Url(serverShard)
 
-  const urlShare = urlBytes.slice(0, 48)
-  const iv = urlBytes.slice(48, 60)
-  const ciphertext = urlBytes.slice(60)
+  const urlShare = urlBytes.slice(0, URL_SHARE_BYTES)
+  const iv = urlBytes.slice(URL_SHARE_BYTES, CIPHERTEXT_OFFSET)
+  const ciphertext = urlBytes.slice(CIPHERTEXT_OFFSET)
 
   const key = reconstructKey(urlShare, shard)
   const decryptedBytes = await decryptToBytes(ciphertext, iv, key)

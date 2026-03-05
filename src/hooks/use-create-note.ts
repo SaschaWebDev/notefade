@@ -3,11 +3,7 @@ import { createNote, computeCheck, protectFragment, padPayload, embedTimeLock, g
 import type { NoteMetadata } from '@/crypto'
 import { storeShard, deferShard, createAdapter, encodeProviderConfig } from '@/api'
 import type { ProviderConfig, ProviderType } from '@/api/provider-types'
-
-const MAX_CHARS = 1800
-const PROVIDER_STORAGE_KEY = 'notefade-provider'
-const LEGACY_API_URL_KEY = 'notefade-api-url'
-const MAX_READ_COUNT = 10
+import { MAX_NOTE_CHARS, MAX_READ_COUNT, STORAGE_KEYS, PROTECTED_PREFIX, TIME_LOCK_PREFIX, DEFAULT_BAR_SECONDS } from '@/constants'
 
 const TTL_OPTIONS = [
   { label: '1h', value: 3600 },
@@ -39,21 +35,21 @@ export interface ReceiptVerification {
 
 function loadProviderConfig(): ProviderConfig | null {
   // Try new storage key first
-  const stored = localStorage.getItem(PROVIDER_STORAGE_KEY)
+  const stored = localStorage.getItem(STORAGE_KEYS.PROVIDER)
   if (stored) {
     try {
       return JSON.parse(stored) as ProviderConfig
     } catch {
-      localStorage.removeItem(PROVIDER_STORAGE_KEY)
+      localStorage.removeItem(STORAGE_KEYS.PROVIDER)
     }
   }
 
   // Migrate from legacy api-url key
-  const legacyUrl = localStorage.getItem(LEGACY_API_URL_KEY)
+  const legacyUrl = localStorage.getItem(STORAGE_KEYS.LEGACY_API_URL)
   if (legacyUrl) {
-    localStorage.removeItem(LEGACY_API_URL_KEY)
+    localStorage.removeItem(STORAGE_KEYS.LEGACY_API_URL)
     const config: ProviderConfig = { t: 'self', u: legacyUrl }
-    localStorage.setItem(PROVIDER_STORAGE_KEY, JSON.stringify(config))
+    localStorage.setItem(STORAGE_KEYS.PROVIDER, JSON.stringify(config))
     return config
   }
 
@@ -117,7 +113,7 @@ interface UseCreateNoteReturn {
 
 export function useCreateNote(): UseCreateNoteReturn {
   const [message, setMessage] = useState('')
-  const [ttl, setTtl] = useState(86400)
+  const [ttl, setTtl] = useState<number>(TTL_OPTIONS[1].value)
   const [noteUrl, setNoteUrl] = useState<string | null>(null)
   const [compactUrl, setCompactUrl] = useState<string | null>(null)
   const [shardId, setShardId] = useState<string | null>(null)
@@ -133,7 +129,7 @@ export function useCreateNote(): UseCreateNoteReturn {
   // Feature 1: Multi-read
   const [readCount, setReadCount] = useState(1)
   // Feature 3: Burn-after-reading
-  const [barDuration, setBarDuration] = useState(300)
+  const [barDuration, setBarDuration] = useState(DEFAULT_BAR_SECONDS)
   // Feature 4: Time-lock
   const [timeLockEnabled, setTimeLockEnabled] = useState(false)
   const [timeLockAt, setTimeLockAt] = useState('')
@@ -147,7 +143,7 @@ export function useCreateNote(): UseCreateNoteReturn {
   const [decoyMessages, setDecoyMessages] = useState<string[]>([])
   const [decoyUrls, setDecoyUrls] = useState<string[]>([])
 
-  const isOverLimit = message.length > MAX_CHARS
+  const isOverLimit = message.length > MAX_NOTE_CHARS
   const isEmpty = message.trim().length === 0
   const isCustomServer = providerConfig !== null
   const providerType = providerConfig?.t ?? null
@@ -155,15 +151,15 @@ export function useCreateNote(): UseCreateNoteReturn {
   const setProviderConfig = (config: ProviderConfig | null) => {
     setProviderConfigState(config)
     if (config) {
-      localStorage.setItem(PROVIDER_STORAGE_KEY, JSON.stringify(config))
+      localStorage.setItem(STORAGE_KEYS.PROVIDER, JSON.stringify(config))
     } else {
-      localStorage.removeItem(PROVIDER_STORAGE_KEY)
+      localStorage.removeItem(STORAGE_KEYS.PROVIDER)
     }
   }
 
   const resetProvider = () => {
     setProviderConfigState(null)
-    localStorage.removeItem(PROVIDER_STORAGE_KEY)
+    localStorage.removeItem(STORAGE_KEYS.PROVIDER)
   }
 
   const setPassword = (pw: string) => {
@@ -274,7 +270,7 @@ export function useCreateNote(): UseCreateNoteReturn {
       let finalFragment: string
       if (passwordEnabled && password.length > 0) {
         const protectedData = await protectFragment(paddedFragment, password)
-        finalFragment = `protected:${protectedData}`
+        finalFragment = `${PROTECTED_PREFIX}${protectedData}`
       } else {
         finalFragment = paddedFragment
       }
@@ -307,7 +303,7 @@ export function useCreateNote(): UseCreateNoteReturn {
 
     // Time-lock prefix (compact/QR only — padded URLs use steganographic embedding)
     const tlPrefix = timeLockEnabled && timeLockAt
-      ? `tl:${Math.floor(new Date(timeLockAt).getTime() / 1000)}:`
+      ? `${TIME_LOCK_PREFIX}${Math.floor(new Date(timeLockAt).getTime() / 1000)}:`
       : ''
 
     // Build compact fragment (variable-length, for QR codes) — keeps tl: prefix
@@ -325,7 +321,7 @@ export function useCreateNote(): UseCreateNoteReturn {
     let compact: string | null = null
     if (passwordEnabled && password.length > 0) {
       const protectedData = await protectFragment(paddedFragment, password)
-      finalFragment = `protected:${protectedData}`
+      finalFragment = `${PROTECTED_PREFIX}${protectedData}`
     } else {
       finalFragment = paddedFragment
       compact = `${window.location.origin}${pathname}#${compactFragment}`
@@ -400,7 +396,7 @@ export function useCreateNote(): UseCreateNoteReturn {
 
   const resetExpertSettings = () => {
     setReadCount(1)
-    setBarDuration(300)
+    setBarDuration(DEFAULT_BAR_SECONDS)
     setTimeLockEnabled(false)
     setTimeLockAt('')
     setDeferredMode(false)
@@ -412,7 +408,7 @@ export function useCreateNote(): UseCreateNoteReturn {
 
   const resetNote = () => {
     setMessage('')
-    setTtl(86400)
+    setTtl(TTL_OPTIONS[1].value)
     setNoteUrl(null)
     setCompactUrl(null)
     setShardId(null)
@@ -420,7 +416,7 @@ export function useCreateNote(): UseCreateNoteReturn {
     setPasswordState('')
     setPasswordEnabledState(false)
     setReadCount(1)
-    setBarDuration(300)
+    setBarDuration(DEFAULT_BAR_SECONDS)
     setTimeLockEnabled(false)
     setTimeLockAt('')
     setDeferredMode(false)
@@ -444,7 +440,7 @@ export function useCreateNote(): UseCreateNoteReturn {
     error,
     isOverLimit,
     isEmpty,
-    maxChars: MAX_CHARS,
+    maxChars: MAX_NOTE_CHARS,
     ttlOptions: TTL_OPTIONS,
     providerConfig,
     setProviderConfig,

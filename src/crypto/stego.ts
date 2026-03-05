@@ -2,6 +2,8 @@
 /*  Randomized stego filename generation                               */
 /* ------------------------------------------------------------------ */
 
+import { randInt, pick } from '@/utils/random'
+
 const ADJECTIVES = [
   'cool', 'warm', 'bright', 'dark', 'soft', 'bold', 'calm', 'deep',
   'vivid', 'muted', 'golden', 'silver', 'hazy', 'dreamy', 'rustic',
@@ -47,17 +49,6 @@ const PERSONAL = [
   'postcard', 'poster', 'cover', 'banner', 'avatar', 'pfp',
   'background', 'lockscreen', 'screensaver', 'thumbnail',
 ]
-
-/** Cryptographically random integer in [0, max) */
-function randInt(max: number): number {
-  const arr = new Uint32Array(1)
-  crypto.getRandomValues(arr)
-  return arr[0]! % max
-}
-
-function pick<T>(pool: readonly T[]): T {
-  return pool[randInt(pool.length)]!
-}
 
 function pad2(n: number): string {
   return n < 10 ? '0' + n : String(n)

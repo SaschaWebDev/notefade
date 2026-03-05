@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { EndpointDef } from './docs-data'
 import { METHOD_COLORS } from './docs-data'
 import { DocsCodeBlock } from './DocsCodeBlock'
+import { IconChevronDown } from '../ui/icons'
 import styles from './ApiEndpoint.module.css'
 
 interface ApiEndpointProps {
@@ -46,21 +47,9 @@ export function ApiEndpoint({ endpoint }: ApiEndpointProps) {
         </div>
         <div className={styles.headerRight}>
           <span className={styles.summary}>{endpoint.summary}</span>
-          <svg
+          <IconChevronDown
             className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`}
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
-            <path
-              d="M4 6l4 4 4-4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          />
         </div>
       </button>
 

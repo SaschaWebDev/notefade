@@ -1,8 +1,11 @@
 import type { ProviderAdapter, CloudflareD1Config } from '../provider-types'
 import { generateShardId } from '../shard-id'
+import { ttlToISOExpiry } from '@/utils/time'
+
+const CF_API_BASE = 'https://api.cloudflare.com/client/v4'
 
 function queryUrl(config: CloudflareD1Config): string {
-  return `https://api.cloudflare.com/client/v4/accounts/${config.a}/d1/database/${config.d}/query`
+  return `${CF_API_BASE}/accounts/${config.a}/d1/database/${config.d}/query`
 }
 
 function headers(config: CloudflareD1Config): Record<string, string> {
@@ -16,7 +19,7 @@ export function createCloudflareD1Adapter(config: CloudflareD1Config): ProviderA
   return {
     async store(shard, ttl) {
       const id = generateShardId()
-      const expiresAt = new Date(Date.now() + ttl * 1000).toISOString()
+      const expiresAt = ttlToISOExpiry(ttl)
       const res = await fetch(queryUrl(config), {
         method: 'POST',
         headers: headers(config),

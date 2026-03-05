@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { COPY_FEEDBACK_MS } from '@/constants'
 import styles from './DocsCodeBlock.module.css'
 
 interface DocsCodeBlockProps {
@@ -12,7 +13,7 @@ export function DocsCodeBlock({ code, language }: DocsCodeBlockProps) {
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(code).then(() => {
       setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
+      setTimeout(() => setCopied(false), COPY_FEEDBACK_MS)
     })
   }, [code])
 

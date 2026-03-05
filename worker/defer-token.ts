@@ -25,11 +25,12 @@ function hexToBytes(hex: string): Uint8Array {
   return bytes
 }
 
+const CHUNK_SIZE = 8192
+
 function toBase64Url(bytes: Uint8Array): string {
   const chunks: string[] = []
-  const chunkSize = 8192
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const slice = bytes.slice(i, i + chunkSize)
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    const slice = bytes.slice(i, i + CHUNK_SIZE)
     chunks.push(String.fromCharCode(...slice))
   }
   return btoa(chunks.join(''))
