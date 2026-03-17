@@ -5,6 +5,7 @@ import { DocsCodeBlock } from '@/components/docs/DocsCodeBlock'
 import { DocsCallout } from '@/components/docs/DocsCallout'
 import { ApiReference } from '@/components/docs/ApiReference'
 import { SelfHosting } from '@/components/docs/SelfHosting'
+import { IntegrationApi } from '@/components/docs/IntegrationApi'
 import styles from './Docs.module.css'
 
 const SCROLL_DELAY_MS = 100
@@ -663,6 +664,9 @@ download (7).png            (generic download)`}
 
       {/* ---- Self-Hosting ---- */}
       <SelfHosting />
+
+      {/* ---- Third-Party Integration ---- */}
+      <IntegrationApi />
 
       <footer className={styles.footer}>
         <p className={styles.footerCredit}>

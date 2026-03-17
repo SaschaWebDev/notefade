@@ -5,14 +5,22 @@ import { PROVIDERS, getProviderEntry } from '@/api/provider-registry';
 import type { ProviderConfig, ProviderType } from '@/api/provider-types';
 import { ContentFade } from '@/components/ui/content-fade';
 import { NoteLink } from '../note-link';
-import { NoteMarkdown, hasMarkdownPatterns } from '@/components/ui/note-markdown';
+import {
+  NoteMarkdown,
+  hasMarkdownPatterns,
+} from '@/components/ui/note-markdown';
 import { generateDecoyMessage } from '@/crypto';
-import { COPY_FEEDBACK_MS, DEFAULT_BAR_SECONDS, MAX_PASSWORD_LENGTH, MAX_DECOY_COUNT } from '@/constants';
+import {
+  COPY_FEEDBACK_MS,
+  DEFAULT_BAR_SECONDS,
+  MAX_PASSWORD_LENGTH,
+  MAX_DECOY_COUNT,
+} from '@/constants';
 import styles from './CreateNote.module.css';
 
-const DEFAULT_TIMELOCK_OFFSET_MS = 86_400_000
-const MIN_TIMELOCK_OFFSET_MS = 60_000
-const MIN_PASSWORD_INPUT_WIDTH = 14
+const DEFAULT_TIMELOCK_OFFSET_MS = 86_400_000;
+const MIN_TIMELOCK_OFFSET_MS = 60_000;
+const MIN_PASSWORD_INPUT_WIDTH = 14;
 
 const BYOS_PROVIDER_TYPES = PROVIDERS.map((p) => p.type);
 
@@ -648,7 +656,10 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                       setNoteUrlCopied(true);
                       setHasEverCopiedUrl(true);
                       setConfirmingLeave(false);
-                      setTimeout(() => setNoteUrlCopied(false), COPY_FEEDBACK_MS);
+                      setTimeout(
+                        () => setNoteUrlCopied(false),
+                        COPY_FEEDBACK_MS,
+                      );
                     }}
                   >
                     {noteUrlCopied ? 'copied' : 'copy link'}
@@ -681,7 +692,10 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                   setLaunchCodeCopied(true);
                   setHasEverCopiedLaunchCode(true);
                   setConfirmingLeave(false);
-                  setTimeout(() => setLaunchCodeCopied(false), COPY_FEEDBACK_MS);
+                  setTimeout(
+                    () => setLaunchCodeCopied(false),
+                    COPY_FEEDBACK_MS,
+                  );
                 }}
               >
                 {launchCodeCopied ? 'copied' : 'copy launch code'}
@@ -764,7 +778,12 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
           readCount={readCount}
           receiptVerification={receiptVerification}
           decoyUrls={decoyUrls}
-          barDurationLabel={barDuration !== DEFAULT_BAR_SECONDS ? (barOptions.find((o) => o.value === barDuration)?.label ?? `${barDuration}s`) : undefined}
+          barDurationLabel={
+            barDuration !== DEFAULT_BAR_SECONDS
+              ? (barOptions.find((o) => o.value === barDuration)?.label ??
+                `${barDuration}s`)
+              : undefined
+          }
           timeLockAt={timeLockEnabled && timeLockAt ? timeLockAt : undefined}
         />
       ) : (
@@ -1607,7 +1626,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                         }}
                         value={password}
                         onChange={(e) =>
-                          setPassword(e.target.value.slice(0, MAX_PASSWORD_LENGTH))
+                          setPassword(
+                            e.target.value.slice(0, MAX_PASSWORD_LENGTH),
+                          )
                         }
                         maxLength={MAX_PASSWORD_LENGTH}
                         placeholder='password'
@@ -1623,7 +1644,10 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                           navigator.clipboard.writeText(password);
                           setShowPassword(false);
                           setPwCopied(true);
-                          setTimeout(() => setPwCopied(false), COPY_FEEDBACK_MS);
+                          setTimeout(
+                            () => setPwCopied(false),
+                            COPY_FEEDBACK_MS,
+                          );
                         }}
                         title={pwCopied ? 'copied' : 'copy password'}
                         tabIndex={-1}

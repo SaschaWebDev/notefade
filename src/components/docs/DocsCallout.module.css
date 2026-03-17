@@ -21,6 +21,12 @@
   background: rgba(var(--fg), 0.02);
 }
 
+.danger {
+  border-left-width: 4px;
+  border-left-color: rgba(239, 68, 68, 0.7);
+  background: rgba(239, 68, 68, 0.06);
+}
+
 .label {
   display: block;
   font-size: 11px;
@@ -40,6 +46,10 @@
 
 .caveat .label {
   color: rgba(var(--fg), 0.35);
+}
+
+.danger .label {
+  color: rgba(239, 68, 68, 0.8);
 }
 
 .body {

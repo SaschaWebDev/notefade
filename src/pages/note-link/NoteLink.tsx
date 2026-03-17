@@ -33,13 +33,22 @@ import {
   IconUpload,
   IconReset,
 } from '@/components/ui/icons';
-import { STORAGE_KEYS, COPY_FEEDBACK_MS, COPY_FLASH_FADE_MS, COPY_FLASH_DONE_MS, QR_CHAR_LIMIT, QR_EXPORT_SIZE, MIN_STEGO_TEXT_LENGTH, PROTECTED_PREFIX } from '@/constants';
+import {
+  STORAGE_KEYS,
+  COPY_FEEDBACK_MS,
+  COPY_FLASH_FADE_MS,
+  COPY_FLASH_DONE_MS,
+  QR_CHAR_LIMIT,
+  QR_EXPORT_SIZE,
+  MIN_STEGO_TEXT_LENGTH,
+  PROTECTED_PREFIX,
+} from '@/constants';
 import { formatCountdown, formatDate } from '@/utils/time';
 import { buildZip } from '@/utils/zip';
 import styles from './NoteLink.module.css';
 
-const PASSWORD_MASK_MAX = 20
-const QR_HEIGHT_OFFSET = 30
+const PASSWORD_MASK_MAX = 20;
+const QR_HEIGHT_OFFSET = 30;
 
 type DestroyState = 'idle' | 'confirming' | 'destroying' | 'destroyed';
 
@@ -429,18 +438,12 @@ export function NoteLink({
           </div>
 
           {barDurationLabel && (
-            <MetaPill
-              href="/docs#auto-expiring"
-              icon={<IconSunburst />}
-            >
+            <MetaPill href='/docs#auto-expiring' icon={<IconSunburst />}>
               fades after {barDurationLabel}
             </MetaPill>
           )}
           {timeLockAt && (
-            <MetaPill
-              href="/docs#time-lock"
-              icon={<IconLockSmall />}
-            >
+            <MetaPill href='/docs#time-lock' icon={<IconLockSmall />}>
               unlocks{' '}
               {new Date(timeLockAt).toLocaleDateString([], {
                 month: 'short',
@@ -451,26 +454,17 @@ export function NoteLink({
             </MetaPill>
           )}
           {readCount > 1 && (
-            <MetaPill
-              href="/docs#one-time-read"
-              icon={<IconReadCount />}
-            >
+            <MetaPill href='/docs#one-time-read' icon={<IconReadCount />}>
               {readCount}&times; reads
             </MetaPill>
           )}
           {receiptVerification && (
-            <MetaPill
-              href="/docs#proof-of-read"
-              icon={<IconShieldCheck />}
-            >
+            <MetaPill href='/docs#proof-of-read' icon={<IconShieldCheck />}>
               proof of read
             </MetaPill>
           )}
           {decoyUrls.length > 0 && (
-            <MetaPill
-              href="/docs#decoy-links"
-              icon={<IconGrid />}
-            >
+            <MetaPill href='/docs#decoy-links' icon={<IconGrid />}>
               {decoyUrls.length} decoy link{decoyUrls.length > 1 ? 's' : ''}
             </MetaPill>
           )}
@@ -508,11 +502,7 @@ export function NoteLink({
                   onClick={handleCopy}
                   title={copied ? 'copied' : 'copy to clipboard'}
                 >
-                  {copied ? (
-                    <IconCheck />
-                  ) : (
-                    <IconClipboard />
-                  )}
+                  {copied ? <IconCheck /> : <IconClipboard />}
                 </button>
                 <button
                   type='button'
@@ -605,47 +595,49 @@ export function NoteLink({
               )}
             </div>
 
-            {fragment.startsWith(`#${PROTECTED_PREFIX}`) && password.length > 0 && (
-              <div className={styles.passwordDisplay}>
-                <span className={styles.passwordLabel}>password</span>
-                <span className={styles.passwordText}>
-                  {showPw
-                    ? password
-                    : '\u2022'.repeat(Math.min(password.length, PASSWORD_MASK_MAX))}
-                </span>
-                <button
-                  type='button'
-                  className={styles.passwordAction}
-                  onClick={() => {
-                    if (pwCopied !== 'idle') return;
-                    navigator.clipboard.writeText(password);
-                    setShowPw(false);
-                    setPwCopied('shown');
-                    setTimeout(() => setPwCopied('fading'), COPY_FLASH_FADE_MS);
-                    setTimeout(() => setPwCopied('idle'), COPY_FLASH_DONE_MS);
-                  }}
-                  title={pwCopied !== 'idle' ? 'copied' : 'copy password'}
-                >
-                  {pwCopied !== 'idle' ? (
-                    <IconCheck size={14} />
-                  ) : (
-                    <IconClipboard size={14} />
-                  )}
-                </button>
-                <button
-                  type='button'
-                  className={styles.passwordAction}
-                  onClick={() => setShowPw((prev) => !prev)}
-                  title={showPw ? 'hide password' : 'reveal password'}
-                >
-                  {showPw ? (
-                    <IconEye />
-                  ) : (
-                    <IconEyeOff />
-                  )}
-                </button>
-              </div>
-            )}
+            {fragment.startsWith(`#${PROTECTED_PREFIX}`) &&
+              password.length > 0 && (
+                <div className={styles.passwordDisplay}>
+                  <span className={styles.passwordLabel}>password</span>
+                  <span className={styles.passwordText}>
+                    {showPw
+                      ? password
+                      : '\u2022'.repeat(
+                          Math.min(password.length, PASSWORD_MASK_MAX),
+                        )}
+                  </span>
+                  <button
+                    type='button'
+                    className={styles.passwordAction}
+                    onClick={() => {
+                      if (pwCopied !== 'idle') return;
+                      navigator.clipboard.writeText(password);
+                      setShowPw(false);
+                      setPwCopied('shown');
+                      setTimeout(
+                        () => setPwCopied('fading'),
+                        COPY_FLASH_FADE_MS,
+                      );
+                      setTimeout(() => setPwCopied('idle'), COPY_FLASH_DONE_MS);
+                    }}
+                    title={pwCopied !== 'idle' ? 'copied' : 'copy password'}
+                  >
+                    {pwCopied !== 'idle' ? (
+                      <IconCheck size={14} />
+                    ) : (
+                      <IconClipboard size={14} />
+                    )}
+                  </button>
+                  <button
+                    type='button'
+                    className={styles.passwordAction}
+                    onClick={() => setShowPw((prev) => !prev)}
+                    title={showPw ? 'hide password' : 'reveal password'}
+                  >
+                    {showPw ? <IconEye /> : <IconEyeOff />}
+                  </button>
+                </div>
+              )}
           </div>
 
           {/* Steganographic sharing (Feature 7) */}
@@ -805,7 +797,10 @@ export function NoteLink({
                   URL.revokeObjectURL(u);
                   setReceiptDownloaded(true);
                   setVerificationCopied(true);
-                  setTimeout(() => setVerificationCopied(false), COPY_FEEDBACK_MS);
+                  setTimeout(
+                    () => setVerificationCopied(false),
+                    COPY_FEEDBACK_MS,
+                  );
                 }}
               >
                 {verificationCopied
@@ -829,7 +824,10 @@ export function NoteLink({
                   onClick={() => {
                     navigator.clipboard.writeText(dUrl);
                     setCopiedDecoyIndex(i);
-                    setTimeout(() => setCopiedDecoyIndex(null), COPY_FEEDBACK_MS);
+                    setTimeout(
+                      () => setCopiedDecoyIndex(null),
+                      COPY_FEEDBACK_MS,
+                    );
                   }}
                   title='click to copy'
                 >

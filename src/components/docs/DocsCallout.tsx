@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import styles from './DocsCallout.module.css'
 
-type CalloutVariant = 'note' | 'warning' | 'caveat'
+type CalloutVariant = 'note' | 'warning' | 'caveat' | 'danger'
 
 interface DocsCalloutProps {
   variant?: CalloutVariant
@@ -12,6 +12,7 @@ const LABELS: Record<CalloutVariant, string> = {
   note: 'Note',
   warning: 'Warning',
   caveat: 'Caveat',
+  danger: 'Important',
 }
 
 export function DocsCallout({ variant = 'note', children }: DocsCalloutProps) {

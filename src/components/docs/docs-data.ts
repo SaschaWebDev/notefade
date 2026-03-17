@@ -67,6 +67,12 @@ export const TOC_GROUPS: TocGroup[] = [
       { id: 'verifying-builds', label: 'Verifying Builds' },
     ],
   },
+  {
+    label: 'Third-Party Integration',
+    items: [
+      { id: 'integration-api', label: 'Integration API' },
+    ],
+  },
 ]
 
 export const CORS_ORIGINS = [
@@ -318,3 +324,52 @@ export const METHOD_COLORS: Record<string, string> = {
   DELETE: '#f87171',
   HEAD: '#a78bfa',
 }
+
+export const INTEGRATION_ENDPOINTS: EndpointDef[] = [
+  {
+    method: 'POST',
+    path: '/api/v1/create-note',
+    summary: 'Create a note (server-side encryption)',
+    description:
+      'Accepts plaintext, encrypts it on the server using the same AES-256-GCM + XOR key-splitting scheme as the main app, stores the shard, and returns a one-time note URL. The server sees plaintext briefly (~1-2ms) in volatile Worker memory. Plaintext is never stored or logged — it goes out of scope after the response is sent. Requires a valid API key via the X-Api-Key header. Fixed 24-hour TTL.',
+    params: [
+      {
+        name: 'text',
+        location: 'body',
+        type: 'string',
+        required: true,
+        description: 'The plaintext note content (1-1800 characters)',
+        pattern: '1 ≤ length ≤ 1800',
+      },
+    ],
+    responses: [
+      {
+        status: 201,
+        description: 'Note created',
+        body: '{ "url": "https://notefade.com/#...", "shardId": "a1b2c3d4e5f67890", "expiresAt": 1710720000000 }',
+      },
+      { status: 400, description: 'Invalid JSON or failed schema validation' },
+      { status: 401, description: 'Missing or invalid API key' },
+      { status: 413, description: 'Request body exceeds 4 KB' },
+      { status: 429, description: 'Per-key rate limit exceeded' },
+    ],
+    exampleRequest: `POST /api/v1/create-note HTTP/1.1
+Content-Type: application/json
+X-Api-Key: nfk_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+
+{
+  "text": "The deploy credentials are ..."
+}`,
+    exampleResponse: `HTTP/1.1 201 Created
+Content-Type: application/json
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 59
+X-RateLimit-Reset: 1710720060
+
+{
+  "url": "https://notefade.com/#a1b2c3d4e5f67890:...",
+  "shardId": "a1b2c3d4e5f67890",
+  "expiresAt": 1710806400000
+}`,
+  },
+]
