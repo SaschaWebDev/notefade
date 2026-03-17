@@ -2,15 +2,21 @@ import { z } from 'zod'
 import { CloudflareKVShardStore } from './shard-store'
 import type { ShardStore } from './shard-store'
 import { createDeferToken, openDeferToken } from './defer-token'
+import { createNote, computeCheck } from '../src/crypto/crypto'
+import { validateApiKey } from './api-key'
+import { checkKeyRateLimit } from './rate-limit-kv'
 
 interface Env {
   SHARDS: KVNamespace
   DEFER_SECRET?: string  // 64 hex chars (32 bytes), set via `wrangler secret put`
+  WEB_ORIGIN?: string    // Override for dev/staging (defaults to https://notefade.com)
 }
 
 const VALID_TTLS = [3600, 86400, 604800] as const
 const MAX_BODY_SIZE = 1024 // 1KB
+const MAX_API_BODY_SIZE = 4096 // 4KB (1800-char message + JSON overhead)
 const SHARD_ID_RE = /^[a-f0-9]{8,16}$/
+const API_DEFAULT_TTL = 86400 // 24 hours
 
 // --- In-memory rate limiting (per-isolate) ---
 
@@ -95,6 +101,10 @@ const ActivateTokenSchema = z.object({
   token: z.string().min(1, 'Token is required'),
 })
 
+const CreateNoteSchema = z.object({
+  text: z.string().min(1).max(1800),
+})
+
 /** Maximum token age: 30 days */
 const MAX_TOKEN_AGE_MS = 30 * 24 * 60 * 60 * 1000
 
@@ -109,7 +119,7 @@ function corsHeaders(origin: string): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, HEAD, POST, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Api-Key',
     'Access-Control-Max-Age': '86400',
     'Cache-Control': 'no-store',
     'Pragma': 'no-cache',
@@ -123,9 +133,13 @@ const ALLOWED_ORIGINS = new Set([
 
 const DEV_ORIGIN_RE = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/
 
-function getAllowedOrigin(request: Request): string {
+function getAllowedOrigin(request: Request, hasApiKey = false): string {
   const origin = request.headers.get('Origin') ?? ''
   if (ALLOWED_ORIGINS.has(origin) || DEV_ORIGIN_RE.test(origin)) {
+    return origin
+  }
+  // API-key-authenticated requests: reflect the request's Origin
+  if (hasApiKey && origin) {
     return origin
   }
   return 'https://notefade.com'
@@ -137,7 +151,8 @@ async function handleRequest(
   env: Env,
 ): Promise<Response> {
   const url = new URL(request.url)
-  const origin = getAllowedOrigin(request)
+  const hasApiKey = request.headers.get('X-Api-Key') !== null
+  const origin = getAllowedOrigin(request, hasApiKey)
   const headers = corsHeaders(origin)
 
   // CORS preflight
@@ -360,13 +375,102 @@ async function handleRequest(
     return Response.json({ id: payload.id }, { status: 201, headers })
   }
 
+  // POST /api/v1/create-note — integration API (requires API key)
+  if (request.method === 'POST' && url.pathname === '/api/v1/create-note') {
+    // Require API key
+    const rawKey = request.headers.get('X-Api-Key')
+    if (!rawKey) {
+      return Response.json(
+        { error: 'Missing API key' },
+        { status: 401, headers },
+      )
+    }
+
+    const keyResult = await validateApiKey(env.SHARDS, rawKey)
+    if (!keyResult) {
+      return Response.json(
+        { error: 'Invalid API key' },
+        { status: 401, headers },
+      )
+    }
+
+    // Per-key rate limit
+    const rateLimit = await checkKeyRateLimit(
+      env.SHARDS,
+      keyResult.keyId,
+      keyResult.limits?.postPerMin,
+    )
+    const rlHeaders = {
+      ...headers,
+      'X-RateLimit-Limit': String(rateLimit.limit),
+      'X-RateLimit-Remaining': String(rateLimit.remaining),
+      'X-RateLimit-Reset': String(rateLimit.resetAt),
+    }
+
+    if (!rateLimit.allowed) {
+      const retryAfter = rateLimit.resetAt - Math.floor(Date.now() / 1000)
+      return Response.json(
+        { error: 'Rate limit exceeded' },
+        {
+          status: 429,
+          headers: { ...rlHeaders, 'Retry-After': String(Math.max(1, retryAfter)) },
+        },
+      )
+    }
+
+    // Body size check (larger limit for API)
+    const rawBody = await request.text()
+    if (rawBody.length > MAX_API_BODY_SIZE) {
+      return Response.json(
+        { error: 'Body too large' },
+        { status: 413, headers: rlHeaders },
+      )
+    }
+
+    let body: unknown
+    try {
+      body = JSON.parse(rawBody)
+    } catch {
+      return Response.json(
+        { error: 'Invalid JSON' },
+        { status: 400, headers: rlHeaders },
+      )
+    }
+
+    const parsed = CreateNoteSchema.safeParse(body)
+    if (!parsed.success) {
+      return Response.json(
+        { error: 'Invalid request', details: parsed.error.issues },
+        { status: 400, headers: rlHeaders },
+      )
+    }
+
+    // Encrypt and split
+    const { urlPayload, serverShard } = await createNote(parsed.data.text)
+    const id = generateShardId()
+    await store.put(id, serverShard, API_DEFAULT_TTL)
+
+    // Build URL
+    const check = computeCheck(urlPayload)
+    const webOrigin = env.WEB_ORIGIN ?? 'https://notefade.com'
+    const noteUrl = `${webOrigin}/#${id}:${check}:${urlPayload}`
+    const expiresAt = Date.now() + API_DEFAULT_TTL * 1000
+
+    return Response.json(
+      { url: noteUrl, shardId: id, expiresAt },
+      { status: 201, headers: rlHeaders },
+    )
+  }
+
   return Response.json({ error: 'Not found' }, { status: 404, headers })
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    // Rate limit before any business logic (skip preflight)
-    if (request.method !== 'OPTIONS') {
+    const isApiRoute = new URL(request.url).pathname.startsWith('/api/')
+
+    // Rate limit before any business logic (skip preflight and API routes — they have their own)
+    if (request.method !== 'OPTIONS' && !isApiRoute) {
       const origin = getAllowedOrigin(request)
       const headers = corsHeaders(origin)
       const limited = checkRateLimit(request, headers)
