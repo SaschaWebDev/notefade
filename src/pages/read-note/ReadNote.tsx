@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
 import { useReadNote } from '@/hooks/use-read-note';
+import { useReadMultiNote } from '@/hooks/use-read-multi-note';
 import { fromBase64Url, computeCheck, computeReceiptProof } from '@/crypto';
+import type { ParsedFragment } from '@/hooks/use-hash-route';
 import { getProviderLabel } from '@/api/provider-registry';
 import type { ProviderConfig } from '@/api/provider-types';
 import { COPY_FEEDBACK_MS } from '@/constants';
@@ -8,7 +10,7 @@ import { formatDuration, formatTimeLockCountdown } from '@/utils/time';
 import { ContentFade } from '@/components/ui/content-fade';
 import { NoteGone } from '../note-gone';
 import { NoteMarkdown, hasMarkdownPatterns } from '@/components/ui/note-markdown';
-import { IconTimeLockClock, IconError, IconXCircle, IconWarning, IconFade } from '@/components/ui/icons';
+import { IconTimeLockClock, IconError, IconXCircle, IconWarning, IconFade, IconClipboard, IconCheck } from '@/components/ui/icons';
 import styles from './ReadNote.module.css';
 
 const SHARD_ID_PATTERN = /^[a-f0-9]{4,32}$/i
@@ -21,6 +23,7 @@ interface ReadNoteProps {
   check: string | null;
   provider: ProviderConfig | null;
   timeLockAt: number | null;
+  multiChunks?: ParsedFragment[] | null;
 }
 
 function validateFragment(
@@ -65,12 +68,15 @@ export function ReadNote({
   check,
   provider,
   timeLockAt,
+  multiChunks,
 }: ReadNoteProps) {
+  const isMultiChunk = multiChunks != null && multiChunks.length > 1;
   const [confirmed, setConfirmed] = useState(false);
   const [checked, setChecked] = useState(false);
   const [viewMode, setViewMode] = useState<'raw' | 'formatted'>('formatted');
   const [receiptProof, setReceiptProof] = useState<string | null>(null);
   const [receiptCopied, setReceiptCopied] = useState(false);
+  const [noteCopied, setNoteCopied] = useState(false);
   const [timeLockReady, setTimeLockReady] = useState(
     timeLockAt === null || timeLockAt * 1000 <= Date.now(),
   );
@@ -95,13 +101,18 @@ export function ReadNote({
     return () => clearInterval(interval);
   }, [timeLockAt, timeLockReady]);
 
-  const { state, remainingReads } = useReadNote(
-    validationError || !timeLockReady ? '' : shardId,
+  const singleResult = useReadNote(
+    isMultiChunk ? '' : (validationError || !timeLockReady ? '' : shardId),
     urlPayload,
-    confirmed && !validationError && timeLockReady,
+    !isMultiChunk && confirmed && !validationError && timeLockReady,
     provider,
     shardIds,
   );
+  const multiResult = useReadMultiNote(
+    isMultiChunk ? multiChunks : [],
+    isMultiChunk && confirmed && !validationError && timeLockReady,
+  );
+  const { state, remainingReads } = isMultiChunk ? multiResult : singleResult;
   const pathname = window.location.pathname;
 
   const handleCopy = useCallback(async (text: string) => {
@@ -353,29 +364,36 @@ export function ReadNote({
           </div>
         )}
 
-        <div
-          className={
-            viewMode === 'formatted' && showToggle
-              ? `${styles.noteContent} ${styles.noteContentFormatted}`
-              : styles.noteContent
-          }
-        >
-          {viewMode === 'formatted' && showToggle ? (
-            <NoteMarkdown plaintext={state.plaintext} />
-          ) : (
-            state.plaintext
-          )}
+        <div className={styles.noteContentWrapper}>
+          <div
+            className={
+              viewMode === 'formatted' && showToggle
+                ? `${styles.noteContent} ${styles.noteContentFormatted}`
+                : styles.noteContent
+            }
+          >
+            {viewMode === 'formatted' && showToggle ? (
+              <NoteMarkdown plaintext={state.plaintext} />
+            ) : (
+              state.plaintext
+            )}
+          </div>
+          <button
+            type='button'
+            className={styles.copyIcon}
+            onClick={() => {
+              handleCopy(state.plaintext);
+              setNoteCopied(true);
+              setTimeout(() => setNoteCopied(false), COPY_FEEDBACK_MS);
+            }}
+            title={noteCopied ? 'copied' : 'copy to clipboard'}
+          >
+            {noteCopied ? <IconCheck /> : <IconClipboard />}
+          </button>
         </div>
 
         <div className={styles.footer}>
           <div className={styles.footerActions}>
-            <button
-              type='button'
-              className={styles.copyButton}
-              onClick={() => handleCopy(state.plaintext)}
-            >
-              copy note
-            </button>
 
             {hasReceipt && !receiptProof && (
               <button
@@ -409,8 +427,8 @@ export function ReadNote({
             </div>
           )}
 
-          <a href={pathname} className={styles.newLink}>
-            create another
+          <a href={`${pathname}?reply`} className={styles.newLink}>
+            reply with note
           </a>
         </div>
       </div>

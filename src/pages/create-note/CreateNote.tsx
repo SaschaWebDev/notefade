@@ -15,6 +15,7 @@ import {
   DEFAULT_BAR_SECONDS,
   MAX_PASSWORD_LENGTH,
   MAX_DECOY_COUNT,
+  MAX_NOTE_CHARS_SINGLE,
 } from '@/constants';
 import styles from './CreateNote.module.css';
 
@@ -151,6 +152,8 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
     decoyMessages,
     setDecoyMessages,
     decoyUrls,
+    isMultiChunk,
+    chunkCount,
     handleCreate,
     resetNote,
     resetExpertSettings,
@@ -172,6 +175,28 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   const [decoyEnabled, setDecoyEnabled] = useState(false);
   const [decoyCount, setDecoyCount] = useState(1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('reply')) {
+      textareaRef.current?.focus();
+      history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
+  // Auto-disable incompatible features when entering multi-chunk mode
+  useEffect(() => {
+    if (isMultiChunk) {
+      if (deferredMode) setDeferredMode(false);
+      if (decoyEnabled) {
+        setDecoyEnabled(false);
+        setDecoyMessages([]);
+        setDecoyCount(1);
+      }
+      if (readCount > maxReadCount) setReadCount(maxReadCount);
+    }
+  }, [isMultiChunk, maxReadCount]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const closeExpertPanel = useCallback(() => {
     if (expertOpen) {
       setExpertOpen(false);
@@ -1137,6 +1162,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
               ) : (
                 <span className={styles.charCount}>
                   {message.length}/{maxChars} chars
+                  {isMultiChunk && ` (${chunkCount} chunks)`}
                 </span>
               )}
             </div>
@@ -1267,7 +1293,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                             setDecoyCount(1);
                           }
                         }}
-                        disabled={loading || !canDefer || decoyEnabled}
+                        disabled={loading || !canDefer || decoyEnabled || isMultiChunk}
                         small
                       />
                     </div>
@@ -1276,12 +1302,17 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                         requires default API or self-hosted worker
                       </span>
                     )}
-                    {deferredMode && canDefer && (
+                    {isMultiChunk && canDefer && (
+                      <span className={styles.advancedHint}>
+                        not available for long notes
+                      </span>
+                    )}
+                    {deferredMode && canDefer && !isMultiChunk && (
                       <span className={styles.advancedHint}>
                         encrypt now, activate later via launch code
                       </span>
                     )}
-                    {decoyEnabled && canDefer && (
+                    {decoyEnabled && canDefer && !isMultiChunk && (
                       <span className={styles.advancedHint}>
                         not available with decoy links
                       </span>
@@ -1320,13 +1351,18 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                   <OnOffToggle
                     enabled={decoyEnabled}
                     onToggle={handleDecoyToggle}
-                    disabled={loading || deferredMode}
+                    disabled={loading || deferredMode || isMultiChunk}
                     small
                   />
                 </div>
                 {deferredMode && (
                   <span className={styles.advancedHint}>
                     not available with dead drop mode
+                  </span>
+                )}
+                {isMultiChunk && !deferredMode && (
+                  <span className={styles.advancedHint}>
+                    not available for long notes
                   </span>
                 )}
                 {decoyEnabled && (
@@ -1360,7 +1396,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                               handleDecoyMessageChange(i, e.target.value)
                             }
                             placeholder={`decoy message ${i + 1}`}
-                            maxLength={1800}
+                            maxLength={MAX_NOTE_CHARS_SINGLE}
                             disabled={loading}
                           />
                           <button

@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { unprotectFragment } from '@/crypto';
-import { parseFragment } from '@/hooks/use-hash-route';
+import { parseFragment, parseMultiFragment } from '@/hooks/use-hash-route';
+import type { ParsedFragment } from '@/hooks/use-hash-route';
+import { MULTI_PREFIX } from '@/constants';
 import { ReadNote } from '../read-note';
 import { ContentFade } from '@/components/ui/content-fade';
 import { IconPadlock, IconEye, IconEyeOff } from '@/components/ui/icons';
@@ -14,7 +16,7 @@ type GateState =
   | { status: 'idle' }
   | { status: 'unlocking' }
   | { status: 'error'; message: string }
-  | { status: 'unlocked'; shardId: string; shardIds: string[]; urlPayload: string; check: string | null; provider: import('@/api/provider-types').ProviderConfig | null; timeLockAt: number | null }
+  | { status: 'unlocked'; shardId: string; shardIds: string[]; urlPayload: string; check: string | null; provider: import('@/api/provider-types').ProviderConfig | null; timeLockAt: number | null; multiChunks: ParsedFragment[] | null }
 
 export function PasswordGate({ protectedData }: PasswordGateProps) {
   const [password, setPassword] = useState('');
@@ -35,6 +37,28 @@ export function PasswordGate({ protectedData }: PasswordGateProps) {
         window.history.replaceState(null, '', window.location.pathname);
       }
 
+      // Check for multi-chunk inside the protected fragment
+      if (innerFragment.startsWith(MULTI_PREFIX)) {
+        const body = innerFragment.slice(MULTI_PREFIX.length);
+        const chunks = parseMultiFragment(body);
+        if (!chunks || chunks.length === 0) {
+          setState({ status: 'error', message: 'Decrypted data is not a valid note link.' });
+          return;
+        }
+        const first = chunks[0]!;
+        setState({
+          status: 'unlocked',
+          shardId: first.shardId,
+          shardIds: first.shardIds,
+          urlPayload: first.urlPayload,
+          check: first.check,
+          provider: first.provider,
+          timeLockAt: first.timeLockAt,
+          multiChunks: chunks,
+        });
+        return;
+      }
+
       const parsed = parseFragment(innerFragment);
       if (!parsed) {
         setState({ status: 'error', message: 'Decrypted data is not a valid note link.' });
@@ -49,6 +73,7 @@ export function PasswordGate({ protectedData }: PasswordGateProps) {
         check: parsed.check,
         provider: parsed.provider,
         timeLockAt: parsed.timeLockAt,
+        multiChunks: null,
       });
     } catch {
       setState({ status: 'error', message: 'wrong password' });
@@ -64,6 +89,7 @@ export function PasswordGate({ protectedData }: PasswordGateProps) {
         check={state.check}
         provider={state.provider}
         timeLockAt={state.timeLockAt}
+        multiChunks={state.multiChunks}
       />
     );
   }

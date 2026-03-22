@@ -58,6 +58,7 @@ export function App() {
         check={route.check}
         provider={route.provider}
         timeLockAt={route.timeLockAt}
+        multiChunks={route.multiChunks}
       />
     </Layout>
   )

@@ -267,6 +267,10 @@
   background: rgba(var(--fg), 0.08);
 }
 
+.noteContentWrapper {
+  position: relative;
+}
+
 .noteContent {
   font-size: 15px;
   font-weight: 400;
@@ -275,9 +279,32 @@
   white-space: pre-wrap;
   word-break: break-word;
   padding: 20px;
+  padding-right: 44px;
   background: rgba(var(--fg), 0.02);
   border: 1px solid rgba(var(--fg), 0.05);
   border-radius: 10px;
+}
+
+.copyIcon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(var(--fg), 0.06);
+  border: 1px solid rgba(var(--fg), 0.08);
+  color: rgba(var(--fg), 0.4);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.copyIcon:hover {
+  background: rgba(var(--fg), 0.1);
+  color: rgba(var(--fg), 0.6);
 }
 
 .noteContentFormatted {
@@ -352,23 +379,6 @@
   justify-content: center;
 }
 
-.copyButton {
-  padding: 8px 20px;
-  font-size: 13px;
-  font-weight: 500;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  color: rgba(var(--fg), 0.5);
-  background: rgba(var(--fg), 0.04);
-  border: 1px solid rgba(var(--fg), 0.08);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.copyButton:hover {
-  background: rgba(var(--fg), 0.08);
-  border-color: rgba(var(--fg), 0.15);
-}
 
 .receiptButton {
   padding: 8px 20px;
