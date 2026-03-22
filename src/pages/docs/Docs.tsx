@@ -123,13 +123,19 @@ total overhead ≈ 44 bytes + ciphertext + base64 expansion`}
         />
         <h3 className={styles.h3}>URL-level padding</h3>
         <p className={styles.p}>
-          All shared links are padded to a fixed length (7,307 characters) using
-          random fill, regardless of message size. This prevents length-based
-          traffic analysis — an observer seeing a notefade link cannot infer
-          whether the message is one word or a full note. Notes longer than
-          1,800 characters are split into independently-encrypted chunks,
-          bundled into a single URL — the recipient sees one seamless message.
-          Multi-chunk URLs use compact (unpadded) fragments. The compact
+          Notes up to 1,800 characters are padded to a fixed length (7,307
+          characters) using random fill. This prevents length-based traffic
+          analysis — an observer seeing a notefade link cannot infer whether the
+          message is one word or 1,800 characters.
+        </p>
+        <p className={styles.p}>
+          Notes longer than 1,800 characters are split into
+          independently-encrypted chunks and bundled into a single URL. The
+          recipient sees one seamless message. Multi-chunk URLs use compact
+          (unpadded) fragments, so the URL length reveals approximate message
+          size to within ~1,800-character granularity. Padding all URLs to the
+          browser fragment limit (~60 KB) would break sharing on platforms with
+          message length limits (Telegram, Discord, Twitter). The compact
           (unpadded) URL is also used for QR codes, where size constraints
           apply.
         </p>

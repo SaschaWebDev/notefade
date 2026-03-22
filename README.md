@@ -40,6 +40,7 @@ Notefade splits your encryption key so the server stores only 16 meaningless byt
 - 📬 **Dead drop mode** — encrypt now, share an inert link, activate later via launch code
 - 🕯️ **Burn-after-reading** — configurable fade timer (30 s, 1 min, 5 min, 15 min) clears the decrypted note from the browser
 - 👁️ **Multi-read notes** — allow up to 10 reads before the note is gone
+- 📝 **Long notes** — write up to 50,000 characters; internally split into encrypted chunks and bundled into a single URL
 - 🔒 **Time-lock** — schedule when a note becomes readable with a live countdown
 - 🧾 **Proof of read** — cryptographic HMAC receipt the sender can verify without knowing who read it
 - 🃏 **Decoy links** — generate 1–3 extra encrypted notes with plausible alternate content for deniability
@@ -83,7 +84,7 @@ Notefade is designed so the server is never trusted with secrets.
 - 💾 Data breaches — no content is ever stored server-side
 - ⚖️ Subpoenas / legal requests — there's nothing meaningful to produce
 - 📡 Network surveillance — the URL fragment never leaves the browser
-- 📏 URL length analysis — all links are padded to a fixed length regardless of message size
+- 📏 URL length analysis — notes up to 1,800 characters are padded to a fixed length; longer notes use encrypted multi-chunk URLs whose length reveals approximate size
 - ♻️ Link reuse — the shard is deleted after a single read
 
 **What it does not protect against:**
