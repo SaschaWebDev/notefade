@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { stringFromBase64Url, unpadPayload, extractTimeLock } from '@/crypto'
 import { decodeProviderConfig } from '@/api/provider-config'
 import type { ProviderConfig } from '@/api/provider-types'
-import { PROTECTED_PREFIX, TIME_LOCK_PREFIX } from '@/constants'
+import { PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER } from '@/constants'
 
 interface CreateRoute {
   mode: 'create'
@@ -18,6 +18,8 @@ interface ReadRoute {
   provider: ProviderConfig | null
   /** Unix timestamp when time-locked note becomes readable (Feature 2) */
   timeLockAt: number | null
+  /** Additional chunks for multi-note long messages (null = single note) */
+  multiChunks: ParsedFragment[] | null
 }
 
 interface ProtectedRoute {
@@ -133,6 +135,20 @@ export function parseFragment(fragment: string): ParsedFragment | null {
   return { shardId, shardIds, check: null, urlPayload: unpadPayload(rawUrlPayload), provider, timeLockAt }
 }
 
+/** Parse a multi-chunk fragment (body after "multi:" prefix) into chunk array */
+export function parseMultiFragment(body: string): ParsedFragment[] | null {
+  const parts = body.split(MULTI_DELIMITER)
+  if (parts.length < 2) return null
+
+  const chunks: ParsedFragment[] = []
+  for (const part of parts) {
+    const parsed = parseFragment(part)
+    if (!parsed) return null
+    chunks.push(parsed)
+  }
+  return chunks
+}
+
 function parseHash(): HashRoute {
   const hash = window.location.hash.slice(1) // remove #
   if (!hash) {
@@ -148,12 +164,21 @@ function parseHash(): HashRoute {
     return { mode: 'create' }
   }
 
+  // Check for multi-chunk fragment
+  if (hash.startsWith(MULTI_PREFIX)) {
+    const body = hash.slice(MULTI_PREFIX.length)
+    const chunks = parseMultiFragment(body)
+    if (!chunks || chunks.length === 0) return { mode: 'create' }
+    const first = chunks[0]!
+    return { mode: 'read', ...first, multiChunks: chunks }
+  }
+
   const parsed = parseFragment(hash)
   if (!parsed) {
     return { mode: 'create' }
   }
 
-  return { mode: 'read', ...parsed }
+  return { mode: 'read', ...parsed, multiChunks: null }
 }
 
 export function useHashRoute(): HashRoute {
