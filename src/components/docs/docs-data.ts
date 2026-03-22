@@ -338,7 +338,7 @@ export const INTEGRATION_ENDPOINTS: EndpointDef[] = [
         location: 'body',
         type: 'string',
         required: true,
-        description: 'The plaintext note content (1-1800 characters)',
+        description: 'The plaintext note content (1-1800 characters). The API does not support multi-chunk notes — use the web app for longer messages.',
         pattern: '1 ≤ length ≤ 1800',
       },
     ],
