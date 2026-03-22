@@ -35,9 +35,9 @@ beforeEach(() => {
 })
 
 describe('useCreateNote', () => {
-  it('exposes maxChars as 1800', () => {
+  it('exposes maxChars as 50000', () => {
     const { result } = renderHook(() => useCreateNote())
-    expect(result.current.maxChars).toBe(1800)
+    expect(result.current.maxChars).toBe(50000)
   })
 
   it('exposes ttlOptions with correct values', () => {
@@ -71,15 +71,15 @@ describe('useCreateNote', () => {
     expect(result.current.isEmpty).toBe(false)
   })
 
-  it('isOverLimit is true when > 1800 chars', () => {
+  it('isOverLimit is true when > 50000 chars', () => {
     const { result } = renderHook(() => useCreateNote())
-    act(() => result.current.setMessage('x'.repeat(1801)))
+    act(() => result.current.setMessage('x'.repeat(50001)))
     expect(result.current.isOverLimit).toBe(true)
   })
 
-  it('isOverLimit is false when <= 1800 chars', () => {
+  it('isOverLimit is false when <= 50000 chars', () => {
     const { result } = renderHook(() => useCreateNote())
-    act(() => result.current.setMessage('x'.repeat(1800)))
+    act(() => result.current.setMessage('x'.repeat(50000)))
     expect(result.current.isOverLimit).toBe(false)
   })
 

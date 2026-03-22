@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { createNote, computeCheck, protectFragment, padPayload, embedTimeLock, generateReceiptSeed } from '@/crypto'
+import { createNote, computeCheck, protectFragment, padPayload, embedTimeLock, generateReceiptSeed, splitText } from '@/crypto'
 import type { NoteMetadata } from '@/crypto'
-import { storeShard, deferShard, createAdapter, encodeProviderConfig } from '@/api'
+import { storeShard, deferShard, deleteShard, createAdapter, encodeProviderConfig } from '@/api'
 import type { ProviderConfig, ProviderType } from '@/api/provider-types'
-import { MAX_NOTE_CHARS, MAX_READ_COUNT, STORAGE_KEYS, PROTECTED_PREFIX, TIME_LOCK_PREFIX, DEFAULT_BAR_SECONDS } from '@/constants'
+import { MAX_NOTE_CHARS, MAX_NOTE_CHARS_SINGLE, MAX_READ_COUNT, MAX_TOTAL_SHARDS, STORAGE_KEYS, PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER, DEFAULT_BAR_SECONDS } from '@/constants'
 
 const TTL_OPTIONS = [
   { label: '1h', value: 3600 },
@@ -106,6 +106,9 @@ interface UseCreateNoteReturn {
   decoyMessages: string[]
   setDecoyMessages: (msgs: string[] | ((prev: string[]) => string[])) => void
   decoyUrls: string[]
+  // Multi-chunk
+  isMultiChunk: boolean
+  chunkCount: number
   handleCreate: () => Promise<void>
   resetNote: () => void
   resetExpertSettings: () => void
@@ -147,6 +150,9 @@ export function useCreateNote(): UseCreateNoteReturn {
   const isEmpty = message.trim().length === 0
   const isCustomServer = providerConfig !== null
   const providerType = providerConfig?.t ?? null
+  const chunkCount = message.length <= MAX_NOTE_CHARS_SINGLE ? 1 : Math.ceil(message.length / MAX_NOTE_CHARS_SINGLE)
+  const isMultiChunk = chunkCount > 1
+  const dynamicMaxReadCount = Math.min(MAX_READ_COUNT, Math.floor(MAX_TOTAL_SHARDS / Math.max(1, chunkCount)))
 
   const setProviderConfig = (config: ProviderConfig | null) => {
     setProviderConfigState(config)
@@ -230,6 +236,38 @@ export function useCreateNote(): UseCreateNoteReturn {
     }
 
     setProviderConfig(newConfig)
+  }
+
+  /** Build a single-chunk compact fragment (no padding, no password wrapping) */
+  const buildSingleChunkFragment = async (
+    msg: string,
+    metadata: NoteMetadata,
+    shardCount: number,
+  ): Promise<{ shardIds: string[]; compactFragment: string }> => {
+    const { urlPayload, serverShard } = await createNote(msg, metadata)
+    const configSuffix = providerConfig ? `@${encodeProviderConfig(providerConfig)}` : ''
+
+    const ids: string[] = []
+    for (let i = 0; i < shardCount; i++) {
+      let id: string
+      if (providerConfig) {
+        const adapter = createAdapter(providerConfig)
+        id = await adapter.store(serverShard, ttl)
+      } else {
+        id = await storeShard(serverShard, ttl)
+      }
+      ids.push(id)
+    }
+
+    const shardIdStr = ids.join('~')
+    const check = computeCheck(urlPayload)
+
+    const tlPrefix = timeLockEnabled && timeLockAt
+      ? `${TIME_LOCK_PREFIX}${Math.floor(new Date(timeLockAt).getTime() / 1000)}:`
+      : ''
+
+    const compactFragment = `${tlPrefix}${shardIdStr}:${check}:${urlPayload}${configSuffix}`
+    return { shardIds: ids, compactFragment }
   }
 
   /** Build a full note URL from components */
@@ -334,55 +372,119 @@ export function useCreateNote(): UseCreateNoteReturn {
   const handleCreate = async () => {
     if (isEmpty || isOverLimit || loading) return
 
+    // Clamp read count if it exceeds dynamic max
+    const effectiveReadCount = Math.min(readCount, dynamicMaxReadCount)
+
     setLoading(true)
     setError(null)
 
     try {
-      // Build metadata
-      const metadata: NoteMetadata = {}
-      if (barDuration > 0) {
-        metadata.barSeconds = barDuration
-      }
-      let receiptSeed: string | undefined
-      if (receiptEnabled) {
-        receiptSeed = generateReceiptSeed()
-        metadata.receiptSeed = receiptSeed
-      }
+      if (isMultiChunk) {
+        // --- Multi-chunk flow ---
+        const chunks = splitText(message, MAX_NOTE_CHARS_SINGLE)
+        const allStoredShardIds: string[] = []
 
-      const result = await buildNoteUrl(message, metadata, readCount)
-
-      if (deferredMode) {
-        // For deferred mode, show the URL (inert until activated) + launch code
-        setShardId(result.primaryShardId)
-        setExpiresAt(0) // TTL starts on activation
-        setNoteUrl(result.noteUrl)
-        setCompactUrl(null)
-      } else {
-        setShardId(result.primaryShardId)
-        setExpiresAt(Date.now() + ttl * 1000)
-        setNoteUrl(result.noteUrl)
-        setCompactUrl(result.compactUrl)
-      }
-
-      // Generate receipt verification file
-      if (receiptEnabled && receiptSeed) {
-        setReceiptVerification({ plaintext: message, receiptSeed })
-      }
-
-      // Generate decoy links (Feature 8)
-      if (decoyMessages.length > 0) {
-        const dUrls: string[] = []
-        for (const decoyMsg of decoyMessages) {
-          if (!decoyMsg.trim()) continue
-          const decoyResult = await buildNoteUrl(decoyMsg, {}, 1)
-          if (decoyResult.noteUrl) {
-            dUrls.push(decoyResult.noteUrl)
-          }
+        // Build metadata for first chunk only
+        const firstMeta: NoteMetadata = {}
+        if (barDuration > 0) {
+          firstMeta.barSeconds = barDuration
         }
-        setDecoyUrls(dUrls)
-      }
+        let receiptSeed: string | undefined
+        if (receiptEnabled) {
+          receiptSeed = generateReceiptSeed()
+          firstMeta.receiptSeed = receiptSeed
+        }
 
-      setMessage('')
+        const fragments: string[] = []
+        try {
+          for (let i = 0; i < chunks.length; i++) {
+            const meta = i === 0 ? firstMeta : {}
+            const result = await buildSingleChunkFragment(chunks[i]!, meta, effectiveReadCount)
+            fragments.push(result.compactFragment)
+            allStoredShardIds.push(...result.shardIds)
+          }
+        } catch (err) {
+          // Best-effort cleanup: delete any shards we already stored
+          for (const id of allStoredShardIds) {
+            try {
+              if (providerConfig) {
+                const adapter = createAdapter(providerConfig)
+                await adapter.delete(id)
+              } else {
+                await deleteShard(id)
+              }
+            } catch { /* ignore cleanup errors */ }
+          }
+          throw err
+        }
+
+        // Bundle fragments
+        let bundleFragment = `${MULTI_PREFIX}${fragments.join(MULTI_DELIMITER)}`
+
+        // Apply password protection to entire bundle
+        if (passwordEnabled && password.length > 0) {
+          const protectedData = await protectFragment(bundleFragment, password)
+          bundleFragment = `${PROTECTED_PREFIX}${protectedData}`
+        }
+
+        const pathname = window.location.pathname
+        const url = `${window.location.origin}${pathname}#${bundleFragment}`
+
+        setShardId(allStoredShardIds[0]!)
+        setExpiresAt(Date.now() + ttl * 1000)
+        setNoteUrl(url)
+        setCompactUrl(null) // no compact URL for multi-chunk
+
+        if (receiptEnabled && receiptSeed) {
+          setReceiptVerification({ plaintext: message, receiptSeed })
+        }
+
+        setMessage('')
+      } else {
+        // --- Single-note flow (unchanged) ---
+        const metadata: NoteMetadata = {}
+        if (barDuration > 0) {
+          metadata.barSeconds = barDuration
+        }
+        let receiptSeed: string | undefined
+        if (receiptEnabled) {
+          receiptSeed = generateReceiptSeed()
+          metadata.receiptSeed = receiptSeed
+        }
+
+        const result = await buildNoteUrl(message, metadata, effectiveReadCount)
+
+        if (deferredMode) {
+          setShardId(result.primaryShardId)
+          setExpiresAt(0)
+          setNoteUrl(result.noteUrl)
+          setCompactUrl(null)
+        } else {
+          setShardId(result.primaryShardId)
+          setExpiresAt(Date.now() + ttl * 1000)
+          setNoteUrl(result.noteUrl)
+          setCompactUrl(result.compactUrl)
+        }
+
+        if (receiptEnabled && receiptSeed) {
+          setReceiptVerification({ plaintext: message, receiptSeed })
+        }
+
+        // Generate decoy links (Feature 8)
+        if (decoyMessages.length > 0) {
+          const dUrls: string[] = []
+          for (const decoyMsg of decoyMessages) {
+            if (!decoyMsg.trim()) continue
+            const decoyResult = await buildNoteUrl(decoyMsg, {}, 1)
+            if (decoyResult.noteUrl) {
+              dUrls.push(decoyResult.noteUrl)
+            }
+          }
+          setDecoyUrls(dUrls)
+        }
+
+        setMessage('')
+      }
     } catch (err) {
       setError(
         err instanceof Error
@@ -454,7 +556,7 @@ export function useCreateNote(): UseCreateNoteReturn {
     setPasswordEnabled,
     readCount,
     setReadCount,
-    maxReadCount: MAX_READ_COUNT,
+    maxReadCount: dynamicMaxReadCount,
     barDuration,
     setBarDuration,
     barOptions: BAR_OPTIONS,
@@ -471,6 +573,8 @@ export function useCreateNote(): UseCreateNoteReturn {
     decoyMessages,
     setDecoyMessages,
     decoyUrls,
+    isMultiChunk,
+    chunkCount,
     handleCreate,
     resetNote,
     resetExpertSettings,
