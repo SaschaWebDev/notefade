@@ -1,4 +1,5 @@
-export const MAX_NOTE_CHARS = 1800
+export const MAX_NOTE_CHARS_SINGLE = 1800
+export const MAX_NOTE_CHARS = 50000
 export const MAX_READ_COUNT = 10
 export const OFFICIAL_HOSTS = ['notefade.com', 'www.notefade.com'] as const
 export const STORAGE_KEYS = {
@@ -22,6 +23,11 @@ export const MIN_STEGO_TEXT_LENGTH = 2
 // QR code
 export const QR_CHAR_LIMIT = 2950
 export const QR_EXPORT_SIZE = 512
+
+// Multi-note chunking
+export const MULTI_PREFIX = 'multi:'
+export const MULTI_DELIMITER = '|'
+export const MAX_TOTAL_SHARDS = 30
 
 // Fragment prefixes (protocol-level)
 export const PROTECTED_PREFIX = 'protected:'
