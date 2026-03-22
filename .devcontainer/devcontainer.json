@@ -1,14 +1,14 @@
 {
   "name": "notefade",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
-  "forwardPorts": [5173, 8787],
+  "forwardPorts": [5173, 8686],
   "portsAttributes": {
     "5173": { "label": "Vite Dev Server", "onAutoForward": "notify" },
-    "8787": { "label": "Wrangler Worker", "onAutoForward": "silent" }
+    "8686": { "label": "Wrangler Worker", "onAutoForward": "silent" }
   },
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   "containerEnv": {
-    "VITE_API_URL": "http://localhost:8787"
+    "VITE_API_URL": "http://localhost:8686"
   },
   "remoteUser": "node",
   "customizations": {

@@ -15,7 +15,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/shard': {
-        target: 'http://localhost:8787',
+        target: 'http://localhost:8686',
         changeOrigin: true,
       },
     },
