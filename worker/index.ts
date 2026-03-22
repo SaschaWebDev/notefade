@@ -14,14 +14,14 @@ interface Env {
 
 const VALID_TTLS = [3600, 86400, 604800] as const
 const MAX_BODY_SIZE = 1024 // 1KB
-const MAX_API_BODY_SIZE = 4096 // 4KB (1800-char message + JSON overhead)
+const MAX_API_BODY_SIZE = 4096 // 4KB (1800-char API message + JSON overhead; web app supports up to 50,000 chars via multi-chunk)
 const SHARD_ID_RE = /^[a-f0-9]{8,16}$/
 const API_DEFAULT_TTL = 86400 // 24 hours
 
 // --- In-memory rate limiting (per-isolate) ---
 
 const RATE_LIMITS: Record<string, number> = {
-  POST: 20,    // 20 creates/min (worst-case: 10 multi-read + 3 decoys = 13)
+  POST: 60,    // 60 creates/min (multi-chunk notes can need 28+ sequential stores)
   HEAD: 30,    // 30 probes/min
   GET: 15,     // 15 reads/min (multi-read notes may have several near-simultaneous readers)
   DELETE: 10,  // 10 deletes/min
