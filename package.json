@@ -7,13 +7,14 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently --names vite,worker --prefix-colors blue,yellow \"yarn dev:vite\" \"yarn worker:dev\"",
+    "dev:vite": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "worker:config": "node scripts/gen-wrangler-config.cjs",
-    "worker:dev": "node scripts/gen-wrangler-config.cjs && wrangler dev worker/index.ts --port 8787",
+    "worker:dev": "node scripts/gen-wrangler-config.cjs && wrangler dev worker/index.ts --port 8686",
     "worker:deploy": "node scripts/gen-wrangler-config.cjs && wrangler deploy worker/index.ts",
     "build:manifest": "node scripts/build-manifest.cjs",
     "build:prod": "tsc --noEmit && vite build && node scripts/inject-sri.cjs && node scripts/build-manifest.cjs",
@@ -30,16 +31,17 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250214.0",
+    "@playwright/test": "^1.50.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
+    "concurrently": "^9.2.1",
     "happy-dom": "^17.4.0",
     "typescript": "^5.7.0",
     "vite": "~6.1.0",
     "vitest": "~2.1.0",
-    "@playwright/test": "^1.50.0",
     "wrangler": "^3.109.0"
   }
 }
