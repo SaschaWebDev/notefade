@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { CloudflareKVShardStore } from './shard-store'
 import type { ShardStore } from './shard-store'
 import { createDeferToken, openDeferToken } from './defer-token'
-import { createNote, computeCheck } from '../src/crypto/crypto'
+import { createNote, openNote, computeCheck } from '../src/crypto/crypto'
 import { validateApiKey } from './api-key'
 import { checkKeyRateLimit } from './rate-limit-kv'
 
@@ -15,6 +15,7 @@ interface Env {
 const VALID_TTLS = [3600, 86400, 604800] as const
 const MAX_BODY_SIZE = 1024 // 1KB
 const MAX_API_BODY_SIZE = 4096 // 4KB (1800-char API message + JSON overhead; web app supports up to 50,000 chars via multi-chunk)
+const MAX_READ_API_BODY_SIZE = 16384 // 16KB (padded single-note URLs can reach ~7.5KB)
 const SHARD_ID_RE = /^[a-f0-9]{8,16}$/
 const API_DEFAULT_TTL = 86400 // 24 hours
 
@@ -103,6 +104,10 @@ const ActivateTokenSchema = z.object({
 
 const CreateNoteSchema = z.object({
   text: z.string().min(1).max(1800),
+})
+
+const ReadNoteSchema = z.object({
+  url: z.string().min(1),
 })
 
 /** Maximum token age: 30 days */
@@ -459,6 +464,172 @@ async function handleRequest(
     return Response.json(
       { url: noteUrl, shardId: id, expiresAt },
       { status: 201, headers: rlHeaders },
+    )
+  }
+
+  // POST /api/v1/read-note — integration API (requires API key)
+  if (request.method === 'POST' && url.pathname === '/api/v1/read-note') {
+    // Require API key
+    const rawKey = request.headers.get('X-Api-Key')
+    if (!rawKey) {
+      return Response.json(
+        { error: 'Missing API key' },
+        { status: 401, headers },
+      )
+    }
+
+    const keyResult = await validateApiKey(env.SHARDS, rawKey)
+    if (!keyResult) {
+      return Response.json(
+        { error: 'Invalid API key' },
+        { status: 401, headers },
+      )
+    }
+
+    // Per-key rate limit
+    const rateLimit = await checkKeyRateLimit(
+      env.SHARDS,
+      keyResult.keyId,
+      keyResult.limits?.postPerMin,
+    )
+    const rlHeaders = {
+      ...headers,
+      'X-RateLimit-Limit': String(rateLimit.limit),
+      'X-RateLimit-Remaining': String(rateLimit.remaining),
+      'X-RateLimit-Reset': String(rateLimit.resetAt),
+    }
+
+    if (!rateLimit.allowed) {
+      const retryAfter = rateLimit.resetAt - Math.floor(Date.now() / 1000)
+      return Response.json(
+        { error: 'Rate limit exceeded' },
+        {
+          status: 429,
+          headers: { ...rlHeaders, 'Retry-After': String(Math.max(1, retryAfter)) },
+        },
+      )
+    }
+
+    // Body size check
+    const rawBody = await request.text()
+    if (rawBody.length > MAX_READ_API_BODY_SIZE) {
+      return Response.json(
+        { error: 'Body too large' },
+        { status: 413, headers: rlHeaders },
+      )
+    }
+
+    let body: unknown
+    try {
+      body = JSON.parse(rawBody)
+    } catch {
+      return Response.json(
+        { error: 'Invalid JSON' },
+        { status: 400, headers: rlHeaders },
+      )
+    }
+
+    const parsed = ReadNoteSchema.safeParse(body)
+    if (!parsed.success) {
+      return Response.json(
+        { error: 'Invalid request', details: parsed.error.issues },
+        { status: 400, headers: rlHeaders },
+      )
+    }
+
+    // Extract fragment from URL
+    const hashIndex = parsed.data.url.indexOf('#')
+    if (hashIndex === -1) {
+      return Response.json(
+        { error: 'URL must contain a fragment (#)' },
+        { status: 400, headers: rlHeaders },
+      )
+    }
+
+    let fragment = parsed.data.url.slice(hashIndex + 1)
+
+    // Reject multi-chunk URLs
+    if (fragment.startsWith('multi:')) {
+      return Response.json(
+        { error: 'Multi-chunk notes are not supported by this endpoint' },
+        { status: 400, headers: rlHeaders },
+      )
+    }
+
+    // Reject custom provider URLs
+    if (fragment.includes('@')) {
+      return Response.json(
+        { error: 'Custom provider notes are not supported by this endpoint' },
+        { status: 400, headers: rlHeaders },
+      )
+    }
+
+    // Strip time-lock prefix (tl:timestamp:...)
+    if (fragment.startsWith('tl:')) {
+      const colonAfterTs = fragment.indexOf(':', 3)
+      if (colonAfterTs === -1) {
+        return Response.json(
+          { error: 'Invalid URL fragment' },
+          { status: 400, headers: rlHeaders },
+        )
+      }
+      fragment = fragment.slice(colonAfterTs + 1)
+    }
+
+    // Parse: shardId(s):check:urlPayload
+    const firstColon = fragment.indexOf(':')
+    const secondColon = fragment.indexOf(':', firstColon + 1)
+    if (firstColon === -1 || secondColon === -1) {
+      return Response.json(
+        { error: 'Invalid URL fragment' },
+        { status: 400, headers: rlHeaders },
+      )
+    }
+
+    const shardIdPart = fragment.slice(0, firstColon)
+    const check = fragment.slice(firstColon + 1, secondColon)
+    const urlPayload = fragment.slice(secondColon + 1)
+
+    // For multi-read notes (shardId1~shardId2~...), use the first shard
+    const shardId = shardIdPart.split('~')[0]!
+    if (!SHARD_ID_RE.test(shardId)) {
+      return Response.json(
+        { error: 'Invalid shard ID in URL' },
+        { status: 400, headers: rlHeaders },
+      )
+    }
+
+    // Verify integrity check
+    if (computeCheck(urlPayload) !== check) {
+      return Response.json(
+        { error: 'URL integrity check failed' },
+        { status: 400, headers: rlHeaders },
+      )
+    }
+
+    // Fetch shard (destructive — consumes one read)
+    const shard = await store.get(shardId)
+    if (shard === null) {
+      return Response.json(
+        { error: 'Note not found or already read' },
+        { status: 404, headers: rlHeaders },
+      )
+    }
+
+    // Decrypt
+    let result: { plaintext: string }
+    try {
+      result = await openNote(urlPayload, shard)
+    } catch {
+      return Response.json(
+        { error: 'Decryption failed' },
+        { status: 400, headers: rlHeaders },
+      )
+    }
+
+    return Response.json(
+      { text: result.plaintext, shardId },
+      { status: 200, headers: rlHeaders },
     )
   }
 
