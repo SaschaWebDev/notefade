@@ -1,4 +1,10 @@
-import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  type ReactNode,
+} from 'react';
 import { useReadNote } from '@/hooks/use-read-note';
 import { useReadMultiNote } from '@/hooks/use-read-multi-note';
 import { fromBase64Url, computeCheck, computeReceiptProof } from '@/crypto';
@@ -9,12 +15,23 @@ import { COPY_FEEDBACK_MS } from '@/constants';
 import { formatDuration, formatTimeLockCountdown } from '@/utils/time';
 import { ContentFade } from '@/components/ui/content-fade';
 import { NoteGone } from '../note-gone';
-import { NoteMarkdown, hasMarkdownPatterns } from '@/components/ui/note-markdown';
-import { IconTimeLockClock, IconError, IconXCircle, IconWarning, IconFade, IconClipboard, IconCheck } from '@/components/ui/icons';
+import {
+  NoteMarkdown,
+  hasMarkdownPatterns,
+} from '@/components/ui/note-markdown';
+import {
+  IconTimeLockClock,
+  IconError,
+  IconXCircle,
+  IconWarning,
+  IconFade,
+  IconClipboard,
+  IconCheck,
+} from '@/components/ui/icons';
 import styles from './ReadNote.module.css';
 
-const SHARD_ID_PATTERN = /^[a-f0-9]{4,32}$/i
-const MIN_PAYLOAD_BYTES = 76
+const SHARD_ID_PATTERN = /^[a-f0-9]{4,32}$/i;
+const MIN_PAYLOAD_BYTES = 76;
 
 interface ReadNoteProps {
   shardId: string;
@@ -77,6 +94,7 @@ export function ReadNote({
   const [receiptProof, setReceiptProof] = useState<string | null>(null);
   const [receiptCopied, setReceiptCopied] = useState(false);
   const [noteCopied, setNoteCopied] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
   const [timeLockReady, setTimeLockReady] = useState(
     timeLockAt === null || timeLockAt * 1000 <= Date.now(),
   );
@@ -102,7 +120,7 @@ export function ReadNote({
   }, [timeLockAt, timeLockReady]);
 
   const singleResult = useReadNote(
-    isMultiChunk ? '' : (validationError || !timeLockReady ? '' : shardId),
+    isMultiChunk ? '' : validationError || !timeLockReady ? '' : shardId,
     urlPayload,
     !isMultiChunk && confirmed && !validationError && timeLockReady,
     provider,
@@ -233,18 +251,30 @@ export function ReadNote({
         <p className={styles.disclaimerText}>
           {shardIds.length > 1 ? (
             remainingReads !== null ? (
-              <>this note has <strong>{remainingReads} of {shardIds.length}</strong> reads remaining</>
+              <>
+                this note has{' '}
+                <strong>
+                  {remainingReads} of {shardIds.length}
+                </strong>{' '}
+                reads remaining
+              </>
             ) : (
-              <>this note can be read up to <strong>{shardIds.length} times</strong></>
+              <>
+                this note can be read up to{' '}
+                <strong>{shardIds.length} times</strong>
+              </>
             )
           ) : (
-            <>this note can only be read <strong>once</strong></>
+            <>
+              this note can only be read <strong>once</strong>
+            </>
           )}
         </p>
         <p className={styles.disclaimerDetail}>
           {shardIds.length > 1 ? (
             <>
-              opening it will use one read — the note is destroyed when all reads are consumed
+              opening it will use one read — the note is destroyed when all
+              reads are consumed
               <br />
               the content itself was never stored on any server
             </>
@@ -276,6 +306,18 @@ export function ReadNote({
           onClick={() => setConfirmed(true)}
         >
           reveal note
+        </button>
+
+        <button
+          type='button'
+          className={styles.copyUrlButton}
+          onClick={() => {
+            navigator.clipboard.writeText(window.location.href);
+            setUrlCopied(true);
+            setTimeout(() => setUrlCopied(false), COPY_FEEDBACK_MS);
+          }}
+        >
+          {urlCopied ? 'copied!' : 'copy link'}
         </button>
       </div>
     );
@@ -394,7 +436,6 @@ export function ReadNote({
 
         <div className={styles.footer}>
           <div className={styles.footerActions}>
-
             {hasReceipt && !receiptProof && (
               <button
                 type='button'
