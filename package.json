@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "worker:config": "node scripts/gen-wrangler-config.cjs",
     "worker:dev": "node scripts/gen-wrangler-config.cjs && wrangler dev worker/index.ts --port 8686",
-    "worker:deploy": "node scripts/gen-wrangler-config.cjs && wrangler deploy worker/index.ts",
+    "worker:deploy": "node scripts/gen-wrangler-config.cjs && wrangler deploy worker/index.ts --env production",
     "build:manifest": "node scripts/build-manifest.cjs",
     "build:prod": "tsc --noEmit && vite build && node scripts/inject-sri.cjs && node scripts/build-manifest.cjs",
     "build:docker": "docker build -f Dockerfile.build --output type=local,dest=./dist-verify .",
