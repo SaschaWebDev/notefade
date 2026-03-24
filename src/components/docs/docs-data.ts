@@ -372,4 +372,50 @@ X-RateLimit-Reset: 1710720060
   "expiresAt": 1710806400000
 }`,
   },
+  {
+    method: 'POST',
+    path: '/api/v1/read-note',
+    summary: 'Read a note (server-side decryption)',
+    description:
+      'Accepts a note URL, fetches the shard from storage, reconstructs the encryption key, and decrypts the content on the server. The shard is consumed — the note cannot be read again. Plaintext is held in volatile Worker memory for ~1-2ms during decryption — never stored, never logged. The full note URL (including fragment) must be sent to the server, which means the server momentarily has access to all key material. Requires a valid API key via the X-Api-Key header. Multi-chunk and custom-provider notes are not supported.',
+    params: [
+      {
+        name: 'url',
+        location: 'body',
+        type: 'string',
+        required: true,
+        description: 'The full note URL including the fragment (e.g. https://notefade.com/#shardId:check:payload). The fragment is required — it contains the encrypted data and key material.',
+        pattern: 'Must contain # fragment',
+      },
+    ],
+    responses: [
+      {
+        status: 200,
+        description: 'Note decrypted and returned',
+        body: '{ "text": "The secret message content", "shardId": "a1b2c3d4e5f67890" }',
+      },
+      { status: 400, description: 'Invalid URL, bad fragment format, integrity check failed, or multi-chunk/custom-provider URL' },
+      { status: 401, description: 'Missing or invalid API key' },
+      { status: 404, description: 'Note not found — already read, expired, or invalid shard ID' },
+      { status: 413, description: 'Request body exceeds 16 KB' },
+      { status: 429, description: 'Per-key rate limit exceeded' },
+    ],
+    exampleRequest: `POST /api/v1/read-note HTTP/1.1
+Content-Type: application/json
+X-Api-Key: nfk_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+
+{
+  "url": "https://notefade.com/#a1b2c3d4e5f67890:aBcDeF:..."
+}`,
+    exampleResponse: `HTTP/1.1 200 OK
+Content-Type: application/json
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 59
+X-RateLimit-Reset: 1710720060
+
+{
+  "text": "The deploy credentials are ...",
+  "shardId": "a1b2c3d4e5f67890"
+}`,
+  },
 ]

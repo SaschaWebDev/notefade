@@ -8,22 +8,27 @@ export function IntegrationApi() {
   return (
     <DocsSection id='integration-api' title='integration API (third-party)'>
       <DocsCallout variant='danger'>
-        This endpoint does <strong>not</strong> follow notefade's zero-knowledge
-        security model. The server receives plaintext, encrypts it, and returns
-        a note URL. Plaintext is held in volatile Worker memory for ~1-2ms —
-        never stored, never logged, no filesystem — but the server{' '}
-        <em>processes</em> content, which the main application never does. Do
-        not send highly sensitive plaintext through this endpoint ONLY EVER SEND
-        ALREADY ENCRYPTED TEXT. It is a convenience API for trusted third-party
+        These endpoints do <strong>not</strong> follow notefade's zero-knowledge
+        security model. The create endpoint receives plaintext and encrypts it
+        on the server. The read endpoint fetches the shard, reconstructs the
+        key, and decrypts on the server. In both cases, plaintext is held in
+        volatile Worker memory for ~1-2ms — never stored, never logged, no
+        filesystem — but the server <em>processes</em> content, which the main
+        application never does. Do not send highly sensitive plaintext through
+        the create endpoint — ONLY EVER SEND ALREADY ENCRYPTED TEXT. The read
+        endpoint will return whatever the note contains, so if the content was
+        pre-encrypted before creation, the server only ever sees the opaque
+        ciphertext. These are convenience APIs for trusted third-party
         applications, not a replacement for the main application's client-side
         encryption.
       </DocsCallout>
 
       <p className={styles.text}>
-        The integration API lets third-party applications create encrypted notes
-        with a single HTTP request. It produces the same encrypted output as the
-        main app — AES-256-GCM, XOR key splitting, one-time-read — but
-        encryption happens on the server instead of in the browser.
+        The integration API lets third-party applications create and read
+        encrypted notes with a single HTTP request. It uses the same
+        AES-256-GCM encryption and XOR key splitting as the main app, but
+        encryption and decryption happen on the server instead of in the
+        browser.
       </p>
 
       <h3 className={styles.subheading}>How it differs from the main app</h3>
@@ -38,6 +43,11 @@ export function IntegrationApi() {
         <tbody>
           <tr>
             <td>Encryption location</td>
+            <td>Client (browser)</td>
+            <td>Server (Worker isolate)</td>
+          </tr>
+          <tr>
+            <td>Decryption location</td>
             <td>Client (browser)</td>
             <td>Server (Worker isolate)</td>
           </tr>
@@ -66,12 +76,16 @@ export function IntegrationApi() {
 
       <h3 className={styles.subheading}>When to use this</h3>
       <ul className={styles.list}>
-        <li>Third-party apps that need to create notes programmatically</li>
+        <li>Third-party apps that need to create or read notes programmatically</li>
         <li>
           Server-side services where importing the crypto module isn't practical
         </li>
         <li>
           Trusted integrations owned by the same operator running the Worker
+        </li>
+        <li>
+          Consuming notes that were created with pre-encrypted content — the
+          server only sees the opaque ciphertext, not the underlying secret
         </li>
       </ul>
 
@@ -144,7 +158,12 @@ export function IntegrationApi() {
       <ul className={styles.list}>
         <li>
           Plaintext is visible to the Worker isolate for ~1-2ms during
-          encryption
+          encryption or decryption
+        </li>
+        <li>
+          The read endpoint requires sending the full note URL (including
+          fragment) to the server — in normal browser usage, the fragment never
+          leaves the client
         </li>
         <li>
           Cloudflare (as the infrastructure provider) could theoretically

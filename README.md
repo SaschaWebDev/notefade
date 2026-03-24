@@ -309,7 +309,7 @@ worker/
 
 ## 📡 API
 
-Six endpoints. That's the entire backend.
+Eight endpoints. That's the entire backend.
 
 | Method   | Endpoint          | Description                      |
 | -------- | ----------------- | -------------------------------- |
@@ -324,15 +324,16 @@ Rate limited per IP. Max request body: 1 KB. Full API docs at [notefade.com/docs
 
 ### ⚠️ Third-Party Integration API
 
-> **Security tradeoff:** This endpoint does NOT follow the zero-knowledge model. The server briefly sees plaintext (~1-2ms in volatile Worker memory) before encrypting. Never stored, never logged — but the server processes content, which the main application never does. Use the main app for sensitive secrets.
+> **Security tradeoff:** These endpoints do NOT follow the zero-knowledge model. The server briefly sees plaintext (~1-2ms in volatile Worker memory) during encryption or decryption. Never stored, never logged — but the server processes content, which the main application never does. The read endpoint additionally requires the full note URL (including the `#` fragment) to be sent to the server. Use the main app for sensitive secrets.
 
-| Method | Endpoint              | Description                            |
-| ------ | --------------------- | -------------------------------------- |
-| `POST` | `/api/v1/create-note` | Create a note (server-side encryption) |
+| Method | Endpoint              | Description                             |
+| ------ | --------------------- | --------------------------------------- |
+| `POST` | `/api/v1/create-note` | Create a note (server-side encryption)  |
+| `POST` | `/api/v1/read-note`   | Read a note (server-side decryption)    |
 
-Requires an `X-Api-Key` header. Rate limited per key (60 req/min, KV-based). Max body: 4 KB. Fixed 24-hour TTL.
+Requires an `X-Api-Key` header. Rate limited per key (60 req/min, KV-based). Max body: 4 KB (create) / 16 KB (read). Fixed 24-hour TTL for created notes.
 
-This is a convenience endpoint for trusted third-party apps that need to create notes programmatically. It produces the same encrypted output as the main app — AES-256-GCM, XOR key splitting, one-time-read — but encryption happens on the server instead of in the browser. See [notefade.com/docs#integration-api](https://notefade.com/docs#integration-api) for full documentation and security details.
+These are convenience endpoints for trusted third-party apps that need to create or read notes programmatically. They produce and consume the same encrypted format as the main app — AES-256-GCM, XOR key splitting, one-time-read — but crypto operations happen on the server instead of in the browser. See [notefade.com/docs#integration-api](https://notefade.com/docs#integration-api) for full documentation and security details.
 
 ## 📄 License
 
