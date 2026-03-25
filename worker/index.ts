@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { CloudflareKVShardStore } from './shard-store'
 import type { ShardStore } from './shard-store'
 import { createDeferToken, openDeferToken } from './defer-token'
-import { createNote, openNote, computeCheck } from '../src/crypto/crypto'
+import { createNote, openNote, computeCheck, decryptByokContent } from '../src/crypto/crypto'
 import { validateApiKey } from './api-key'
 import { checkKeyRateLimit } from './rate-limit-kv'
 
@@ -548,6 +548,17 @@ async function handleRequest(
 
     let fragment = parsed.data.url.slice(hashIndex + 1)
 
+    // Extract BYOK key suffix: ...!keyBase64url
+    let byokKey: string | null = null
+    const bangIndex = fragment.lastIndexOf('!')
+    if (bangIndex !== -1) {
+      const candidate = fragment.slice(bangIndex + 1)
+      if (candidate && /^[A-Za-z0-9_-]{40,50}$/.test(candidate)) {
+        byokKey = candidate
+        fragment = fragment.slice(0, bangIndex)
+      }
+    }
+
     // Reject multi-chunk URLs
     if (fragment.startsWith('multi:')) {
       return Response.json(
@@ -627,8 +638,21 @@ async function handleRequest(
       )
     }
 
+    // BYOK: second-layer decryption with user-provided key
+    let finalText = result.plaintext
+    if (byokKey) {
+      try {
+        finalText = await decryptByokContent(result.plaintext, byokKey)
+      } catch {
+        return Response.json(
+          { error: 'BYOK decryption failed — key may not match the encrypted content' },
+          { status: 400, headers: rlHeaders },
+        )
+      }
+    }
+
     return Response.json(
-      { text: result.plaintext, shardId },
+      { text: finalText, shardId },
       { status: 200, headers: rlHeaders },
     )
   }
