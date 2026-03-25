@@ -640,6 +640,46 @@ export function NoteLink({
               )}
           </div>
 
+          {settingsOpen && (
+            <div className={styles.settingsRow}>
+              <label className={styles.settingsLabel}>
+                custom frontend base url
+              </label>
+              <div className={styles.settingsInputRow}>
+                <input
+                  ref={baseUrlInputRef}
+                  type='text'
+                  className={`${styles.baseUrlInput} ${isUnsafeBase ? styles.baseUrlInputUnsafe : ''}`}
+                  value={customBase || defaultBase}
+                  onChange={(e) => handleBaseChange(e.target.value)}
+                  onFocus={(e) => {
+                    if (!customBase) {
+                      setCustomBase(defaultBase);
+                      localStorage.setItem(STORAGE_KEYS.BASE_URL, defaultBase);
+                    }
+                    e.target.select();
+                  }}
+                  spellCheck={false}
+                />
+                {customBase && (
+                  <button
+                    type='button'
+                    className={styles.resetLink}
+                    onClick={handleReset}
+                    title='reset to default'
+                  >
+                    <IconReset />
+                  </button>
+                )}
+              </div>
+              {isUnsafeBase && (
+                <p className={styles.unsafeWarning}>
+                  non-https base URL — links may not be secure
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Steganographic sharing (Feature 7) */}
           <p className={styles.stegoLabel}>
             disguise your link with steganography
@@ -837,46 +877,6 @@ export function NoteLink({
                   </span>
                 </div>
               ))}
-            </div>
-          )}
-
-          {settingsOpen && (
-            <div className={styles.settingsRow}>
-              <label className={styles.settingsLabel}>
-                custom frontend base url
-              </label>
-              <div className={styles.settingsInputRow}>
-                <input
-                  ref={baseUrlInputRef}
-                  type='text'
-                  className={`${styles.baseUrlInput} ${isUnsafeBase ? styles.baseUrlInputUnsafe : ''}`}
-                  value={customBase || defaultBase}
-                  onChange={(e) => handleBaseChange(e.target.value)}
-                  onFocus={(e) => {
-                    if (!customBase) {
-                      setCustomBase(defaultBase);
-                      localStorage.setItem(STORAGE_KEYS.BASE_URL, defaultBase);
-                    }
-                    e.target.select();
-                  }}
-                  spellCheck={false}
-                />
-                {customBase && (
-                  <button
-                    type='button'
-                    className={styles.resetLink}
-                    onClick={handleReset}
-                    title='reset to default'
-                  >
-                    <IconReset />
-                  </button>
-                )}
-              </div>
-              {isUnsafeBase && (
-                <p className={styles.unsafeWarning}>
-                  non-https base URL — links may not be secure
-                </p>
-              )}
             </div>
           )}
         </>
