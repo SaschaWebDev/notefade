@@ -138,6 +138,31 @@
   border-color: rgba(var(--fg), 0.15);
 }
 
+.docsLink {
+  position: absolute;
+  top: 44px;
+  right: 56px;
+  z-index: 51;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(var(--fg), 0.04);
+  border: 1px solid rgba(var(--fg), 0.08);
+  color: rgba(var(--fg), 0.4);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.docsLink:hover {
+  background: rgba(var(--fg), 0.08);
+  color: rgba(var(--fg), 0.7);
+  border-color: rgba(var(--fg), 0.15);
+}
+
 .dotGrid {
   position: fixed;
   inset: 0;

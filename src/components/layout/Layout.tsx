@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback } from 'react'
 import { useTheme } from '@/hooks'
-import { IconSun, IconMoon } from '../ui/icons'
+import { IconSun, IconMoon, IconDocs } from '../ui/icons'
 import styles from './Layout.module.css'
 
 interface LayoutProps {
@@ -20,6 +20,16 @@ export function Layout({ children, isDocs }: LayoutProps) {
 
   return (
     <main className={`${styles.backdrop} ${isDocs ? styles.backdropDocs : ''}`}>
+      <a
+        href="/docs"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={styles.docsLink}
+        title="documentation"
+        aria-label="documentation"
+      >
+        <IconDocs />
+      </a>
       <button
         type="button"
         className={styles.themeToggle}

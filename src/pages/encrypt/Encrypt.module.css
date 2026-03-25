@@ -1,0 +1,179 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  padding: 36px;
+  gap: 16px;
+}
+
+.heading {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.desc {
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(var(--fg), 0.4);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: var(--text-primary);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.08);
+  border-radius: 10px;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  box-sizing: border-box;
+}
+
+.textarea:focus {
+  border-color: rgba(var(--accent-rgb), 0.4);
+}
+
+.textarea::placeholder {
+  color: rgba(var(--fg), 0.2);
+}
+
+.encryptBtn {
+  padding: 12px 32px;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  align-self: flex-start;
+}
+
+.encryptBtn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.encryptBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* --- Result --- */
+
+.resultSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.resultLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(var(--fg), 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.resultBox {
+  position: relative;
+}
+
+.resultTextarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px 40px 12px 14px;
+  font-size: 11px;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  color: rgba(var(--fg), 0.6);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
+  border-radius: 8px;
+  outline: none;
+  resize: none;
+  word-break: break-all;
+  box-sizing: border-box;
+}
+
+.resultInput {
+  width: 100%;
+  padding: 12px 40px 12px 14px;
+  font-size: 12px;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  color: rgba(var(--fg), 0.6);
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.06);
+  border-radius: 8px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.copyBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(var(--fg), 0.06);
+  color: rgba(var(--fg), 0.4);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.copyBtn:hover {
+  background: rgba(var(--fg), 0.1);
+  color: rgba(var(--fg), 0.7);
+}
+
+.hint {
+  font-size: 13px;
+  color: rgba(var(--fg), 0.35);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.actionBtn {
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--fg), 0.08);
+  background: rgba(var(--fg), 0.04);
+  color: rgba(var(--fg), 0.5);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.actionBtn:hover {
+  background: rgba(var(--fg), 0.08);
+  border-color: rgba(var(--fg), 0.15);
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 24px 20px;
+  }
+}

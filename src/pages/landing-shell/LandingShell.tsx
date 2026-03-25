@@ -8,7 +8,7 @@ import {
 import { CreateNote } from '../create-note';
 import { useTheme } from '@/hooks';
 import { OFFICIAL_HOSTS } from '@/constants';
-import { IconSun, IconMoon, IconChevronDown, IconClose } from '@/components/ui/icons';
+import { IconSun, IconMoon, IconChevronDown, IconClose, IconDocs } from '@/components/ui/icons';
 import styles from './LandingShell.module.css';
 
 const PILL_ROWS = [
@@ -131,9 +131,9 @@ const CTA_CARDS: readonly {
     ),
   },
   {
-    href: '/docs',
-    title: 'documentation',
-    description: 'how it works, API reference, and self-hosting guide',
+    href: '/encrypt',
+    title: 'encrypt content',
+    description: 'encrypt text locally for use with bring-your-own-key notes',
     icon: (
       <svg
         width='20'
@@ -142,25 +142,22 @@ const CTA_CARDS: readonly {
         fill='none'
         className={styles.ctaIcon}
       >
-        <path
-          d='M4 3.5h8l4 4V16a.5.5 0 01-.5.5H4a.5.5 0 01-.5-.5V4a.5.5 0 01.5-.5z'
+        <rect
+          x='4'
+          y='9'
+          width='12'
+          height='8'
+          rx='2'
           stroke='currentColor'
           strokeWidth='1.5'
-          strokeLinejoin='round'
         />
         <path
-          d='M12 3.5V7.5h4'
-          stroke='currentColor'
-          strokeWidth='1.5'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-        />
-        <path
-          d='M7 11h6M7 13.5h4'
+          d='M7 9V6a3 3 0 016 0v3'
           stroke='currentColor'
           strokeWidth='1.5'
           strokeLinecap='round'
         />
+        <circle cx='10' cy='13' r='1.5' fill='currentColor' />
       </svg>
     ),
   },
@@ -473,6 +470,16 @@ export function LandingShell({ children }: { children: ReactNode }) {
   return (
     <main className={styles.page}>
       <DomainIndicator />
+      <a
+        href='/docs'
+        target='_blank'
+        rel='noopener noreferrer'
+        className={styles.docsLink}
+        title='documentation'
+        aria-label='documentation'
+      >
+        <IconDocs />
+      </a>
       <button
         type='button'
         className={styles.themeToggle}
