@@ -14,7 +14,7 @@ interface Env {
 
 const VALID_TTLS = [3600, 86400, 604800] as const
 const MAX_BODY_SIZE = 1024 // 1KB
-const MAX_API_BODY_SIZE = 4096 // 4KB (1800-char API message + JSON overhead; web app supports up to 50,000 chars via multi-chunk)
+const MAX_API_BODY_SIZE = 16384 // 16KB — matches read endpoint; accommodates BYOK-encrypted text (up to ~7.2KB for worst-case UTF-8)
 const MAX_READ_API_BODY_SIZE = 16384 // 16KB (padded single-note URLs can reach ~7.5KB)
 const SHARD_ID_RE = /^[a-f0-9]{8,16}$/
 const API_DEFAULT_TTL = 86400 // 24 hours
@@ -103,7 +103,9 @@ const ActivateTokenSchema = z.object({
 })
 
 const CreateNoteSchema = z.object({
-  text: z.string().min(1).max(1800),
+  // Plaintext limit is 1800 chars (enforced upstream). BYOK encryption expands text via
+  // base64url(IV + ciphertext + GCM tag); worst case (3-byte UTF-8): 1800 → ~7238 chars.
+  text: z.string().min(1).max(8000),
 })
 
 const ReadNoteSchema = z.object({
