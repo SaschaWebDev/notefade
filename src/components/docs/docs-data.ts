@@ -338,8 +338,8 @@ export const INTEGRATION_ENDPOINTS: EndpointDef[] = [
         location: 'body',
         type: 'string',
         required: true,
-        description: 'The plaintext note content (1-1800 characters). The API does not support multi-chunk notes — use the web app for longer messages.',
-        pattern: '1 ≤ length ≤ 1800',
+        description: 'The note content (1-8000 characters). Plaintext is limited to 1800 chars; the higher limit accommodates BYOK-encrypted payloads (base64url-encoded ciphertext). The API does not support multi-chunk notes — use the web app for longer messages.',
+        pattern: '1 ≤ length ≤ 8000',
       },
     ],
     responses: [
@@ -350,7 +350,7 @@ export const INTEGRATION_ENDPOINTS: EndpointDef[] = [
       },
       { status: 400, description: 'Invalid JSON or failed schema validation' },
       { status: 401, description: 'Missing or invalid API key' },
-      { status: 413, description: 'Request body exceeds 4 KB' },
+      { status: 413, description: 'Request body exceeds 16 KB' },
       { status: 429, description: 'Per-key rate limit exceeded' },
     ],
     exampleRequest: `POST /api/v1/create-note HTTP/1.1

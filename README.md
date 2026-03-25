@@ -332,7 +332,7 @@ Rate limited per IP. Max request body: 1 KB. Full API docs at [notefade.com/docs
 | `POST` | `/api/v1/create-note` | Create a note (server-side encryption) |
 | `POST` | `/api/v1/read-note`   | Read a note (server-side decryption)   |
 
-Requires an `X-Api-Key` header. Rate limited per key (60 req/min, KV-based). Max body: 4 KB (create) / 16 KB (read). Fixed 24-hour TTL for created notes.
+Requires an `X-Api-Key` header. Rate limited per key (60 req/min, KV-based). Max body: 16 KB (create and read). Fixed 24-hour TTL for created notes.
 
 These are convenience endpoints for trusted third-party apps that need to create or read notes programmatically. They produce and consume the same encrypted format as the main app — AES-256-GCM, XOR key splitting, one-time-read — but crypto operations happen on the server instead of in the browser.
 

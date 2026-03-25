@@ -204,12 +204,12 @@ describe('POST /api/v1/create-note', () => {
     expect(res.status).toBe(400)
   })
 
-  it('returns 400 for text exceeding 1800 chars', async () => {
+  it('returns 400 for text exceeding 8000 chars', async () => {
     const store = mockStore()
     const env = { SHARDS: mockShards }
     setupKvWithValidKey()
 
-    const body = JSON.stringify({ text: 'a'.repeat(1801) })
+    const body = JSON.stringify({ text: 'a'.repeat(8001) })
     const res = await handleRequest(
       req('POST', '/api/v1/create-note', { body, apiKey: VALID_API_KEY }),
       store,
@@ -237,12 +237,12 @@ describe('POST /api/v1/create-note', () => {
     expect(json.error).toBe('Invalid JSON')
   })
 
-  it('returns 413 for body exceeding 4KB', async () => {
+  it('returns 413 for body exceeding 16KB', async () => {
     const store = mockStore()
     const env = { SHARDS: mockShards }
     setupKvWithValidKey()
 
-    const body = 'x'.repeat(4097)
+    const body = 'x'.repeat(16385)
     const res = await handleRequest(
       req('POST', '/api/v1/create-note', { body, apiKey: VALID_API_KEY }),
       store,
@@ -324,12 +324,12 @@ describe('POST /api/v1/create-note', () => {
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://chat.example.com')
   })
 
-  it('accepts text at exactly 1800 chars', async () => {
+  it('accepts text at exactly 8000 chars', async () => {
     const store = mockStore()
     const env = { SHARDS: mockShards }
     setupKvWithValidKey()
 
-    const body = JSON.stringify({ text: 'a'.repeat(1800) })
+    const body = JSON.stringify({ text: 'a'.repeat(8000) })
     const res = await handleRequest(
       req('POST', '/api/v1/create-note', { body, apiKey: VALID_API_KEY }),
       store,
