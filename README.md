@@ -226,7 +226,7 @@ yarn test:watch
 
 ### 🧪 Testing
 
-**468 unit tests** across 26 test suites (Vitest) covering cryptography, steganography, key splitting, receipt verification, URL encoding, decoy generation, ZIP building, time formatting, and random utilities. **9 end-to-end tests** (Playwright, Chromium) covering page routing, the create-note flow, full create-to-read roundtrip decryption, note-gone states, and password gate rendering.
+**538 unit tests** across 31 test suites (Vitest) covering cryptography, BYOK encryption, steganography, key splitting, receipt verification, URL parsing, decoy generation, API integration endpoints, backend adapters, worker shard storage, rate limiting, ZIP building, time formatting, and random utilities. **9 end-to-end tests** (Playwright, Chromium) covering page routing, the create-note flow, full create-to-read roundtrip decryption, note-gone states, and password gate rendering.
 
 ```bash
 # Run unit tests
