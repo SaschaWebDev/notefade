@@ -375,16 +375,16 @@ X-RateLimit-Reset: 1710720060
   {
     method: 'POST',
     path: '/api/v1/read-note',
-    summary: 'Read a note (server-side decryption)',
+    summary: 'Read a note (server-side decryption, BYOK supported)',
     description:
-      'Accepts a note URL, fetches the shard from storage, reconstructs the encryption key, and decrypts the content on the server. The shard is consumed — the note cannot be read again. Plaintext is held in volatile Worker memory for ~1-2ms during decryption — never stored, never logged. The full note URL (including fragment) must be sent to the server, which means the server momentarily has access to all key material. Requires a valid API key via the X-Api-Key header. Multi-chunk and custom-provider notes are not supported.',
+      'Accepts a note URL, fetches the shard from storage, reconstructs the encryption key, and decrypts the content on the server. If the URL contains a BYOK key suffix (!keyBase64url), the server performs a second AES-256-GCM decryption using the provided 32-byte key after the standard notefade decryption, returning the fully-decrypted plaintext. This allows third-party apps that pre-encrypt content to read notes without client-side crypto. The shard is consumed — the note cannot be read again. Plaintext is held in volatile Worker memory for ~1-2ms during decryption — never stored, never logged. The full note URL (including fragment) must be sent to the server. Requires a valid API key via the X-Api-Key header. Multi-chunk and custom-provider notes are not supported.',
     params: [
       {
         name: 'url',
         location: 'body',
         type: 'string',
         required: true,
-        description: 'The full note URL including the fragment (e.g. https://notefade.com/#shardId:check:payload). The fragment is required — it contains the encrypted data and key material.',
+        description: 'The full note URL including the fragment (e.g. https://notefade.com/#shardId:check:payload). For BYOK notes, append the decryption key with a ! delimiter (e.g. ...payload!keyBase64url). The fragment is required — it contains the encrypted data and key material.',
         pattern: 'Must contain # fragment',
       },
     ],
@@ -394,7 +394,7 @@ X-RateLimit-Reset: 1710720060
         description: 'Note decrypted and returned',
         body: '{ "text": "The secret message content", "shardId": "a1b2c3d4e5f67890" }',
       },
-      { status: 400, description: 'Invalid URL, bad fragment format, integrity check failed, or multi-chunk/custom-provider URL' },
+      { status: 400, description: 'Invalid URL, bad fragment format, integrity check failed, BYOK decryption failed (wrong key), or multi-chunk/custom-provider URL' },
       { status: 401, description: 'Missing or invalid API key' },
       { status: 404, description: 'Note not found — already read, expired, or invalid shard ID' },
       { status: 413, description: 'Request body exceeds 16 KB' },

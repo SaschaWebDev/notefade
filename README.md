@@ -44,6 +44,7 @@ Notefade splits your encryption key so the server stores only 16 meaningless byt
 - 🔒 **Time-lock** — schedule when a note becomes readable with a live countdown
 - 🧾 **Proof of read** — cryptographic HMAC receipt the sender can verify without knowing who read it
 - 🃏 **Decoy links** — generate 1–3 extra encrypted notes with plausible alternate content for deniability
+- 🔐 **Use already encrypted notes** — encrypt your content externally (or browser local with built-in [/encrypt](https://notefade.com/encrypt) tool), paste the encrypted text, and include your AES-256-GCM decryption key (32-byte key, 12-byte IV) in the shared note URL for double-encrypted, zero-trust notes
 - 🧩 **7 backend adapters** — Cloudflare KV, Cloudflare D1, Upstash Redis, Vercel KV, Supabase, AWS DynamoDB, or your own API
 - 🏠 **Self-hostable** — frontend and backend, no vendor lock-in
 - 🔁 **Reproducible builds** — deterministic Docker builds, SHA-256 build manifests on every release
@@ -326,14 +327,16 @@ Rate limited per IP. Max request body: 1 KB. Full API docs at [notefade.com/docs
 
 > **Security tradeoff:** These endpoints do NOT follow the zero-knowledge model. The server briefly sees plaintext (~1-2ms in volatile Worker memory) during encryption or decryption. Never stored, never logged — but the server processes content, which the main application never does. The read endpoint additionally requires the full note URL (including the `#` fragment) to be sent to the server. Use the main app for sensitive secrets.
 
-| Method | Endpoint              | Description                             |
-| ------ | --------------------- | --------------------------------------- |
-| `POST` | `/api/v1/create-note` | Create a note (server-side encryption)  |
-| `POST` | `/api/v1/read-note`   | Read a note (server-side decryption)    |
+| Method | Endpoint              | Description                            |
+| ------ | --------------------- | -------------------------------------- |
+| `POST` | `/api/v1/create-note` | Create a note (server-side encryption) |
+| `POST` | `/api/v1/read-note`   | Read a note (server-side decryption)   |
 
 Requires an `X-Api-Key` header. Rate limited per key (60 req/min, KV-based). Max body: 4 KB (create) / 16 KB (read). Fixed 24-hour TTL for created notes.
 
-These are convenience endpoints for trusted third-party apps that need to create or read notes programmatically. They produce and consume the same encrypted format as the main app — AES-256-GCM, XOR key splitting, one-time-read — but crypto operations happen on the server instead of in the browser. See [notefade.com/docs#integration-api](https://notefade.com/docs#integration-api) for full documentation and security details.
+These are convenience endpoints for trusted third-party apps that need to create or read notes programmatically. They produce and consume the same encrypted format as the main app — AES-256-GCM, XOR key splitting, one-time-read — but crypto operations happen on the server instead of in the browser.
+
+**BYOK support:** The read endpoint supports BYOK (Bring Your Own Key) URLs. If the URL contains a `!keyBase64url` suffix, the server performs notefade's standard decryption first, then applies a second AES-256-GCM decryption using the provided key — returning the fully-decrypted plaintext. Third-party apps can pre-encrypt content with their own key before creating notes, ensuring the server never sees the original plaintext. See [notefade.com/docs#integration-api](https://notefade.com/docs#integration-api) for full documentation and security details.
 
 ## 📄 License
 

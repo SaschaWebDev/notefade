@@ -342,6 +342,16 @@ const COMPARISON: readonly ComparisonRow[] = [
     ),
     typical: <Some />,
   },
+  {
+    label: 'Bring your own key (BYOK)',
+    notefade: (
+      <Check>
+        <span className={styles.greenText}>Yes</span>{' '}
+        <span className={styles.dimDetail}>(double encryption)</span>
+      </Check>
+    ),
+    typical: <No />,
+  },
 ];
 
 export function LandingComparisonContent() {

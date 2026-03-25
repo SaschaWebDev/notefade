@@ -565,6 +565,95 @@ download (7).png            (generic download)`}
         </DocsCallout>
       </DocsSection>
 
+      <DocsSection id="byok" title="bring your own key (BYOK)">
+        <p className={styles.p}>
+          Users who don't trust the service's encryption can encrypt content
+          externally with AES-256-GCM, paste the ciphertext as the note message,
+          and include their own decryption key in the URL. The result is
+          double-encrypted: notefade's standard AES-256-GCM layer on top of
+          the user's own encryption.
+        </p>
+
+        <h3 className={styles.h3}>How it works</h3>
+        <ol className={styles.list}>
+          <li>
+            Encrypt your content with AES-256-GCM using a random 32-byte key
+            and 12-byte IV. You can use the built-in{' '}
+            <a href="/encrypt" className={styles.link}>/encrypt</a> tool or any
+            compatible tool (OpenSSL, Web Crypto API, etc.).
+          </li>
+          <li>
+            The encrypted output is a base64url-encoded blob:{' '}
+            <code className={styles.code}>IV (12 bytes) || ciphertext || GCM tag (16 bytes)</code>.
+            Paste this as the note message on the main page.
+          </li>
+          <li>
+            Enable <strong>pre-encrypted (BYOK)</strong> in the expert settings
+            panel and enter your 32-byte key (base64url encoded). Alternatively,
+            create the note first and add the key afterward via the gear icon on
+            the note link page.
+          </li>
+          <li>
+            The key is appended to the URL fragment with a{' '}
+            <code className={styles.code}>!</code> delimiter:{' '}
+            <code className={styles.code}>#shardId:check:payload!keyBase64url</code>
+          </li>
+          <li>
+            When the recipient opens the link, notefade decrypts its own layer
+            first (reconstructing the XOR-split key from the URL share and server
+            shard), then detects the <code className={styles.code}>!</code>{' '}
+            suffix and performs a second AES-256-GCM decryption using the
+            provided key to reveal the original plaintext.
+          </li>
+        </ol>
+
+        <h3 className={styles.h3}>Security properties</h3>
+        <ul className={styles.list}>
+          <li>
+            <strong>Key stays in the URL fragment</strong> — the{' '}
+            <code className={styles.code}>#</code> fragment is never sent to the
+            server by the browser. The key never leaves the client.
+          </li>
+          <li>
+            <strong>Double encryption</strong> — even if notefade's encryption
+            is somehow compromised, the content remains protected by the user's
+            own AES-256-GCM layer.
+          </li>
+          <li>
+            <strong>256-bit key strength</strong> — 2<sup>256</sup> possible
+            keys (~1.16 &times; 10<sup>77</sup>). Brute force is
+            computationally infeasible — it would take longer than the age of the
+            universe even with every atom in the observable universe acting as a
+            computer.
+          </li>
+          <li>
+            <strong>Same algorithm as notefade</strong> — both layers use
+            AES-256-GCM via the Web Crypto API with 32-byte keys and 12-byte
+            IVs. No additional dependencies.
+          </li>
+        </ul>
+
+        <h3 className={styles.h3}>Encrypt tool</h3>
+        <p className={styles.p}>
+          The <a href="/encrypt" className={styles.link}>/encrypt</a> page
+          provides a local-only browser tool that encrypts your text with
+          AES-256-GCM and outputs the ciphertext blob and decryption key. Nothing
+          leaves your browser — the encryption happens entirely in the Web Crypto
+          API. Copy both values, paste the ciphertext as your note message, and
+          add the key in the settings.
+        </p>
+
+        <DocsCallout variant="note">
+          The <code className={styles.code}>!</code> delimiter is not in the
+          base64url alphabet (<code className={styles.code}>A-Za-z0-9-_</code>),
+          so it cannot collide with fragment data. The key is always the last
+          segment after the final <code className={styles.code}>!</code> in the
+          URL. BYOK composes with all existing features — password protection,
+          time-lock, multi-read, multi-chunk, steganography, and custom
+          providers all work alongside BYOK.
+        </DocsCallout>
+      </DocsSection>
+
       <DocsSection id="no-tracking" title="no tracking">
         <p className={styles.p}>
           notefade loads zero third-party scripts. No analytics, no tracking

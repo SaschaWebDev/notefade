@@ -15,12 +15,25 @@ export function IntegrationApi() {
         volatile Worker memory for ~1-2ms — never stored, never logged, no
         filesystem — but the server <em>processes</em> content, which the main
         application never does. Do not send highly sensitive plaintext through
-        the create endpoint — ONLY EVER SEND ALREADY ENCRYPTED TEXT. The read
-        endpoint will return whatever the note contains, so if the content was
-        pre-encrypted before creation, the server only ever sees the opaque
-        ciphertext. These are convenience APIs for trusted third-party
-        applications, not a replacement for the main application's client-side
-        encryption.
+        the create endpoint — <strong>only ever send already encrypted
+        text</strong>. The read endpoint will return whatever the note contains,
+        so if the content was pre-encrypted before creation, the server only
+        ever sees the opaque ciphertext. These are convenience APIs for trusted
+        third-party applications, not a replacement for the main application's
+        client-side encryption.
+      </DocsCallout>
+
+      <DocsCallout variant='note'>
+        <strong>BYOK support:</strong> The read endpoint now supports
+        Bring Your Own Key (BYOK) URLs. If the URL contains a{' '}
+        <code style={{ fontSize: '12px' }}>!keyBase64url</code> suffix, the
+        server performs notefade's standard AES-256-GCM decryption first, then
+        applies a second AES-256-GCM decryption using the provided 32-byte key
+        — returning the fully-decrypted plaintext. This means third-party apps
+        can pre-encrypt content with their own key, create notes via the create
+        endpoint, and later read them back through the read endpoint — the
+        server only ever sees the opaque ciphertext during the first decryption
+        layer, never the original plaintext.
       </DocsCallout>
 
       <p className={styles.text}>
@@ -71,6 +84,11 @@ export function IntegrationApi() {
             <td>Yes</td>
             <td>Yes</td>
           </tr>
+          <tr>
+            <td>Pre-encrypted content (BYOK)</td>
+            <td>Client encrypts, key in URL fragment</td>
+            <td>Server decrypts both layers when URL includes <code style={{ fontSize: '11px' }}>!key</code></td>
+          </tr>
         </tbody>
       </table>
 
@@ -95,6 +113,52 @@ export function IntegrationApi() {
         client-side encryption yourself. If the data is highly sensitive, use
         the main app directly. If you don't control the Worker, you're trusting
         someone else's server with your plaintext.
+      </DocsCallout>
+
+      <h3 className={styles.subheading}>Pre-encrypted content (BYOK) with the API</h3>
+      <p className={styles.text}>
+        For maximum security, third-party apps should pre-encrypt content with
+        their own AES-256-GCM key before creating notes. The recommended
+        workflow:
+      </p>
+      <ol className={styles.list}>
+        <li>
+          Generate a random 32-byte AES-256-GCM key and a random 12-byte IV
+        </li>
+        <li>
+          Encrypt your plaintext and encode the result as base64url:{' '}
+          <code className={styles.inlineCode}>
+            base64url(IV || ciphertext || GCM tag)
+          </code>
+        </li>
+        <li>
+          POST the base64url blob to{' '}
+          <code className={styles.inlineCode}>/api/v1/create-note</code> as the{' '}
+          <code className={styles.inlineCode}>text</code> field — the server
+          encrypts your ciphertext again with notefade's own key (double
+          encryption)
+        </li>
+        <li>
+          Append{' '}
+          <code className={styles.inlineCode}>!base64url(key)</code> to the
+          returned URL — the <code className={styles.inlineCode}>!</code>{' '}
+          delimiter separates the BYOK key from the fragment
+        </li>
+        <li>
+          To read: POST the full URL (with{' '}
+          <code className={styles.inlineCode}>!key</code> suffix) to{' '}
+          <code className={styles.inlineCode}>/api/v1/read-note</code> — the
+          server performs notefade's standard decryption first, then applies a
+          second AES-256-GCM decryption using the provided key, returning the
+          fully-decrypted plaintext
+        </li>
+      </ol>
+      <DocsCallout variant='note'>
+        This approach preserves zero-knowledge for your original plaintext: the
+        server only ever sees your opaque ciphertext blob during the first
+        decryption layer — never the underlying content. The BYOK key is
+        extracted from the URL before fragment parsing, so it composes with all
+        note features (time-lock, multi-read, password protection, etc.).
       </DocsCallout>
 
       <h3 className={styles.subheading}>Endpoint</h3>

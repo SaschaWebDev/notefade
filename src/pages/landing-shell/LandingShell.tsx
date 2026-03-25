@@ -8,7 +8,13 @@ import {
 import { CreateNote } from '../create-note';
 import { useTheme } from '@/hooks';
 import { OFFICIAL_HOSTS } from '@/constants';
-import { IconSun, IconMoon, IconChevronDown, IconClose, IconDocs } from '@/components/ui/icons';
+import {
+  IconSun,
+  IconMoon,
+  IconChevronDown,
+  IconClose,
+  IconDocs,
+} from '@/components/ui/icons';
 import styles from './LandingShell.module.css';
 
 const PILL_ROWS = [
@@ -83,13 +89,7 @@ const CTA_CARDS: readonly {
           stroke='currentColor'
           strokeWidth='1.5'
         />
-        <circle
-          cx='7'
-          cy='7'
-          r='1.5'
-          stroke='currentColor'
-          strokeWidth='1.2'
-        />
+        <circle cx='7' cy='7' r='1.5' stroke='currentColor' strokeWidth='1.2' />
         <path
           d='M2 14l4.5-4.5 3 3L13 9l5 5'
           stroke='currentColor'
@@ -132,8 +132,9 @@ const CTA_CARDS: readonly {
   },
   {
     href: '/encrypt',
-    title: 'encrypt content',
-    description: 'encrypt text locally for use with bring-your-own-key notes',
+    title: 'pre-encrypt content',
+    description:
+      'encrypt text locally before using it with notefade for double encryption',
     icon: (
       <svg
         width='20'
@@ -316,9 +317,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
         className={styles.faqAnswer}
         style={{ maxHeight: open ? `${height}px` : '0px' }}
       >
-        <div className={styles.faqAnswerInner}>
-          {answer}
-        </div>
+        <div className={styles.faqAnswerInner}>{answer}</div>
       </div>
     </div>
   );
@@ -331,7 +330,9 @@ function useBuildVerified(): boolean {
 }
 
 function DomainIndicator() {
-  const isOfficial = (OFFICIAL_HOSTS as readonly string[]).includes(window.location.hostname);
+  const isOfficial = (OFFICIAL_HOSTS as readonly string[]).includes(
+    window.location.hostname,
+  );
   const buildVerified = useBuildVerified();
 
   return (
