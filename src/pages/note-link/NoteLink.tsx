@@ -33,6 +33,7 @@ import {
   IconUpload,
   IconReset,
 } from '@/components/ui/icons';
+import { isValidByokKey } from '@/crypto';
 import {
   STORAGE_KEYS,
   COPY_FEEDBACK_MS,
@@ -42,6 +43,7 @@ import {
   QR_EXPORT_SIZE,
   MIN_STEGO_TEXT_LENGTH,
   PROTECTED_PREFIX,
+  BYOK_DELIMITER,
 } from '@/constants';
 import { formatCountdown, formatDate } from '@/utils/time';
 import { buildZip } from '@/utils/zip';
@@ -117,14 +119,18 @@ export function NoteLink({
   const [customBase, setCustomBase] = useState(
     () => localStorage.getItem(STORAGE_KEYS.BASE_URL) ?? '',
   );
+  const [byokKeyInput, setByokKeyInput] = useState('');
 
   const pathname = window.location.pathname;
   const defaultBase = window.location.origin + pathname;
 
   const fragment = url.includes('#') ? url.slice(url.indexOf('#')) : '';
-  const displayUrl = customBase
+  const byokSuffix = byokKeyInput && isValidByokKey(byokKeyInput)
+    ? `${BYOK_DELIMITER}${byokKeyInput}`
+    : '';
+  const displayUrl = (customBase
     ? customBase.replace(/\/+$/, '') + '/' + fragment
-    : url;
+    : url) + byokSuffix;
 
   const handleCopy = useCallback(async () => {
     if (copyState !== 'idle') return;
@@ -675,6 +681,35 @@ export function NoteLink({
               {isUnsafeBase && (
                 <p className={styles.unsafeWarning}>
                   non-https base URL — links may not be secure
+                </p>
+              )}
+              <label className={styles.settingsLabel} style={{ marginTop: 12 }}>
+                pre-encrypted decryption key (BYOK)
+              </label>
+              <div className={styles.settingsInputRow}>
+                <input
+                  type='text'
+                  className={styles.baseUrlInput}
+                  value={byokKeyInput}
+                  onChange={(e) => setByokKeyInput(e.target.value.trim())}
+                  placeholder='base64url key (32 bytes)'
+                  spellCheck={false}
+                  autoComplete='off'
+                />
+                {byokKeyInput && (
+                  <button
+                    type='button'
+                    className={styles.resetLink}
+                    onClick={() => setByokKeyInput('')}
+                    title='clear key'
+                  >
+                    <IconReset />
+                  </button>
+                )}
+              </div>
+              {byokKeyInput && !isValidByokKey(byokKeyInput) && (
+                <p className={styles.unsafeWarning}>
+                  key must be exactly 32 bytes (base64url encoded)
                 </p>
               )}
             </div>
