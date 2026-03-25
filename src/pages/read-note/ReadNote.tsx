@@ -41,6 +41,7 @@ interface ReadNoteProps {
   provider: ProviderConfig | null;
   timeLockAt: number | null;
   multiChunks?: ParsedFragment[] | null;
+  byokKey?: string | null;
 }
 
 function validateFragment(
@@ -86,6 +87,7 @@ export function ReadNote({
   provider,
   timeLockAt,
   multiChunks,
+  byokKey,
 }: ReadNoteProps) {
   const isMultiChunk = multiChunks != null && multiChunks.length > 1;
   const [confirmed, setConfirmed] = useState(false);
@@ -125,10 +127,12 @@ export function ReadNote({
     !isMultiChunk && confirmed && !validationError && timeLockReady,
     provider,
     shardIds,
+    byokKey,
   );
   const multiResult = useReadMultiNote(
     isMultiChunk ? multiChunks : [],
     isMultiChunk && confirmed && !validationError && timeLockReady,
+    byokKey,
   );
   const { state, remainingReads } = isMultiChunk ? multiResult : singleResult;
   const pathname = window.location.pathname;
@@ -371,6 +375,11 @@ export function ReadNote({
             <span className={styles.badge}>
               this note url has self-destructed
             </span>
+            {byokKey && (
+              <span className={styles.badge}>
+                decrypted with your key
+              </span>
+            )}
             {hasBarTimer && (
               <span className={styles.barBadge}>
                 fades in {formatDuration(state.remainingMs)}

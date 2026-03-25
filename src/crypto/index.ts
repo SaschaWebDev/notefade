@@ -25,6 +25,8 @@ export {
   deriveTimeLockPositions,
   embedTimeLock,
   extractTimeLock,
+  decryptByokContent,
+  isValidByokKey,
 } from './crypto'
 export type { SplitResult, NoteMetadata, OpenNoteResult } from './crypto'
 export { splitText, estimateMultiFragmentLength, FRAGMENT_LIMIT } from './multi-note'

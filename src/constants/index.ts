@@ -32,3 +32,6 @@ export const MAX_TOTAL_SHARDS = 30
 // Fragment prefixes (protocol-level)
 export const PROTECTED_PREFIX = 'protected:'
 export const TIME_LOCK_PREFIX = 'tl:'
+
+// BYOK (Bring Your Own Key) — pre-encrypted content
+export const BYOK_DELIMITER = '!'

@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { createNote, computeCheck, protectFragment, padPayload, embedTimeLock, generateReceiptSeed, splitText } from '@/crypto'
+import { createNote, computeCheck, protectFragment, padPayload, embedTimeLock, generateReceiptSeed, splitText, isValidByokKey } from '@/crypto'
 import type { NoteMetadata } from '@/crypto'
 import { storeShard, deferShard, deleteShard, createAdapter, encodeProviderConfig } from '@/api'
 import type { ProviderConfig, ProviderType } from '@/api/provider-types'
-import { MAX_NOTE_CHARS, MAX_NOTE_CHARS_SINGLE, MAX_READ_COUNT, MAX_TOTAL_SHARDS, STORAGE_KEYS, PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER, DEFAULT_BAR_SECONDS } from '@/constants'
+import { MAX_NOTE_CHARS, MAX_NOTE_CHARS_SINGLE, MAX_READ_COUNT, MAX_TOTAL_SHARDS, STORAGE_KEYS, PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER, DEFAULT_BAR_SECONDS, BYOK_DELIMITER } from '@/constants'
 
 const TTL_OPTIONS = [
   { label: '1h', value: 3600 },
@@ -109,6 +109,12 @@ interface UseCreateNoteReturn {
   // Multi-chunk
   isMultiChunk: boolean
   chunkCount: number
+  // BYOK: Bring Your Own Key
+  byokEnabled: boolean
+  setByokEnabled: (enabled: boolean) => void
+  byokKey: string
+  setByokKey: (key: string) => void
+  byokKeyError: string | null
   handleCreate: () => Promise<void>
   resetNote: () => void
   resetExpertSettings: () => void
@@ -145,6 +151,9 @@ export function useCreateNote(): UseCreateNoteReturn {
   // Feature 8: Decoy links
   const [decoyMessages, setDecoyMessages] = useState<string[]>([])
   const [decoyUrls, setDecoyUrls] = useState<string[]>([])
+  // BYOK: Bring Your Own Key (pre-encrypted content)
+  const [byokEnabled, setByokEnabled] = useState(false)
+  const [byokKey, setByokKey] = useState('')
 
   const isOverLimit = message.length > MAX_NOTE_CHARS
   const isEmpty = message.trim().length === 0
@@ -369,8 +378,19 @@ export function useCreateNote(): UseCreateNoteReturn {
     return { noteUrl: url, compactUrl: compact, primaryShardId: ids[0]!, launchCode: null }
   }
 
+  /** Append BYOK key suffix to a URL if BYOK mode is active */
+  const appendByokSuffix = (url: string): string => {
+    if (!byokEnabled || !byokKey) return url
+    return `${url}${BYOK_DELIMITER}${byokKey}`
+  }
+
+  const byokKeyError = byokEnabled && byokKey.length > 0 && !isValidByokKey(byokKey)
+    ? 'Key must be exactly 32 bytes (base64url)'
+    : null
+
   const handleCreate = async () => {
     if (isEmpty || isOverLimit || loading) return
+    if (byokEnabled && (!byokKey || !isValidByokKey(byokKey))) return
 
     // Clamp read count if it exceeds dynamic max
     const effectiveReadCount = Math.min(readCount, dynamicMaxReadCount)
@@ -428,7 +448,7 @@ export function useCreateNote(): UseCreateNoteReturn {
         }
 
         const pathname = window.location.pathname
-        const url = `${window.location.origin}${pathname}#${bundleFragment}`
+        const url = appendByokSuffix(`${window.location.origin}${pathname}#${bundleFragment}`)
 
         setShardId(allStoredShardIds[0]!)
         setExpiresAt(Date.now() + ttl * 1000)
@@ -457,13 +477,13 @@ export function useCreateNote(): UseCreateNoteReturn {
         if (deferredMode) {
           setShardId(result.primaryShardId)
           setExpiresAt(0)
-          setNoteUrl(result.noteUrl)
+          setNoteUrl(appendByokSuffix(result.noteUrl))
           setCompactUrl(null)
         } else {
           setShardId(result.primaryShardId)
           setExpiresAt(Date.now() + ttl * 1000)
-          setNoteUrl(result.noteUrl)
-          setCompactUrl(result.compactUrl)
+          setNoteUrl(appendByokSuffix(result.noteUrl))
+          setCompactUrl(result.compactUrl ? appendByokSuffix(result.compactUrl) : null)
         }
 
         if (receiptEnabled && receiptSeed) {
@@ -506,6 +526,8 @@ export function useCreateNote(): UseCreateNoteReturn {
     setDecoyMessages([])
     setPasswordEnabledState(false)
     setPasswordState('')
+    setByokEnabled(false)
+    setByokKey('')
   }
 
   const resetNote = () => {
@@ -527,6 +549,8 @@ export function useCreateNote(): UseCreateNoteReturn {
     setReceiptVerification(null)
     setDecoyMessages([])
     setDecoyUrls([])
+    setByokEnabled(false)
+    setByokKey('')
   }
 
   return {
@@ -575,6 +599,11 @@ export function useCreateNote(): UseCreateNoteReturn {
     decoyUrls,
     isMultiChunk,
     chunkCount,
+    byokEnabled,
+    setByokEnabled,
+    byokKey,
+    setByokKey,
+    byokKeyError,
     handleCreate,
     resetNote,
     resetExpertSettings,

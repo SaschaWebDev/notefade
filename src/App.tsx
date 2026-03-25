@@ -1,6 +1,6 @@
 import { useHashRoute } from '@/hooks'
 import { Layout } from '@/components'
-import { Landing, ReadNote, PasswordGate, Docs, Activate, Decode, VerifyReceipt } from '@/pages'
+import { Landing, ReadNote, PasswordGate, Docs, Activate, Decode, VerifyReceipt, Encrypt } from '@/pages'
 
 export function App() {
   const route = useHashRoute()
@@ -37,6 +37,14 @@ export function App() {
     )
   }
 
+  if (window.location.pathname === '/encrypt') {
+    return (
+      <Layout>
+        <Encrypt />
+      </Layout>
+    )
+  }
+
   if (route.mode === 'create') {
     return <Landing />
   }
@@ -44,7 +52,7 @@ export function App() {
   if (route.mode === 'protected') {
     return (
       <Layout>
-        <PasswordGate protectedData={route.protectedData} />
+        <PasswordGate protectedData={route.protectedData} byokKey={route.byokKey} />
       </Layout>
     )
   }
@@ -59,6 +67,7 @@ export function App() {
         provider={route.provider}
         timeLockAt={route.timeLockAt}
         multiChunks={route.multiChunks}
+        byokKey={route.byokKey}
       />
     </Layout>
   )

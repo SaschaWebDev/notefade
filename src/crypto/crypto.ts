@@ -643,3 +643,38 @@ export async function openNote(
 
   return result
 }
+
+// --- BYOK (Bring Your Own Key) DECRYPTION ---
+
+/**
+ * Decrypt BYOK (Bring Your Own Key) content.
+ * The content is base64url-encoded: IV (12 bytes) || ciphertext || GCM tag (16 bytes).
+ * The key is base64url-encoded (32 bytes).
+ */
+export async function decryptByokContent(
+  contentB64: string,
+  keyB64: string,
+): Promise<string> {
+  const blob = fromBase64Url(contentB64)
+  if (blob.length < IV_BYTES + 16) {
+    throw new Error('BYOK content too short')
+  }
+  const iv = blob.slice(0, IV_BYTES)
+  const ciphertext = blob.slice(IV_BYTES)
+  const key = fromBase64Url(keyB64)
+  if (key.length !== KEY_BYTES) {
+    throw new Error('BYOK key must be 32 bytes')
+  }
+  const plaintext = await decrypt(ciphertext, iv, key)
+  key.fill(0)
+  return plaintext
+}
+
+/** Validate a BYOK key string. Returns true if it decodes to exactly 32 bytes. */
+export function isValidByokKey(keyB64: string): boolean {
+  try {
+    return fromBase64Url(keyB64).length === KEY_BYTES
+  } catch {
+    return false
+  }
+}

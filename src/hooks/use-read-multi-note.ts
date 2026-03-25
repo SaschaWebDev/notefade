@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { openNote } from '@/crypto'
+import { openNote, decryptByokContent } from '@/crypto'
 import type { NoteMetadata } from '@/crypto'
 import { checkShard, fetchShard, createAdapter } from '@/api'
 import type { ParsedFragment } from '@/hooks/use-hash-route'
@@ -20,6 +20,7 @@ interface UseReadMultiNoteReturn {
 export function useReadMultiNote(
   chunks: ParsedFragment[],
   confirmed: boolean,
+  byokKey?: string | null,
 ): UseReadMultiNoteReturn {
   const [state, setState] = useState<ReadState>({ status: 'idle' })
   const [remainingReads, setRemainingReads] = useState<number | null>(null)
@@ -161,8 +162,21 @@ export function useReadMultiNote(
         if (cancelled) return
 
         // Concatenate plaintexts; metadata from first chunk only
-        const combinedPlaintext = decrypted.map((d) => d.plaintext).join('')
+        let combinedPlaintext = decrypted.map((d) => d.plaintext).join('')
         const firstMetadata: NoteMetadata = decrypted[0]!.metadata
+
+        // BYOK: second-layer decryption with user-provided key
+        if (byokKey) {
+          try {
+            combinedPlaintext = await decryptByokContent(combinedPlaintext, byokKey)
+          } catch {
+            setState({
+              status: 'error',
+              message: 'Second-layer decryption failed — the provided key may not match the encrypted content.',
+            })
+            return
+          }
+        }
 
         const ttlMs = firstMetadata.barSeconds
           ? firstMetadata.barSeconds * 1000

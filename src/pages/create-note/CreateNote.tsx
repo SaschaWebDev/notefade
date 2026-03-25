@@ -154,6 +154,11 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
     decoyUrls,
     isMultiChunk,
     chunkCount,
+    byokEnabled,
+    setByokEnabled,
+    byokKey,
+    setByokKey,
+    byokKeyError,
     handleCreate,
     resetNote,
     resetExpertSettings,
@@ -490,7 +495,8 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
     deferredMode ||
     receiptEnabled ||
     decoyMessages.length > 0 ||
-    isCustomServer;
+    isCustomServer ||
+    byokEnabled;
 
   // Deferred activation requires a server-side worker (default API or self-hosted API).
   // BYOS adapters that connect directly to storage from the browser (cf-kv, cf-d1, etc.)
@@ -613,6 +619,13 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
         >
           proof of read
         </a>
+      </span>,
+    );
+  if (byokEnabled)
+    expertClauses.push(
+      <span key='byok'>
+        <span className={styles.sentenceText}>uses </span>
+        <span className={styles.sentenceLink}>pre-encrypted content</span>
       </span>,
     );
   if (decoyMessages.length > 0)
@@ -1334,6 +1347,47 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                       <span className={styles.advancedHint}>
                         reader can prove they decrypted the note
                       </span>
+                    )}
+                  </div>
+                  <div className={styles.advancedRowWrap}>
+                    <div className={styles.advancedRow}>
+                      <span className={styles.advancedLabel}>
+                        pre-encrypted (BYOK)
+                      </span>
+                      <OnOffToggle
+                        enabled={byokEnabled}
+                        onToggle={() => {
+                          setByokEnabled(!byokEnabled);
+                          if (byokEnabled) setByokKey('');
+                        }}
+                        disabled={loading}
+                        small
+                      />
+                    </div>
+                    {byokEnabled && (
+                      <>
+                        <input
+                          type='text'
+                          className={styles.timeLockInput}
+                          value={byokKey}
+                          onChange={(e) => setByokKey(e.target.value.trim())}
+                          placeholder='AES-256-GCM key (base64url, 32 bytes)'
+                          disabled={loading}
+                          autoComplete='off'
+                          spellCheck={false}
+                        />
+                        {byokKeyError && (
+                          <span className={styles.advancedHint} style={{ color: 'var(--error, #e57373)' }}>
+                            {byokKeyError}
+                          </span>
+                        )}
+                        <span className={styles.advancedHint}>
+                          paste content you encrypted externally with AES-256-GCM
+                        </span>
+                        <span className={styles.advancedHint}>
+                          format: base64url(IV&#8201;||&#8201;ciphertext&#8201;||&#8201;GCM tag)
+                        </span>
+                      </>
                     )}
                   </div>
                 </div>

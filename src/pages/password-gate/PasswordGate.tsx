@@ -10,6 +10,7 @@ import styles from './PasswordGate.module.css';
 
 interface PasswordGateProps {
   protectedData: string;
+  byokKey?: string | null;
 }
 
 type GateState =
@@ -18,7 +19,7 @@ type GateState =
   | { status: 'error'; message: string }
   | { status: 'unlocked'; shardId: string; shardIds: string[]; urlPayload: string; check: string | null; provider: import('@/api/provider-types').ProviderConfig | null; timeLockAt: number | null; multiChunks: ParsedFragment[] | null }
 
-export function PasswordGate({ protectedData }: PasswordGateProps) {
+export function PasswordGate({ protectedData, byokKey }: PasswordGateProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [state, setState] = useState<GateState>({ status: 'idle' });
@@ -90,6 +91,7 @@ export function PasswordGate({ protectedData }: PasswordGateProps) {
         provider={state.provider}
         timeLockAt={state.timeLockAt}
         multiChunks={state.multiChunks}
+        byokKey={byokKey}
       />
     );
   }

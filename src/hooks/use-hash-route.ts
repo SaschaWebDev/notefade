@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { stringFromBase64Url, unpadPayload, extractTimeLock } from '@/crypto'
 import { decodeProviderConfig } from '@/api/provider-config'
 import type { ProviderConfig } from '@/api/provider-types'
-import { PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER } from '@/constants'
+import { PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER, BYOK_DELIMITER } from '@/constants'
 
 interface CreateRoute {
   mode: 'create'
@@ -20,11 +20,15 @@ interface ReadRoute {
   timeLockAt: number | null
   /** Additional chunks for multi-note long messages (null = single note) */
   multiChunks: ParsedFragment[] | null
+  /** BYOK decryption key (base64url) for pre-encrypted content */
+  byokKey: string | null
 }
 
 interface ProtectedRoute {
   mode: 'protected'
   protectedData: string
+  /** BYOK decryption key (base64url) for pre-encrypted content */
+  byokKey: string | null
 }
 
 export type HashRoute = CreateRoute | ReadRoute | ProtectedRoute
@@ -149,17 +153,34 @@ export function parseMultiFragment(body: string): ParsedFragment[] | null {
   return chunks
 }
 
+/** Extract a BYOK key suffix (!keyBase64url) from a hash string */
+export function extractByokKey(raw: string): { hash: string; byokKey: string | null } {
+  const bangIndex = raw.lastIndexOf(BYOK_DELIMITER)
+  if (bangIndex === -1) {
+    return { hash: raw, byokKey: null }
+  }
+  const candidate = raw.slice(bangIndex + 1)
+  // 32-byte key in base64url is ~43 chars; allow 40-50 for padding variance
+  if (candidate && /^[A-Za-z0-9_-]{40,50}$/.test(candidate)) {
+    return { hash: raw.slice(0, bangIndex), byokKey: candidate }
+  }
+  return { hash: raw, byokKey: null }
+}
+
 function parseHash(): HashRoute {
-  const hash = window.location.hash.slice(1) // remove #
-  if (!hash) {
+  const rawHash = window.location.hash.slice(1) // remove #
+  if (!rawHash) {
     return { mode: 'create' }
   }
+
+  // Extract BYOK key suffix before any other parsing
+  const { hash, byokKey } = extractByokKey(rawHash)
 
   // Check for password-protected fragment
   if (hash.startsWith(PROTECTED_PREFIX)) {
     const protectedData = hash.slice(PROTECTED_PREFIX.length)
     if (protectedData) {
-      return { mode: 'protected', protectedData }
+      return { mode: 'protected', protectedData, byokKey }
     }
     return { mode: 'create' }
   }
@@ -170,7 +191,7 @@ function parseHash(): HashRoute {
     const chunks = parseMultiFragment(body)
     if (!chunks || chunks.length === 0) return { mode: 'create' }
     const first = chunks[0]!
-    return { mode: 'read', ...first, multiChunks: chunks }
+    return { mode: 'read', ...first, multiChunks: chunks, byokKey }
   }
 
   const parsed = parseFragment(hash)
@@ -178,7 +199,7 @@ function parseHash(): HashRoute {
     return { mode: 'create' }
   }
 
-  return { mode: 'read', ...parsed, multiChunks: null }
+  return { mode: 'read', ...parsed, multiChunks: null, byokKey }
 }
 
 export function useHashRoute(): HashRoute {

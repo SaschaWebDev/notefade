@@ -10,7 +10,7 @@ vi.mock('@/api/provider-config', () => ({
   decodeProviderConfig: vi.fn(),
 }))
 
-import { parseFragment } from '@/hooks/use-hash-route'
+import { parseFragment, extractByokKey } from '@/hooks/use-hash-route'
 import { stringFromBase64Url, extractTimeLock } from '@/crypto'
 import { decodeProviderConfig } from '@/api/provider-config'
 
@@ -235,5 +235,75 @@ describe('parseFragment', () => {
       provider: null,
       timeLockAt: 1800000000,
     })
+  })
+})
+
+describe('extractByokKey', () => {
+  // A valid 32-byte key in base64url is 43 chars
+  const validKey = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+
+  it('extracts valid BYOK key after ! delimiter', () => {
+    const result = extractByokKey(`abc123:check:payload!${validKey}`)
+    expect(result.byokKey).toBe(validKey)
+    expect(result.hash).toBe('abc123:check:payload')
+  })
+
+  it('returns null byokKey when no ! present', () => {
+    const result = extractByokKey('abc123:check:payload')
+    expect(result.byokKey).toBeNull()
+    expect(result.hash).toBe('abc123:check:payload')
+  })
+
+  it('returns null byokKey when candidate is too short', () => {
+    const result = extractByokKey('abc123:check:payload!shortkey')
+    expect(result.byokKey).toBeNull()
+    expect(result.hash).toBe('abc123:check:payload!shortkey')
+  })
+
+  it('returns null byokKey when candidate is too long', () => {
+    const longKey = 'A'.repeat(55)
+    const result = extractByokKey(`abc123:check:payload!${longKey}`)
+    expect(result.byokKey).toBeNull()
+    expect(result.hash).toBe(`abc123:check:payload!${longKey}`)
+  })
+
+  it('returns null byokKey when candidate has invalid chars', () => {
+    const badKey = 'A'.repeat(43).slice(0, 40) + '!!!'
+    const result = extractByokKey(`abc123:check:payload!${badKey}`)
+    expect(result.byokKey).toBeNull()
+  })
+
+  it('works with protected: prefix', () => {
+    const result = extractByokKey(`protected:encdata!${validKey}`)
+    expect(result.byokKey).toBe(validKey)
+    expect(result.hash).toBe('protected:encdata')
+  })
+
+  it('works with multi: prefix', () => {
+    const result = extractByokKey(`multi:chunk1|chunk2!${validKey}`)
+    expect(result.byokKey).toBe(validKey)
+    expect(result.hash).toBe('multi:chunk1|chunk2')
+  })
+
+  it('works with tl: prefix and provider suffix', () => {
+    const result = extractByokKey(`tl:1234:abc:check:payload@config!${validKey}`)
+    expect(result.byokKey).toBe(validKey)
+    expect(result.hash).toBe('tl:1234:abc:check:payload@config')
+  })
+
+  it('uses lastIndexOf to handle ! in earlier positions', () => {
+    // If there is a ! in an earlier position (unlikely but possible),
+    // lastIndexOf ensures we pick the last one
+    const result = extractByokKey(`some!thing:check:payload!${validKey}`)
+    expect(result.byokKey).toBe(validKey)
+    expect(result.hash).toBe('some!thing:check:payload')
+  })
+
+  it('accepts keys with base64url special chars - and _', () => {
+    const keyWithSpecial = 'AAAA-BBBB_CCCC-DDDD_EEEE-FFFF_GGGG-HHHH_II'
+    expect(keyWithSpecial.length).toBeGreaterThanOrEqual(40)
+    expect(keyWithSpecial.length).toBeLessThanOrEqual(50)
+    const result = extractByokKey(`abc123:check:payload!${keyWithSpecial}`)
+    expect(result.byokKey).toBe(keyWithSpecial)
   })
 })

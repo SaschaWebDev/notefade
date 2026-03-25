@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { openNote } from '@/crypto'
+import { openNote, decryptByokContent } from '@/crypto'
 import type { NoteMetadata } from '@/crypto'
 import { checkShard, fetchShard, createAdapter } from '@/api'
 import type { ProviderConfig } from '@/api/provider-types'
@@ -27,6 +27,7 @@ export function useReadNote(
   confirmed: boolean,
   provider?: ProviderConfig | null,
   shardIds?: string[],
+  byokKey?: string | null,
 ): UseReadNoteReturn {
   const [state, setState] = useState<ReadState>({ status: 'idle' })
   const [remainingReads, setRemainingReads] = useState<number | null>(null)
@@ -154,13 +155,27 @@ export function useReadNote(
         const result = await openNote(urlPayload, shard)
         if (cancelled) return
 
+        // BYOK: second-layer decryption with user-provided key
+        let finalPlaintext = result.plaintext
+        if (byokKey) {
+          try {
+            finalPlaintext = await decryptByokContent(result.plaintext, byokKey)
+          } catch {
+            setState({
+              status: 'error',
+              message: 'Second-layer decryption failed — the provided key may not match the encrypted content.',
+            })
+            return
+          }
+        }
+
         const ttlMs = result.metadata.barSeconds
           ? result.metadata.barSeconds * 1000
           : DEFAULT_PLAINTEXT_TTL_MS
 
         setState({
           status: 'decrypted',
-          plaintext: result.plaintext,
+          plaintext: finalPlaintext,
           metadata: result.metadata,
           remainingMs: ttlMs,
         })
