@@ -1,3 +1,5 @@
+import { deriveKvKey } from './kv-key'
+
 /** Abstract shard storage interface — enables BYOS (Bring Your Own Server) in v2 */
 export interface ShardStore {
   /** Store a shard with the given ID and TTL (seconds) */
@@ -10,33 +12,49 @@ export interface ShardStore {
   delete(id: string): Promise<boolean>
 }
 
-/** Cloudflare KV implementation of ShardStore */
+/**
+ * Cloudflare KV implementation of ShardStore.
+ *
+ * If `kvSecret` is supplied, the shardId from the URL is HMAC'd before
+ * being used as a KV key. A KV-only dump (without the secret) cannot be
+ * cross-referenced with leaked URLs. See worker/kv-key.ts for rationale
+ * and the rotation caveat.
+ */
 export class CloudflareKVShardStore implements ShardStore {
-  constructor(private readonly kv: KVNamespace) {}
+  constructor(
+    private readonly kv: KVNamespace,
+    private readonly kvSecret?: string,
+  ) {}
+
+  private kvKey(id: string): Promise<string> {
+    return deriveKvKey(this.kvSecret, id)
+  }
 
   async put(id: string, shard: string, ttl: number): Promise<void> {
-    await this.kv.put(id, shard, { expirationTtl: ttl })
+    await this.kv.put(await this.kvKey(id), shard, { expirationTtl: ttl })
   }
 
   async get(id: string): Promise<string | null> {
-    const shard = await this.kv.get(id)
+    const key = await this.kvKey(id)
+    const shard = await this.kv.get(key)
     if (shard === null) {
       return null
     }
     // Delete immediately after serving (one-time read)
-    await this.kv.delete(id)
+    await this.kv.delete(key)
     return shard
   }
 
   async exists(id: string): Promise<boolean> {
-    const shard = await this.kv.get(id)
+    const shard = await this.kv.get(await this.kvKey(id))
     return shard !== null
   }
 
   async delete(id: string): Promise<boolean> {
-    const exists = await this.kv.get(id)
+    const key = await this.kvKey(id)
+    const exists = await this.kv.get(key)
     if (exists === null) return false
-    await this.kv.delete(id)
+    await this.kv.delete(key)
     return true
   }
 }

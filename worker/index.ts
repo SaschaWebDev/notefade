@@ -5,10 +5,12 @@ import { createDeferToken, openDeferToken } from './defer-token'
 import { createNote, openNote, computeCheck, decryptByokContent } from '../src/crypto/crypto'
 import { validateApiKey } from './api-key'
 import { checkKeyRateLimit } from './rate-limit-kv'
+import { deriveKvKey } from './kv-key'
 
 interface Env {
   SHARDS: KVNamespace
   DEFER_SECRET?: string  // 64 hex chars (32 bytes), set via `wrangler secret put`
+  KV_SECRET?: string     // 64 hex chars (32 bytes); HMAC's shardIds before KV lookup. See worker/kv-key.ts. NEVER rotate.
   WEB_ORIGIN?: string    // Override for dev/staging (defaults to https://notefade.com)
 }
 
@@ -366,8 +368,10 @@ async function handleRequest(
       )
     }
 
-    // Prevent replay: reject if this token was already activated
-    const markerKey = `activated:${payload.id}`
+    // Prevent replay: reject if this token was already activated.
+    // The marker key is HMAC'd (when KV_SECRET is set) so a KV-only dump
+    // cannot reveal which shardIds were activated.
+    const markerKey = await deriveKvKey(env.KV_SECRET, `activated:${payload.id}`)
     const alreadyUsed = await env.SHARDS.get(markerKey)
     if (alreadyUsed !== null) {
       return Response.json(
@@ -674,7 +678,7 @@ export default {
       if (limited) return limited
     }
 
-    const store = new CloudflareKVShardStore(env.SHARDS)
+    const store = new CloudflareKVShardStore(env.SHARDS, env.KV_SECRET)
     return handleRequest(request, store, env)
   },
 }
