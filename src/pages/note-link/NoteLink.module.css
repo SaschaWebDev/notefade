@@ -239,8 +239,8 @@
   flex: 1;
   min-width: 0;
   padding: 14px 16px;
-  background: rgba(var(--fg), 0.03);
-  border: 1px solid rgba(var(--fg), 0.06);
+  background: rgba(var(--success-rgb), 0.03);
+  border: 1px solid rgba(var(--success-rgb), 0.15);
   border-radius: 10px;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -249,18 +249,18 @@
 }
 
 .linkBoxInner:hover {
-  border-color: rgba(var(--fg), 0.12);
-  background: rgba(var(--fg), 0.05);
+  border-color: rgba(var(--success-rgb), 0.25);
+  background: rgba(var(--success-rgb), 0.05);
 }
 
 .linkBoxCopied {
-  border-color: rgba(var(--success-rgb), 0.3);
-  background: rgba(var(--success-rgb), 0.04);
+  border-color: rgba(var(--success-rgb), 0.45);
+  background: rgba(var(--success-rgb), 0.08);
 }
 
 .linkBoxCopied:hover {
-  border-color: rgba(var(--success-rgb), 0.3);
-  background: rgba(var(--success-rgb), 0.04);
+  border-color: rgba(var(--success-rgb), 0.45);
+  background: rgba(var(--success-rgb), 0.08);
 }
 
 .linkText {
@@ -322,17 +322,17 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: rgba(var(--fg), 0.06);
-  border: 1px solid rgba(var(--fg), 0.08);
-  color: rgba(var(--fg), 0.4);
+  background: rgba(var(--success-rgb), 0.08);
+  border: 1px solid rgba(var(--success-rgb), 0.12);
+  color: rgba(var(--success-rgb), 0.5);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .copyIcon:hover,
 .linkBox:hover .copyIcon {
-  background: rgba(var(--fg), 0.1);
-  color: rgba(var(--fg), 0.6);
+  background: rgba(var(--success-rgb), 0.15);
+  color: rgba(var(--success-rgb), 0.7);
 }
 
 .settingsIcon {
@@ -387,6 +387,28 @@
 @keyframes hint-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.doodlyArrow {
+  position: absolute;
+  top: -36px;
+  right: 44px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  pointer-events: none;
+  color: rgba(var(--success-rgb), 0.4);
+  animation: hint-in 0.3s ease;
+}
+
+.doodlyText {
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 400;
+  color: rgba(var(--success-rgb), 0.45);
+  white-space: nowrap;
+  transform: rotate(-3deg);
+  margin-bottom: 6px;
 }
 
 .anotherLink {
@@ -582,8 +604,8 @@
 
 .shareLabel {
   font-size: 12px;
-  font-weight: 400;
-  color: rgba(var(--fg), 0.25);
+  font-weight: 500;
+  color: rgba(var(--accent-rgb), 0.7);
   letter-spacing: 0.02em;
 }
 
@@ -600,18 +622,18 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: rgba(var(--fg), 0.04);
-  border: 1px solid rgba(var(--fg), 0.08);
-  color: rgba(var(--fg), 0.3);
+  background: rgba(var(--success-rgb), 0.06);
+  border: 1px solid rgba(var(--success-rgb), 0.12);
+  color: rgba(var(--success-rgb), 0.5);
   text-decoration: none;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .shareIcon:hover {
-  background: rgba(var(--fg), 0.08);
-  color: rgba(var(--fg), 0.6);
-  border-color: rgba(var(--fg), 0.15);
+  background: rgba(var(--success-rgb), 0.12);
+  color: rgba(var(--success-rgb), 0.8);
+  border-color: rgba(var(--success-rgb), 0.25);
 }
 
 /* --- Steganographic sharing (Feature 7) --- */
@@ -995,6 +1017,11 @@
 
   .linkBoxInner {
     width: 100%;
+  }
+
+  .doodlyArrow {
+    right: 36px;
+    top: -34px;
   }
 
   .qrSection {

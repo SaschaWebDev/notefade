@@ -32,6 +32,7 @@ import {
   IconImage,
   IconUpload,
   IconReset,
+  IconDoodlyArrow,
 } from '@/components/ui/icons';
 import { isValidByokKey } from '@/crypto';
 import {
@@ -533,6 +534,12 @@ export function NoteLink({
                 >
                   copied to clipboard
                 </span>
+              )}
+              {!copied && (
+                <div className={styles.doodlyArrow} aria-hidden='true'>
+                  <span className={styles.doodlyText}>copy this</span>
+                  <IconDoodlyArrow />
+                </div>
               )}
             </div>
 
