@@ -505,7 +505,7 @@ export function NoteLink({
               <div className={styles.linkActions}>
                 <button
                   type='button'
-                  className={styles.copyIcon}
+                  className={`${styles.copyIcon} ${!copied ? styles.copyIconPulse : ''}`}
                   onClick={handleCopy}
                   title={copied ? 'copied' : 'copy to clipboard'}
                 >
