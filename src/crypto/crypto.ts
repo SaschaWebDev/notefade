@@ -33,6 +33,8 @@ export interface NoteMetadata {
   voiceMime?: string
   /** Voice recording duration in ms. Only on chunk 0 of voice notes. */
   voiceDurationMs?: number
+  /** One-char image mime code (e.g. 'a' for avif). Only on chunk 0 of image notes. */
+  imageMime?: string
 }
 
 /** Result from opening a note, including parsed metadata */
@@ -280,6 +282,9 @@ function buildMetadataPrefix(metadata: NoteMetadata): string {
   if (metadata.voiceDurationMs !== undefined) {
     prefix += `AD:${metadata.voiceDurationMs}:`
   }
+  if (metadata.imageMime !== undefined) {
+    prefix += `I:${metadata.imageMime}:`
+  }
   return prefix
 }
 
@@ -310,6 +315,12 @@ function parseMetadataPrefix(s: string): { metadata: NoteMetadata; consumed: num
   if (durMatch) {
     metadata.voiceDurationMs = parseInt(durMatch[1]!, 10)
     offset += durMatch[0]!.length
+  }
+
+  const imageMatch = s.slice(offset).match(/^I:([A-Za-z0-9]):/)
+  if (imageMatch) {
+    metadata.imageMime = imageMatch[1]!
+    offset += imageMatch[0]!.length
   }
 
   return { metadata, consumed: offset }

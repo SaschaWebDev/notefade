@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { openNoteBytes, decryptByokContent } from '@/crypto'
 import type { NoteMetadata } from '@/crypto'
 import { checkShard, fetchShard, createAdapter } from '@/api'
-import { VOICE_MIME_CODES, type VoiceMimeCode } from '@/constants'
+import { VOICE_MIME_CODES, IMAGE_MIME_CODES, type VoiceMimeCode, type ImageMimeCode } from '@/constants'
 import type { ParsedFragment } from '@/hooks/use-hash-route'
 import type { ReadState } from '@/hooks/use-read-note'
 
@@ -84,9 +84,14 @@ export function useReadMultiNote(
     }
   }, [chunksKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-clear plaintext after timeout (applies to both text and voice)
+  // Auto-clear plaintext after timeout (applies to text, voice, and image)
   useEffect(() => {
-    if (state.status !== 'decrypted' && state.status !== 'decrypted-voice') return
+    if (
+      state.status !== 'decrypted' &&
+      state.status !== 'decrypted-voice' &&
+      state.status !== 'decrypted-image'
+    )
+      return
 
     const ttlMs = state.metadata.barSeconds
       ? state.metadata.barSeconds * 1000
@@ -101,7 +106,12 @@ export function useReadMultiNote(
         setState({ status: 'faded' })
       } else {
         setState((prev) => {
-          if (prev.status !== 'decrypted' && prev.status !== 'decrypted-voice') return prev
+          if (
+            prev.status !== 'decrypted' &&
+            prev.status !== 'decrypted-voice' &&
+            prev.status !== 'decrypted-image'
+          )
+            return prev
           return { ...prev, remainingMs: remaining }
         })
       }
@@ -109,7 +119,9 @@ export function useReadMultiNote(
 
     return () => clearInterval(interval)
   }, [
-    state.status === 'decrypted' || state.status === 'decrypted-voice'
+    state.status === 'decrypted' ||
+    state.status === 'decrypted-voice' ||
+    state.status === 'decrypted-image'
       ? `${state.status}:${state.metadata.barSeconds}`
       : '',
   ]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -182,22 +194,34 @@ export function useReadMultiNote(
             })
             return
           }
-          // Preallocate one buffer for all audio bytes to avoid Blob copies
-          let total = 0
-          for (const d of decrypted) total += d.content.length
-          const merged = new Uint8Array(total)
-          let offset = 0
-          for (const d of decrypted) {
-            merged.set(d.content, offset)
-            offset += d.content.length
-          }
-          const blob = new Blob([merged], { type: mimeType })
-
+          const blob = concatBytesToBlob(decrypted, mimeType)
           setState({
             status: 'decrypted-voice',
             blob,
             mimeType,
             durationMs: firstMetadata.voiceDurationMs ?? 0,
+            metadata: firstMetadata,
+            remainingMs: ttlMs,
+          })
+          return
+        }
+
+        if (firstMetadata.imageMime) {
+          // --- Image branch ---
+          const mimeCode = firstMetadata.imageMime as ImageMimeCode
+          const mimeType = IMAGE_MIME_CODES[mimeCode]
+          if (!mimeType) {
+            setState({
+              status: 'error',
+              message: 'Unsupported image format.',
+            })
+            return
+          }
+          const blob = concatBytesToBlob(decrypted, mimeType)
+          setState({
+            status: 'decrypted-image',
+            blob,
+            mimeType,
             metadata: firstMetadata,
             remainingMs: ttlMs,
           })
@@ -256,4 +280,19 @@ export function useReadMultiNote(
   }, [chunksKey, confirmed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return { state, remainingReads }
+}
+
+function concatBytesToBlob(
+  decrypted: { content: Uint8Array }[],
+  mimeType: string,
+): Blob {
+  let total = 0
+  for (const d of decrypted) total += d.content.length
+  const merged = new Uint8Array(total)
+  let offset = 0
+  for (const d of decrypted) {
+    merged.set(d.content, offset)
+    offset += d.content.length
+  }
+  return new Blob([merged], { type: mimeType })
 }

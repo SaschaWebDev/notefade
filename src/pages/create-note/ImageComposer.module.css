@@ -1,0 +1,175 @@
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 36px;
+  min-height: 338px;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(var(--fg), 0.55);
+}
+
+.previewLabel {
+  color: rgba(var(--fg), 0.45);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+}
+
+.meta {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 12px;
+  color: rgba(var(--fg), 0.55);
+  letter-spacing: 0.02em;
+}
+
+.previewFrame {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  max-height: 360px;
+  overflow: hidden;
+}
+
+.previewImg {
+  max-width: 100%;
+  max-height: 340px;
+  border-radius: 6px;
+  object-fit: contain;
+  display: block;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ghostBtn {
+  background: rgba(var(--fg), 0.04);
+  color: rgba(var(--fg), 0.6);
+  border: 1px solid rgba(var(--fg), 0.1);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.ghostBtn:hover:not(:disabled) {
+  color: rgba(var(--fg), 0.85);
+  background: rgba(var(--fg), 0.07);
+  border-color: rgba(var(--fg), 0.18);
+}
+
+.ghostBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.idleBody {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.pickBtn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+  color: rgb(var(--accent-rgb));
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.pickBtn:hover:not(:disabled) {
+  background: rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+
+.pickBtn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.pickBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.idleText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.idleTitle {
+  font-size: 18px;
+  color: rgba(var(--fg), 0.8);
+  margin: 0;
+}
+
+.idleSub {
+  font-size: 13px;
+  color: rgba(var(--fg), 0.4);
+  margin: 0;
+}
+
+.status {
+  font-size: 13px;
+  color: rgba(var(--fg), 0.6);
+  margin: 0;
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+
+.caveat {
+  font-size: 11px;
+  color: rgba(var(--fg), 0.35);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 520px;
+}
+
+.errorText {
+  color: var(--error-text);
+  font-size: 13px;
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .composer {
+    padding: 24px 20px;
+    min-height: 180px;
+    gap: 12px;
+  }
+  .pickBtn {
+    width: 52px;
+    height: 52px;
+  }
+  .idleTitle {
+    font-size: 16px;
+  }
+  .previewImg {
+    max-height: 220px;
+  }
+}

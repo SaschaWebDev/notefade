@@ -11,6 +11,7 @@ type ReadState =
   | { status: 'loading' }
   | { status: 'decrypted'; plaintext: string; metadata: NoteMetadata; remainingMs: number }
   | { status: 'decrypted-voice'; blob: Blob; mimeType: string; durationMs: number; metadata: NoteMetadata; remainingMs: number }
+  | { status: 'decrypted-image'; blob: Blob; mimeType: string; metadata: NoteMetadata; remainingMs: number }
   | { status: 'faded' }
   | { status: 'gone' }
   | { status: 'error'; message: string }

@@ -47,3 +47,12 @@ export const VOICE_MIME_CODES = {
   m: 'audio/mp4',
 } as const
 export type VoiceMimeCode = keyof typeof VOICE_MIME_CODES
+
+// Image notes
+export const IMAGE_BYTES_PER_CHUNK = 1250
+export const IMAGE_MAX_BYTES = IMAGE_BYTES_PER_CHUNK * MAX_TOTAL_SHARDS
+export const IMAGE_MAX_DIMENSION = 1024
+export const IMAGE_MIME_CODES = {
+  a: 'image/avif',
+} as const
+export type ImageMimeCode = keyof typeof IMAGE_MIME_CODES

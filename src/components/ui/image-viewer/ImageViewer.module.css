@@ -1,0 +1,28 @@
+.frame {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.08);
+  border-radius: 14px;
+  padding: 12px;
+  max-height: 520px;
+  overflow: hidden;
+}
+
+.img {
+  max-width: 100%;
+  max-height: 480px;
+  border-radius: 8px;
+  object-fit: contain;
+  display: block;
+}
+
+@media (max-width: 480px) {
+  .frame {
+    padding: 8px;
+  }
+  .img {
+    max-height: 320px;
+  }
+}
