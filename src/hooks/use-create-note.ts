@@ -1,9 +1,12 @@
 import { useState } from 'react'
-import { createNote, computeCheck, protectFragment, padPayload, embedTimeLock, generateReceiptSeed, splitText, isValidByokKey } from '@/crypto'
+import { createNote, createNoteBytes, computeCheck, protectFragment, padPayload, embedTimeLock, generateReceiptSeed, splitText, splitBytes, isValidByokKey } from '@/crypto'
 import type { NoteMetadata } from '@/crypto'
 import { storeShard, deferShard, deleteShard, createAdapter, encodeProviderConfig } from '@/api'
 import type { ProviderConfig, ProviderType } from '@/api/provider-types'
-import { MAX_NOTE_CHARS, MAX_NOTE_CHARS_SINGLE, MAX_READ_COUNT, MAX_TOTAL_SHARDS, STORAGE_KEYS, PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER, DEFAULT_BAR_SECONDS, BYOK_DELIMITER } from '@/constants'
+import type { RecordedClip } from '@/audio'
+import { MAX_NOTE_CHARS, MAX_NOTE_CHARS_SINGLE, MAX_READ_COUNT, MAX_TOTAL_SHARDS, STORAGE_KEYS, PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER, DEFAULT_BAR_SECONDS, BYOK_DELIMITER, VOICE_BYTES_PER_CHUNK, VOICE_MAX_BYTES } from '@/constants'
+
+export type NoteMode = 'text' | 'voice'
 
 const TTL_OPTIONS = [
   { label: '1h', value: 3600 },
@@ -57,6 +60,10 @@ function loadProviderConfig(): ProviderConfig | null {
 }
 
 interface UseCreateNoteReturn {
+  mode: NoteMode
+  setMode: (mode: NoteMode) => void
+  voiceClip: RecordedClip | null
+  setVoiceClip: (clip: RecordedClip | null) => void
   message: string
   setMessage: (msg: string) => void
   ttl: number
@@ -121,6 +128,8 @@ interface UseCreateNoteReturn {
 }
 
 export function useCreateNote(): UseCreateNoteReturn {
+  const [mode, setModeState] = useState<NoteMode>('text')
+  const [voiceClip, setVoiceClipState] = useState<RecordedClip | null>(null)
   const [message, setMessage] = useState('')
   const [ttl, setTtl] = useState<number>(TTL_OPTIONS[1].value)
   const [noteUrl, setNoteUrl] = useState<string | null>(null)
@@ -155,13 +164,47 @@ export function useCreateNote(): UseCreateNoteReturn {
   const [byokEnabled, setByokEnabled] = useState(false)
   const [byokKey, setByokKey] = useState('')
 
-  const isOverLimit = message.length > MAX_NOTE_CHARS
-  const isEmpty = message.trim().length === 0
+  const isVoiceMode = mode === 'voice'
+  const voiceBytes = voiceClip?.blob.size ?? 0
+  const voiceChunkCount = voiceBytes === 0
+    ? 0
+    : Math.max(1, Math.ceil(voiceBytes / VOICE_BYTES_PER_CHUNK))
+  const isOverLimit = isVoiceMode
+    ? voiceBytes > VOICE_MAX_BYTES
+    : message.length > MAX_NOTE_CHARS
+  const isEmpty = isVoiceMode
+    ? voiceClip === null
+    : message.trim().length === 0
   const isCustomServer = providerConfig !== null
   const providerType = providerConfig?.t ?? null
-  const chunkCount = message.length <= MAX_NOTE_CHARS_SINGLE ? 1 : Math.ceil(message.length / MAX_NOTE_CHARS_SINGLE)
+  const chunkCount = isVoiceMode
+    ? voiceChunkCount
+    : message.length <= MAX_NOTE_CHARS_SINGLE ? 1 : Math.ceil(message.length / MAX_NOTE_CHARS_SINGLE)
   const isMultiChunk = chunkCount > 1
-  const dynamicMaxReadCount = Math.min(MAX_READ_COUNT, Math.floor(MAX_TOTAL_SHARDS / Math.max(1, chunkCount)))
+  const dynamicMaxReadCount = isVoiceMode
+    ? 1
+    : Math.min(MAX_READ_COUNT, Math.floor(MAX_TOTAL_SHARDS / Math.max(1, chunkCount)))
+
+  const setMode = (next: NoteMode) => {
+    if (next === mode) return
+    setModeState(next)
+    if (next === 'voice') {
+      // Entering voice mode: clear text and any voice-incompatible settings
+      setMessage('')
+      setDecoyMessages([])
+      setByokEnabled(false)
+      setByokKey('')
+      setReceiptEnabled(false)
+      setReadCount(1)
+    } else {
+      // Leaving voice mode: drop the clip
+      setVoiceClipState(null)
+    }
+  }
+
+  const setVoiceClip = (clip: RecordedClip | null) => {
+    setVoiceClipState(clip)
+  }
 
   const setProviderConfig = (config: ProviderConfig | null) => {
     setProviderConfigState(config)
@@ -254,6 +297,24 @@ export function useCreateNote(): UseCreateNoteReturn {
     shardCount: number,
   ): Promise<{ shardIds: string[]; compactFragment: string }> => {
     const { urlPayload, serverShard } = await createNote(msg, metadata)
+    return finalizeChunkFragment(urlPayload, serverShard, shardCount)
+  }
+
+  /** Byte-payload variant of buildSingleChunkFragment for voice chunks */
+  const buildSingleChunkFragmentBytes = async (
+    bytes: Uint8Array,
+    metadata: NoteMetadata,
+    shardCount: number,
+  ): Promise<{ shardIds: string[]; compactFragment: string }> => {
+    const { urlPayload, serverShard } = await createNoteBytes(bytes, metadata)
+    return finalizeChunkFragment(urlPayload, serverShard, shardCount)
+  }
+
+  const finalizeChunkFragment = async (
+    urlPayload: string,
+    serverShard: string,
+    shardCount: number,
+  ): Promise<{ shardIds: string[]; compactFragment: string }> => {
     const configSuffix = providerConfig ? `@${encodeProviderConfig(providerConfig)}` : ''
 
     const ids: string[] = []
@@ -390,7 +451,7 @@ export function useCreateNote(): UseCreateNoteReturn {
 
   const handleCreate = async () => {
     if (isEmpty || isOverLimit || loading) return
-    if (byokEnabled && (!byokKey || !isValidByokKey(byokKey))) return
+    if (!isVoiceMode && byokEnabled && (!byokKey || !isValidByokKey(byokKey))) return
 
     // Clamp read count if it exceeds dynamic max
     const effectiveReadCount = Math.min(readCount, dynamicMaxReadCount)
@@ -399,7 +460,59 @@ export function useCreateNote(): UseCreateNoteReturn {
     setError(null)
 
     try {
-      if (isMultiChunk) {
+      if (isVoiceMode && voiceClip) {
+        // --- Voice flow (always multi-chunk, single-read, byte payload) ---
+        const arrayBuf = await voiceClip.blob.arrayBuffer()
+        const allBytes = new Uint8Array(arrayBuf)
+        if (allBytes.length > VOICE_MAX_BYTES) {
+          throw new Error('recording is too large — please record a shorter clip')
+        }
+        const byteChunks = splitBytes(allBytes, VOICE_BYTES_PER_CHUNK)
+
+        const firstMeta: NoteMetadata = {
+          voiceMime: voiceClip.mimeCode,
+          voiceDurationMs: voiceClip.durationMs,
+        }
+        if (barDuration > 0) firstMeta.barSeconds = barDuration
+
+        const allStoredShardIds: string[] = []
+        const fragments: string[] = []
+        try {
+          for (let i = 0; i < byteChunks.length; i++) {
+            const meta = i === 0 ? firstMeta : {}
+            const result = await buildSingleChunkFragmentBytes(byteChunks[i]!, meta, 1)
+            fragments.push(result.compactFragment)
+            allStoredShardIds.push(...result.shardIds)
+          }
+        } catch (err) {
+          for (const id of allStoredShardIds) {
+            try {
+              if (providerConfig) {
+                const adapter = createAdapter(providerConfig)
+                await adapter.delete(id)
+              } else {
+                await deleteShard(id)
+              }
+            } catch { /* ignore cleanup errors */ }
+          }
+          throw err
+        }
+
+        let bundleFragment = `${MULTI_PREFIX}${fragments.join(MULTI_DELIMITER)}`
+        if (passwordEnabled && password.length > 0) {
+          const protectedData = await protectFragment(bundleFragment, password)
+          bundleFragment = `${PROTECTED_PREFIX}${protectedData}`
+        }
+
+        const pathname = window.location.pathname
+        const url = `${window.location.origin}${pathname}#${bundleFragment}`
+
+        setShardId(allStoredShardIds[0]!)
+        setExpiresAt(Date.now() + ttl * 1000)
+        setNoteUrl(url)
+        setCompactUrl(null)
+        setVoiceClipState(null)
+      } else if (isMultiChunk) {
         // --- Multi-chunk flow ---
         const chunks = splitText(message, MAX_NOTE_CHARS_SINGLE)
         const allStoredShardIds: string[] = []
@@ -531,6 +644,8 @@ export function useCreateNote(): UseCreateNoteReturn {
   }
 
   const resetNote = () => {
+    setModeState('text')
+    setVoiceClipState(null)
     setMessage('')
     setTtl(TTL_OPTIONS[1].value)
     setNoteUrl(null)
@@ -554,6 +669,10 @@ export function useCreateNote(): UseCreateNoteReturn {
   }
 
   return {
+    mode,
+    setMode,
+    voiceClip,
+    setVoiceClip,
     message,
     setMessage,
     ttl,

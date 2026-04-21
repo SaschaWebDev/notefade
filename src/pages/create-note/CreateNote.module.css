@@ -1434,4 +1434,53 @@
     box-sizing: border-box;
     font-size: 12px;
   }
+
+  .modeToggle {
+    padding: 6px 20px 0;
+  }
+}
+
+/* --- Mode toggle (text / voice) --- */
+
+.modeToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 36px 0;
+  margin-right: auto;
+}
+
+.modeToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  color: rgba(var(--fg), 0.35);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 9px;
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.modeToggleBtn:hover:not(:disabled) {
+  color: rgba(var(--fg), 0.6);
+  background: rgba(var(--fg), 0.04);
+}
+
+.modeToggleBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.modeToggleActive {
+  color: rgba(var(--fg), 0.8);
+  background: rgba(var(--fg), 0.05);
+  border-color: rgba(var(--fg), 0.1);
+}
+
+.modeToggleLabel {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }

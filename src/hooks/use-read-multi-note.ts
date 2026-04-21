@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { openNote, decryptByokContent } from '@/crypto'
+import { openNoteBytes, decryptByokContent } from '@/crypto'
 import type { NoteMetadata } from '@/crypto'
 import { checkShard, fetchShard, createAdapter } from '@/api'
+import { VOICE_MIME_CODES, type VoiceMimeCode } from '@/constants'
 import type { ParsedFragment } from '@/hooks/use-hash-route'
 import type { ReadState } from '@/hooks/use-read-note'
 
@@ -83,9 +84,9 @@ export function useReadMultiNote(
     }
   }, [chunksKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-clear plaintext after timeout
+  // Auto-clear plaintext after timeout (applies to both text and voice)
   useEffect(() => {
-    if (state.status !== 'decrypted') return
+    if (state.status !== 'decrypted' && state.status !== 'decrypted-voice') return
 
     const ttlMs = state.metadata.barSeconds
       ? state.metadata.barSeconds * 1000
@@ -100,14 +101,18 @@ export function useReadMultiNote(
         setState({ status: 'faded' })
       } else {
         setState((prev) => {
-          if (prev.status !== 'decrypted') return prev
+          if (prev.status !== 'decrypted' && prev.status !== 'decrypted-voice') return prev
           return { ...prev, remainingMs: remaining }
         })
       }
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [state.status === 'decrypted' ? `${state.metadata.barSeconds}` : '']) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    state.status === 'decrypted' || state.status === 'decrypted-voice'
+      ? `${state.status}:${state.metadata.barSeconds}`
+      : '',
+  ]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Phase 2: Destructive fetch + decrypt all chunks (after confirmation)
   useEffect(() => {
@@ -155,15 +160,53 @@ export function useReadMultiNote(
           return
         }
 
-        // Decrypt all chunks in parallel
+        // Decrypt all chunks in parallel as raw bytes; metadata lives on chunk 0
         const decrypted = await Promise.all(
-          chunks.map((chunk, i) => openNote(chunk.urlPayload, shards[i]!)),
+          chunks.map((chunk, i) => openNoteBytes(chunk.urlPayload, shards[i]!)),
         )
         if (cancelled) return
 
-        // Concatenate plaintexts; metadata from first chunk only
-        let combinedPlaintext = decrypted.map((d) => d.plaintext).join('')
         const firstMetadata: NoteMetadata = decrypted[0]!.metadata
+        const ttlMs = firstMetadata.barSeconds
+          ? firstMetadata.barSeconds * 1000
+          : DEFAULT_PLAINTEXT_TTL_MS
+
+        if (firstMetadata.voiceMime) {
+          // --- Voice branch ---
+          const mimeCode = firstMetadata.voiceMime as VoiceMimeCode
+          const mimeType = VOICE_MIME_CODES[mimeCode]
+          if (!mimeType) {
+            setState({
+              status: 'error',
+              message: 'Unsupported voice format.',
+            })
+            return
+          }
+          // Preallocate one buffer for all audio bytes to avoid Blob copies
+          let total = 0
+          for (const d of decrypted) total += d.content.length
+          const merged = new Uint8Array(total)
+          let offset = 0
+          for (const d of decrypted) {
+            merged.set(d.content, offset)
+            offset += d.content.length
+          }
+          const blob = new Blob([merged], { type: mimeType })
+
+          setState({
+            status: 'decrypted-voice',
+            blob,
+            mimeType,
+            durationMs: firstMetadata.voiceDurationMs ?? 0,
+            metadata: firstMetadata,
+            remainingMs: ttlMs,
+          })
+          return
+        }
+
+        // --- Text branch: decode bytes as UTF-8 and concat ---
+        const decoder = new TextDecoder()
+        let combinedPlaintext = decrypted.map((d) => decoder.decode(d.content)).join('')
 
         // BYOK: second-layer decryption with user-provided key
         if (byokKey) {
@@ -177,10 +220,6 @@ export function useReadMultiNote(
             return
           }
         }
-
-        const ttlMs = firstMetadata.barSeconds
-          ? firstMetadata.barSeconds * 1000
-          : DEFAULT_PLAINTEXT_TTL_MS
 
         setState({
           status: 'decrypted',

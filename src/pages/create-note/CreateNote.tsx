@@ -4,12 +4,15 @@ import { useTypewriter } from '@/hooks/use-typewriter';
 import { PROVIDERS, getProviderEntry } from '@/api/provider-registry';
 import type { ProviderConfig, ProviderType } from '@/api/provider-types';
 import { ContentFade } from '@/components/ui/content-fade';
+import { IconMic, IconText } from '@/components/ui/icons';
 import { NoteLink } from '../note-link';
 import {
   NoteMarkdown,
   hasMarkdownPatterns,
 } from '@/components/ui/note-markdown';
 import { generateDecoyMessage } from '@/crypto';
+import { VoiceComposer } from './VoiceComposer';
+import { isVoiceRecordingSupported } from '@/audio';
 import {
   COPY_FEEDBACK_MS,
   DEFAULT_BAR_SECONDS,
@@ -109,6 +112,10 @@ interface CreateNoteProps {
 
 export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   const {
+    mode,
+    setMode,
+    voiceClip,
+    setVoiceClip,
     message,
     setMessage,
     ttl,
@@ -179,7 +186,14 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   const [hasSelection, setHasSelection] = useState(false);
   const [decoyEnabled, setDecoyEnabled] = useState(false);
   const [decoyCount, setDecoyCount] = useState(1);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    setVoiceEnabled(isVoiceRecordingSupported());
+  }, []);
+
+  const isVoiceMode = mode === 'voice';
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -827,7 +841,35 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
       ) : (
         <div className={styles.container}>
           <div className={styles.textareaWrap}>
-            <div
+            {voiceEnabled && (
+              <div className={styles.modeToggle} role='tablist' aria-label='note type'>
+                <button
+                  type='button'
+                  role='tab'
+                  aria-selected={!isVoiceMode}
+                  className={`${styles.modeToggleBtn} ${!isVoiceMode ? styles.modeToggleActive : ''}`}
+                  onClick={() => setMode('text')}
+                  disabled={loading}
+                  title='text note'
+                >
+                  <IconText />
+                  <span className={styles.modeToggleLabel}>text</span>
+                </button>
+                <button
+                  type='button'
+                  role='tab'
+                  aria-selected={isVoiceMode}
+                  className={`${styles.modeToggleBtn} ${isVoiceMode ? styles.modeToggleActive : ''}`}
+                  onClick={() => setMode('voice')}
+                  disabled={loading}
+                  title='voice note'
+                >
+                  <IconMic />
+                  <span className={styles.modeToggleLabel}>voice</span>
+                </button>
+              </div>
+            )}
+            {!isVoiceMode && <div
               className={`${styles.toolbar} ${showToolbar ? styles.toolbarVisible : ''}`}
             >
               <button
@@ -1110,9 +1152,15 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                   </button>
                 </div>
               )}
-            </div>
+            </div>}
 
-            {viewMode === 'preview' && showFormatToggle ? (
+            {isVoiceMode ? (
+              <VoiceComposer
+                clip={voiceClip}
+                onClipChange={setVoiceClip}
+                disabled={loading}
+              />
+            ) : viewMode === 'preview' && showFormatToggle ? (
               <div className={styles.previewArea}>
                 <NoteMarkdown plaintext={message} />
               </div>
@@ -1140,7 +1188,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 )}
               </>
             )}
-            <div className={styles.charCountRow}>
+            {!isVoiceMode && <div className={styles.charCountRow}>
               {showFormatToggle && (
                 <div
                   className={`${styles.formatToggle} ${styles.formatToggleMobile}`}
@@ -1178,7 +1226,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                   {isMultiChunk && ` (${chunkCount} chunks)`}
                 </span>
               )}
-            </div>
+            </div>}
           </div>
 
           {expertOpen && (
@@ -1187,7 +1235,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
               <div className={styles.expertSection}>
                 <span className={styles.expertSectionHeader}>destruction</span>
                 <div className={styles.expertSectionRow}>
-                  <div className={styles.advancedRowWrap}>
+                  {!isVoiceMode && (<div className={styles.advancedRowWrap}>
                     <div className={styles.advancedRow}>
                       <span className={styles.advancedLabel}>
                         reads before destruct
@@ -1213,7 +1261,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                         (one-time read)
                       </span>
                     )}
-                  </div>
+                  </div>)}
                   <div className={styles.advancedRow}>
                     <span className={styles.advancedLabel}>
                       fade after reading
@@ -1331,7 +1379,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                       </span>
                     )}
                   </div>
-                  <div className={styles.advancedRowWrap}>
+                  {!isVoiceMode && (<div className={styles.advancedRowWrap}>
                     <div className={styles.advancedRow}>
                       <span className={styles.advancedLabel}>
                         proof of read
@@ -1348,8 +1396,8 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                         reader can prove they decrypted the note
                       </span>
                     )}
-                  </div>
-                  <div className={styles.advancedRowWrap}>
+                  </div>)}
+                  {!isVoiceMode && (<div className={styles.advancedRowWrap}>
                     <div className={styles.advancedRow}>
                       <span className={styles.advancedLabel}>
                         pre-encrypted (BYOK)
@@ -1389,14 +1437,14 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                         </span>
                       </>
                     )}
-                  </div>
+                  </div>)}
                 </div>
               </div>
 
-              <div className={styles.expertDivider} />
+              {!isVoiceMode && <div className={styles.expertDivider} />}
 
               {/* — plausible deniability — */}
-              <div className={styles.expertSection}>
+              {!isVoiceMode && (<div className={styles.expertSection}>
                 <span className={styles.expertSectionHeader}>
                   plausible deniability
                 </span>
@@ -1503,7 +1551,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                     </span>
                   </>
                 )}
-              </div>
+              </div>)}
 
               <div className={styles.expertDivider} />
 
@@ -1633,7 +1681,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
             <div className={styles.footerTop}>
               <span className={styles.sentenceLine}>
                 <span className={styles.sentenceText}>
-                  your secret note will{' '}
+                  your secret {isVoiceMode ? 'voice note' : 'note'} will{' '}
                 </span>
               </span>
               <span className={styles.sentenceLine}>

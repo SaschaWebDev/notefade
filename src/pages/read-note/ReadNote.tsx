@@ -14,6 +14,7 @@ import type { ProviderConfig } from '@/api/provider-types';
 import { COPY_FEEDBACK_MS } from '@/constants';
 import { formatDuration, formatTimeLockCountdown } from '@/utils/time';
 import { ContentFade } from '@/components/ui/content-fade';
+import { AudioPlayer } from '@/components/ui/audio-player';
 import { NoteGone } from '../note-gone';
 import {
   NoteMarkdown,
@@ -359,6 +360,25 @@ export function ReadNote({
         <a href={pathname} className={styles.newLink}>
           create note
         </a>
+      </div>
+    );
+  } else if (state.status === 'decrypted-voice') {
+    const hasBarTimer =
+      state.metadata.barSeconds !== undefined && state.metadata.barSeconds > 0;
+    content = (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h2 className={styles.heading}>decrypted voice note</h2>
+          <div className={styles.badgeRow}>
+            <span className={styles.badge}>this note url has self-destructed</span>
+            {hasBarTimer && (
+              <span className={styles.barBadge}>
+                fades in {formatDuration(state.remainingMs)}
+              </span>
+            )}
+          </div>
+        </div>
+        <AudioPlayer blob={state.blob} durationMs={state.durationMs} />
       </div>
     );
   } else if (state.status === 'decrypted') {
