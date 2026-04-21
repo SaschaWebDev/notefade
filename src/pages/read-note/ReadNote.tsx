@@ -15,6 +15,7 @@ import { COPY_FEEDBACK_MS } from '@/constants';
 import { formatDuration, formatTimeLockCountdown } from '@/utils/time';
 import { ContentFade } from '@/components/ui/content-fade';
 import { AudioPlayer } from '@/components/ui/audio-player';
+import { TranscribeButton } from '@/components/ui/transcribe-button';
 import { NoteGone } from '../note-gone';
 import {
   NoteMarkdown,
@@ -379,6 +380,7 @@ export function ReadNote({
           </div>
         </div>
         <AudioPlayer blob={state.blob} durationMs={state.durationMs} />
+        <TranscribeButton blob={state.blob} />
       </div>
     );
   } else if (state.status === 'decrypted') {
