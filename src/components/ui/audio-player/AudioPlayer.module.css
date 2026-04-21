@@ -1,0 +1,111 @@
+.player {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.08);
+  border-radius: 999px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.playBtn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(var(--accent-rgb));
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.playBtn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.playBtn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.playBtn:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.waveform {
+  flex-shrink: 0;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.waveform:focus-visible {
+  outline: 1px dashed rgba(var(--accent-rgb), 0.6);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.bar {
+  width: 2px;
+  border-radius: 0;
+  transition: background 0.1s ease, opacity 0.1s ease;
+  min-height: 3px;
+}
+
+.barPlayed {
+  background: rgb(var(--accent-rgb));
+}
+
+.barUnplayed {
+  background: rgba(var(--fg), 0.3);
+  opacity: 0.55;
+}
+
+.time {
+  flex-shrink: 0;
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 11px;
+  color: rgba(var(--fg), 0.5);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sep {
+  opacity: 0.4;
+  margin: 0 2px;
+}
+
+@media (max-width: 480px) {
+  .player {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .playBtn {
+    width: 32px;
+    height: 32px;
+  }
+  .waveform {
+    height: 26px;
+    gap: 1px;
+  }
+  .bar {
+    width: 2px;
+  }
+  .time {
+    font-size: 10px;
+    min-width: 54px;
+  }
+}
