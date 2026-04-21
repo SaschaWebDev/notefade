@@ -911,13 +911,13 @@
 
   .previewArea {
     min-height: 88px;
-    max-height: 147px;
+    max-height: 120px;
     padding: 20px;
   }
 
   .textarea {
     min-height: 88px;
-    max-height: 147px;
+    max-height: 120px;
     padding: 20px;
     font-size: 18px;
   }
@@ -944,6 +944,10 @@
     padding: 0 20px 16px;
   }
 
+  .footerTop {
+    line-height: 1.8;
+  }
+
   .sentenceText {
     font-size: 15px;
   }
@@ -958,7 +962,7 @@
 
   .sentenceLine {
     display: block;
-    min-height: 40px;
+    min-height: 0;
   }
 
   .passwordInlineInput {
