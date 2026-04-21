@@ -18,7 +18,7 @@ export function IconDoodlyArrow({ size = 48, ...props }: IconProps) {
         fill='none'
       />
       <path
-        d='M45 26 L50 30 L44 30'
+        d='M49 23 L50 30 L44 26'
         stroke='currentColor'
         strokeWidth='1.6'
         strokeLinecap='round'
