@@ -1,9 +1,12 @@
 export {
   createNote,
+  createNoteBytes,
   openNote,
+  openNoteBytes,
   splitKey,
   reconstructKey,
   encrypt,
+  encryptBytes,
   decrypt,
   decryptToBytes,
   unpadPlaintext,
@@ -19,6 +22,8 @@ export {
   unprotectFragment,
   encodeMetadata,
   decodeMetadata,
+  encodeMetadataBytes,
+  decodeMetadataBytes,
   generateReceiptSeed,
   computeReceiptProof,
   verifyReceiptProof,
@@ -28,7 +33,7 @@ export {
   decryptByokContent,
   isValidByokKey,
 } from './crypto'
-export type { SplitResult, NoteMetadata, OpenNoteResult } from './crypto'
-export { splitText, estimateMultiFragmentLength, FRAGMENT_LIMIT } from './multi-note'
+export type { SplitResult, NoteMetadata, OpenNoteResult, OpenNoteBytesResult } from './crypto'
+export { splitText, splitBytes, estimateMultiFragmentLength, FRAGMENT_LIMIT } from './multi-note'
 export { encodeZeroWidth, decodeZeroWidth, hasZeroWidthData, encodeImageStego, decodeImageStego, generateStegoImage, generateStegoFilename } from './stego'
 export { generateDecoyMessage } from './decoy-messages'

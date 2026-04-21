@@ -29,11 +29,21 @@ export interface NoteMetadata {
   barSeconds?: number
   /** Receipt seed for proof of read (32 bytes, base64url-encoded) */
   receiptSeed?: string
+  /** One-char voice mime code (e.g. 'w' for webm/opus). Only on chunk 0 of voice notes. */
+  voiceMime?: string
+  /** Voice recording duration in ms. Only on chunk 0 of voice notes. */
+  voiceDurationMs?: number
 }
 
 /** Result from opening a note, including parsed metadata */
 export interface OpenNoteResult {
   plaintext: string
+  metadata: NoteMetadata
+}
+
+/** Result from opening a byte-payload note (voice), including parsed metadata */
+export interface OpenNoteBytesResult {
+  content: Uint8Array
   metadata: NoteMetadata
 }
 
@@ -103,9 +113,12 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
 }
 
 export async function encrypt(message: string): Promise<EncryptedNote> {
+  return encryptBytes(new TextEncoder().encode(message))
+}
+
+export async function encryptBytes(plaintext: Uint8Array): Promise<EncryptedNote> {
   const key = crypto.getRandomValues(new Uint8Array(KEY_BYTES))
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES))
-  const encoded = new TextEncoder().encode(message)
 
   const cryptoKey = await crypto.subtle.importKey(
     'raw',
@@ -119,7 +132,7 @@ export async function encrypt(message: string): Promise<EncryptedNote> {
     await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv: toArrayBuffer(iv) },
       cryptoKey,
-      toArrayBuffer(encoded),
+      toArrayBuffer(plaintext),
     ),
   )
 
@@ -252,8 +265,8 @@ export function unpadPayload(payload: string): string {
 
 // --- PLAINTEXT METADATA ---
 
-/** Encode metadata prefixes into plaintext before encryption */
-export function encodeMetadata(message: string, metadata: NoteMetadata): string {
+/** Build the ASCII metadata prefix string for a given NoteMetadata */
+function buildMetadataPrefix(metadata: NoteMetadata): string {
   let prefix = ''
   if (metadata.barSeconds !== undefined) {
     prefix += `BAR:${metadata.barSeconds}:`
@@ -261,29 +274,81 @@ export function encodeMetadata(message: string, metadata: NoteMetadata): string 
   if (metadata.receiptSeed !== undefined) {
     prefix += `RECEIPT:${metadata.receiptSeed}:`
   }
-  return prefix + message
+  if (metadata.voiceMime !== undefined) {
+    prefix += `V:${metadata.voiceMime}:`
+  }
+  if (metadata.voiceDurationMs !== undefined) {
+    prefix += `AD:${metadata.voiceDurationMs}:`
+  }
+  return prefix
+}
+
+/** Parse known metadata prefixes from the start of a string; returns metadata + consumed length */
+function parseMetadataPrefix(s: string): { metadata: NoteMetadata; consumed: number } {
+  const metadata: NoteMetadata = {}
+  let offset = 0
+
+  const barMatch = s.slice(offset).match(/^BAR:(\d+):/)
+  if (barMatch) {
+    metadata.barSeconds = parseInt(barMatch[1]!, 10)
+    offset += barMatch[0]!.length
+  }
+
+  const receiptMatch = s.slice(offset).match(/^RECEIPT:([A-Za-z0-9_-]+):/)
+  if (receiptMatch) {
+    metadata.receiptSeed = receiptMatch[1]!
+    offset += receiptMatch[0]!.length
+  }
+
+  const voiceMatch = s.slice(offset).match(/^V:([A-Za-z0-9]):/)
+  if (voiceMatch) {
+    metadata.voiceMime = voiceMatch[1]!
+    offset += voiceMatch[0]!.length
+  }
+
+  const durMatch = s.slice(offset).match(/^AD:(\d+):/)
+  if (durMatch) {
+    metadata.voiceDurationMs = parseInt(durMatch[1]!, 10)
+    offset += durMatch[0]!.length
+  }
+
+  return { metadata, consumed: offset }
+}
+
+/** Encode metadata prefixes into plaintext before encryption */
+export function encodeMetadata(message: string, metadata: NoteMetadata): string {
+  return buildMetadataPrefix(metadata) + message
 }
 
 /** Parse metadata prefixes from decrypted plaintext */
 export function decodeMetadata(plaintext: string): OpenNoteResult {
-  const metadata: NoteMetadata = {}
-  let remaining = plaintext
+  const { metadata, consumed } = parseMetadataPrefix(plaintext)
+  return { plaintext: plaintext.slice(consumed), metadata }
+}
 
-  // Parse BAR prefix
-  const barMatch = remaining.match(/^BAR:(\d+):/)
-  if (barMatch) {
-    metadata.barSeconds = parseInt(barMatch[1]!, 10)
-    remaining = remaining.slice(barMatch[0]!.length)
+/** Encode metadata prefixes into a binary plaintext before encryption */
+export function encodeMetadataBytes(
+  metadata: NoteMetadata,
+  content: Uint8Array,
+): Uint8Array {
+  const prefixBytes = new TextEncoder().encode(buildMetadataPrefix(metadata))
+  const out = new Uint8Array(prefixBytes.length + content.length)
+  out.set(prefixBytes, 0)
+  out.set(content, prefixBytes.length)
+  return out
+}
+
+/** Parse metadata prefixes from a binary decrypted payload */
+export function decodeMetadataBytes(bytes: Uint8Array): OpenNoteBytesResult {
+  // Metadata is ASCII-only. Scan a bounded prefix as a latin1 string so
+  // non-ASCII audio bytes don't poison the regex, then trim by consumed length.
+  const scanLen = Math.min(bytes.length, 256)
+  let asciiPrefix = ''
+  for (let i = 0; i < scanLen; i++) {
+    asciiPrefix += String.fromCharCode(bytes[i]!)
   }
-
-  // Parse RECEIPT prefix
-  const receiptMatch = remaining.match(/^RECEIPT:([A-Za-z0-9_-]+):/)
-  if (receiptMatch) {
-    metadata.receiptSeed = receiptMatch[1]!
-    remaining = remaining.slice(receiptMatch[0]!.length)
-  }
-
-  return { plaintext: remaining, metadata }
+  const { metadata, consumed } = parseMetadataPrefix(asciiPrefix)
+  return { metadata, content: bytes.slice(consumed) }
 }
 
 // --- PROOF OF READ (HMAC-SHA256) ---
@@ -494,6 +559,24 @@ export async function createNote(
 ): Promise<SplitResult> {
   const encodedMessage = metadata ? encodeMetadata(message, metadata) : message
   const { ciphertext, iv, key } = await encrypt(encodedMessage)
+  return packSplitResult(ciphertext, iv, key)
+}
+
+/** Sender creates a binary note (voice): encrypts bytes and splits key */
+export async function createNoteBytes(
+  content: Uint8Array,
+  metadata?: NoteMetadata,
+): Promise<SplitResult> {
+  const encoded = metadata ? encodeMetadataBytes(metadata, content) : content
+  const { ciphertext, iv, key } = await encryptBytes(encoded)
+  return packSplitResult(ciphertext, iv, key)
+}
+
+function packSplitResult(
+  ciphertext: Uint8Array,
+  iv: Uint8Array,
+  key: Uint8Array,
+): SplitResult {
   const { urlShare, serverShard } = splitKey(key)
 
   // URL payload: urlShare (48) + iv (12) + ciphertext (variable + 16 GCM tag)
@@ -613,7 +696,29 @@ export async function openNote(
   urlPayload: string,
   serverShard: string,
 ): Promise<OpenNoteResult> {
-  // Strip URL-level padding if present
+  const decryptedBytes = await decryptNotePayload(urlPayload, serverShard)
+  const unpadded = unpadPlaintext(decryptedBytes)
+  const rawPlaintext = new TextDecoder().decode(unpadded)
+  return decodeMetadata(rawPlaintext)
+}
+
+/**
+ * Recipient opens a binary note: fetches shard, reconstructs key, decrypts,
+ * returns raw bytes + metadata without UTF-8 decoding or 0xFF-based unpadding
+ * (both would corrupt arbitrary binary payloads like Opus audio).
+ */
+export async function openNoteBytes(
+  urlPayload: string,
+  serverShard: string,
+): Promise<OpenNoteBytesResult> {
+  const decryptedBytes = await decryptNotePayload(urlPayload, serverShard)
+  return decodeMetadataBytes(decryptedBytes)
+}
+
+async function decryptNotePayload(
+  urlPayload: string,
+  serverShard: string,
+): Promise<Uint8Array> {
   const realPayload = unpadPayload(urlPayload)
   const urlBytes = fromBase64Url(realPayload)
   const shard = fromBase64Url(serverShard)
@@ -624,11 +729,6 @@ export async function openNote(
 
   const key = reconstructKey(urlShare, shard)
   const decryptedBytes = await decryptToBytes(ciphertext, iv, key)
-  const unpadded = unpadPlaintext(decryptedBytes)
-  const rawPlaintext = new TextDecoder().decode(unpadded)
-
-  // Parse metadata prefixes from decrypted content
-  const result = decodeMetadata(rawPlaintext)
 
   // Zero out sensitive data (best-effort)
   key.fill(0)
@@ -641,7 +741,7 @@ export async function openNote(
     window.history.replaceState(null, '', window.location.pathname)
   }
 
-  return result
+  return decryptedBytes
 }
 
 // --- BYOK (Bring Your Own Key) DECRYPTION ---

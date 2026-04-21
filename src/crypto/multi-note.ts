@@ -73,3 +73,18 @@ export function estimateMultiFragmentLength(chunks: string[]): number {
 
 // Firefox practical fragment limit (chars)
 export const FRAGMENT_LIMIT = 60000
+
+/**
+ * Split raw bytes into fixed-size chunks. Unlike splitText, this operates on
+ * bytes directly — no surrogate-pair handling, no UTF-8 boundaries to respect.
+ * Used for voice notes where the plaintext is an opaque Opus/AAC byte stream.
+ */
+export function splitBytes(bytes: Uint8Array, maxBytesPerChunk: number): Uint8Array[] {
+  if (bytes.length <= maxBytesPerChunk) return [bytes]
+
+  const chunks: Uint8Array[] = []
+  for (let offset = 0; offset < bytes.length; offset += maxBytesPerChunk) {
+    chunks.push(bytes.slice(offset, Math.min(offset + maxBytesPerChunk, bytes.length)))
+  }
+  return chunks
+}
