@@ -8,6 +8,34 @@ import type { ReadState } from '@/hooks/use-read-note'
 
 const DEFAULT_PLAINTEXT_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
+/**
+ * Run `mapper` over `items` with at most `limit` in flight at once, preserving
+ * input order in the output. Stays polite to the worker and the client's socket
+ * pool — a 30-chunk read completes in ~5 waves at limit=6 instead of slamming
+ * the server with 30 parallel requests.
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length)
+  let cursor = 0
+  const worker = async () => {
+    while (true) {
+      const i = cursor++
+      if (i >= items.length) return
+      results[i] = await mapper(items[i]!, i)
+    }
+  }
+  const workerCount = Math.max(1, Math.min(limit, items.length))
+  await Promise.all(Array.from({ length: workerCount }, worker))
+  return results
+}
+
+/** In-flight concurrency ceiling for per-chunk HEAD / GET requests. */
+const CHUNK_FETCH_CONCURRENCY = 6
+
 interface UseReadMultiNoteReturn {
   state: ReadState
   remainingReads: number | null
@@ -40,9 +68,12 @@ export function useReadMultiNote(
 
     if (!checkPromiseRef.current) {
       const countRemaining = async (): Promise<number> => {
-        // For each chunk, check all its shard IDs (multi-read support)
-        const chunkResults = await Promise.all(
-          chunks.map(async (chunk) => {
+        // For each chunk, check all its shard IDs (multi-read support).
+        // Bounded concurrency avoids slamming HEAD limit on large multi-chunk notes.
+        const chunkResults = await mapWithConcurrency(
+          chunks,
+          CHUNK_FETCH_CONCURRENCY,
+          async (chunk) => {
             const ids = chunk.shardIds.length > 0 ? chunk.shardIds : [chunk.shardId]
             const results = await Promise.all(
               ids.map(async (id) => {
@@ -54,7 +85,7 @@ export function useReadMultiNote(
               }),
             )
             return results.filter(Boolean).length
-          }),
+          },
         )
         // If any chunk has 0 remaining shards, the note is unreadable
         if (chunkResults.some((count) => count === 0)) return 0
@@ -138,10 +169,13 @@ export function useReadMultiNote(
     let cancelled = false
 
     if (!fetchPromiseRef.current) {
-      // Fetch one shard per chunk in parallel
+      // Fetch one shard per chunk with bounded concurrency to stay under the
+      // per-IP GET rate limit and keep open-socket counts reasonable.
       const fetchAll = async (): Promise<string[] | null> => {
-        const results = await Promise.all(
-          chunks.map(async (chunk) => {
+        const results = await mapWithConcurrency(
+          chunks,
+          CHUNK_FETCH_CONCURRENCY,
+          async (chunk) => {
             const ids = chunk.shardIds.length > 0 ? chunk.shardIds : [chunk.shardId]
             // Try shard IDs sequentially until one succeeds
             for (const id of ids) {
@@ -155,7 +189,7 @@ export function useReadMultiNote(
               if (shard !== null) return shard
             }
             return null
-          }),
+          },
         )
 
         // If any chunk's shard is missing, the entire note is gone
