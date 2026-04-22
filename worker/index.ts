@@ -25,7 +25,7 @@ const API_DEFAULT_TTL = 86400 // 24 hours
 
 const RATE_LIMITS: Record<string, number> = {
   POST: 60,    // 60 creates/min (multi-chunk notes can need 28+ sequential stores)
-  HEAD: 30,    // 30 probes/min
+  HEAD: 120,   // 120 probes/min — matches GET so a multi-chunk read's phase-1 existence probe can't trip the ceiling when phase-2 already cleared it.
   GET: 120,    // 120 reads/min — accommodates voice/video/draw notes (up to MAX_TOTAL_SHARDS=30 chunks each) × 4 back-to-back reads. Still hostile to scraper-style fetch cadence.
   DELETE: 10,  // 10 deletes/min
 }
