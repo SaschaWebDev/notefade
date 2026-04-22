@@ -66,7 +66,13 @@
 
 .placeholder {
   position: absolute;
-  top: 36px;
+  /* Negative offset pulls the placeholder up into the (invisible)
+     formatting toolbar's reserved space so it sits close under the mode
+     toggle row rather than floating at the textarea's padding edge.
+     The real typed text still begins at the textarea's own padding;
+     the placeholder is only visible while the textarea is empty +
+     unfocused, i.e. before the toolbar ever becomes opaque. */
+  top: -20px;
   left: 36px;
   right: 36px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
@@ -932,13 +938,8 @@
   }
 
   .placeholder {
-    /* Negative offset pulls the placeholder up into the (invisible)
-       formatting toolbar's space so it sits close under the mode toggle
-       row with a harmonized gap, rather than floating at the padding edge
-       of the textarea where it reads as vertically centered. The real
-       typed text still starts at the textarea's 20px padding — placeholder
-       only visible while the textarea is empty + unfocused. */
-    top: -20px;
+    /* top inherits the base -20px offset; only horizontal padding + font
+       size differ on mobile. */
     left: 20px;
     right: 20px;
     font-size: 18px;
