@@ -9,6 +9,15 @@
   flex-direction: column;
 }
 
+/* Local positioning root for textarea + typewriter placeholder so the
+   absolute-positioned placeholder anchors to the textarea's top edge,
+   not the wrap's — preventing overlap with the mode toggle above. */
+.textareaBox {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
 .textarea {
   width: 100%;
   min-height: 338px;

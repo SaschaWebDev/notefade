@@ -1244,7 +1244,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                 <NoteMarkdown plaintext={message} />
               </div>
             ) : (
-              <>
+              <div className={styles.textareaBox}>
                 <textarea
                   ref={textareaRef}
                   className={`${styles.textarea} ${isOverLimit ? styles.textareaOver : ''}`}
@@ -1265,7 +1265,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                     <span className={styles.cursor} />
                   </span>
                 )}
-              </>
+              </div>
             )}
             {!isMediaMode && <div className={styles.charCountRow}>
               {showFormatToggle && (
