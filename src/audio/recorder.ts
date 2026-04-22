@@ -169,8 +169,12 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         audio: {
           channelCount: { ideal: 1 },
           sampleRate: { ideal: 16000 },
-          echoCancellation: true,
-          noiseSuppression: true,
+          // echoCancellation + noiseSuppression off so soft speech isn't
+          // gated out by the browser's RNNoise-style filter before Opus
+          // even sees it. autoGainControl stays on to normalize loudness
+          // between quiet/loud passages.
+          echoCancellation: false,
+          noiseSuppression: false,
           autoGainControl: true,
         },
       })

@@ -37,8 +37,8 @@ export const TIME_LOCK_PREFIX = 'tl:'
 export const BYOK_DELIMITER = '!'
 
 // Voice notes
-export const VOICE_MAX_DURATION_MS = 30_000
-export const VOICE_TARGET_BITRATE = 8_000
+export const VOICE_MAX_DURATION_MS = 15_000
+export const VOICE_TARGET_BITRATE = 16_000
 export const VOICE_BYTES_PER_CHUNK = 1250
 export const VOICE_MAX_BYTES = VOICE_BYTES_PER_CHUNK * MAX_TOTAL_SHARDS
 /** One-char mime codes embedded in note metadata */
