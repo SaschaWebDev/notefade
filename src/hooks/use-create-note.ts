@@ -8,7 +8,7 @@ import type { RecordedVideoClip } from '@/video'
 import { encryptAndShorten, VoidHopError } from '@/voidhop'
 import { MAX_NOTE_CHARS, MAX_NOTE_CHARS_SINGLE, MAX_READ_COUNT, MAX_TOTAL_SHARDS, STORAGE_KEYS, PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER, DEFAULT_BAR_SECONDS, BYOK_DELIMITER, VOICE_BYTES_PER_CHUNK, VOICE_MAX_BYTES, IMAGE_BYTES_PER_CHUNK, IMAGE_MAX_BYTES, VIDEO_BYTES_PER_CHUNK, VIDEO_MAX_BYTES, type ImageMimeCode } from '@/constants'
 
-export type NoteMode = 'text' | 'voice' | 'image' | 'video'
+export type NoteMode = 'text' | 'voice' | 'image' | 'video' | 'draw'
 
 export interface ImageClip {
   blob: Blob
@@ -182,7 +182,8 @@ export function useCreateNote(): UseCreateNoteReturn {
   const isVoiceMode = mode === 'voice'
   const isImageMode = mode === 'image'
   const isVideoMode = mode === 'video'
-  const isMediaMode = isVoiceMode || isImageMode || isVideoMode
+  const isDrawMode = mode === 'draw'
+  const isMediaMode = isVoiceMode || isImageMode || isVideoMode || isDrawMode
   const voiceBytes = voiceClip?.blob.size ?? 0
   const voiceChunkCount = voiceBytes === 0
     ? 0
@@ -197,14 +198,14 @@ export function useCreateNote(): UseCreateNoteReturn {
     : Math.max(1, Math.ceil(videoBytes / VIDEO_BYTES_PER_CHUNK))
   const isOverLimit = isVoiceMode
     ? voiceBytes > VOICE_MAX_BYTES
-    : isImageMode
+    : isImageMode || isDrawMode
       ? imageBytes > IMAGE_MAX_BYTES
       : isVideoMode
         ? videoBytes > VIDEO_MAX_BYTES
         : message.length > MAX_NOTE_CHARS
   const isEmpty = isVoiceMode
     ? voiceClip === null
-    : isImageMode
+    : isImageMode || isDrawMode
       ? imageClip === null
       : isVideoMode
         ? videoClip === null
@@ -213,7 +214,7 @@ export function useCreateNote(): UseCreateNoteReturn {
   const providerType = providerConfig?.t ?? null
   const chunkCount = isVoiceMode
     ? voiceChunkCount
-    : isImageMode
+    : isImageMode || isDrawMode
       ? imageChunkCount
       : isVideoMode
         ? videoChunkCount
@@ -226,7 +227,7 @@ export function useCreateNote(): UseCreateNoteReturn {
   const setMode = (next: NoteMode) => {
     if (next === mode) return
     setModeState(next)
-    if (next === 'voice' || next === 'image' || next === 'video') {
+    if (next === 'voice' || next === 'image' || next === 'video' || next === 'draw') {
       setMessage('')
       setDecoyMessages([])
       setByokEnabled(false)
@@ -235,7 +236,8 @@ export function useCreateNote(): UseCreateNoteReturn {
       setReadCount(1)
     }
     if (next !== 'voice') setVoiceClipState(null)
-    if (next !== 'image') setImageClipState(null)
+    // Image and draw share imageClip — only clear when leaving both.
+    if (next !== 'image' && next !== 'draw') setImageClipState(null)
     if (next !== 'video') setVideoClipState(null)
   }
 
@@ -578,7 +580,7 @@ export function useCreateNote(): UseCreateNoteReturn {
           }
         }
         setVideoClipState(null)
-      } else if (isImageMode && imageClip) {
+      } else if ((isImageMode || isDrawMode) && imageClip) {
         // --- Image flow (always multi-chunk, single-read, byte payload) ---
         const arrayBuf = await imageClip.blob.arrayBuffer()
         const allBytes = new Uint8Array(arrayBuf)

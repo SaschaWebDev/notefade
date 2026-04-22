@@ -1,0 +1,276 @@
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px;
+  min-height: 338px;
+  justify-content: flex-start;
+  box-sizing: border-box;
+}
+
+.canvasWrap {
+  display: flex;
+  justify-content: center;
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.08);
+  border-radius: 12px;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.canvas {
+  width: 100%;
+  max-width: 720px;
+  aspect-ratio: 4 / 3;
+  background: #ffffff;
+  border-radius: 6px;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+  display: block;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.toolGroup {
+  display: inline-flex;
+  gap: 2px;
+  border: 1px solid rgba(var(--fg), 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.toolBtn {
+  background: transparent;
+  color: rgba(var(--fg), 0.55);
+  border: none;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.toolBtn:hover:not(:disabled) {
+  color: rgba(var(--fg), 0.85);
+  background: rgba(var(--fg), 0.04);
+}
+
+.toolBtnActive,
+.toolBtnActive:hover {
+  background: rgba(var(--accent-rgb), 0.14);
+  color: rgb(var(--accent-rgb));
+}
+
+.palette {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--fg), 0.15);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.swatch:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.swatchActive {
+  box-shadow: 0 0 0 2px rgb(var(--accent-rgb));
+  border-color: transparent;
+}
+
+.swatch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.customColorLabel {
+  position: relative;
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+}
+
+.customColorInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+}
+
+.customColorSwatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--fg), 0.15);
+  pointer-events: none;
+}
+
+.sizeGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(var(--fg), 0.55);
+}
+
+.sizeLabel {
+  letter-spacing: 0.04em;
+}
+
+.sizeSlider {
+  width: 100px;
+  accent-color: rgb(var(--accent-rgb));
+}
+
+.sizeValue {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  min-width: 32px;
+  text-align: right;
+}
+
+.actions {
+  display: inline-flex;
+  margin-left: auto;
+  gap: 8px;
+}
+
+.primaryBtn {
+  background: rgba(var(--accent-rgb), 0.16);
+  color: rgb(var(--accent-rgb));
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  background: rgba(var(--accent-rgb), 0.24);
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+
+.primaryBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ghostBtn {
+  background: rgba(var(--fg), 0.04);
+  color: rgba(var(--fg), 0.6);
+  border: 1px solid rgba(var(--fg), 0.1);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.ghostBtn:hover:not(:disabled) {
+  color: rgba(var(--fg), 0.85);
+  background: rgba(var(--fg), 0.07);
+  border-color: rgba(var(--fg), 0.18);
+}
+
+.ghostBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(var(--fg), 0.55);
+}
+
+.previewLabel {
+  color: rgba(var(--fg), 0.45);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+}
+
+.meta {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 12px;
+  color: rgba(var(--fg), 0.55);
+  letter-spacing: 0.02em;
+}
+
+.previewFrame {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(var(--fg), 0.03);
+  border: 1px solid rgba(var(--fg), 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  max-height: 360px;
+  overflow: hidden;
+}
+
+.previewImg {
+  max-width: 100%;
+  max-height: 340px;
+  border-radius: 6px;
+  object-fit: contain;
+  display: block;
+  background: #ffffff;
+}
+
+.caveat {
+  font-size: 11px;
+  color: rgba(var(--fg), 0.35);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 520px;
+}
+
+.errorText {
+  color: var(--error-text);
+  font-size: 13px;
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .composer {
+    padding: 16px 12px;
+    gap: 10px;
+  }
+  .toolbar {
+    gap: 8px;
+  }
+  .sizeSlider {
+    width: 70px;
+  }
+  .actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .previewImg {
+    max-height: 220px;
+  }
+}

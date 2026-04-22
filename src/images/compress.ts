@@ -38,7 +38,7 @@ export interface CompressOptions {
  * + canvas path. This is the straightforward, no-extra-deps way to get
  * pixels out of any browser-decodable format (jpg/png/webp/avif/heic-on-safari).
  */
-async function fileToImageData(file: File, maxDimension: number): Promise<ImageData> {
+async function fileToImageData(file: File | Blob, maxDimension: number): Promise<ImageData> {
   const bitmap = await createImageBitmap(file)
   try {
     const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height))
@@ -73,7 +73,7 @@ async function encodeAvif(
  * the dimensions and retries. Gives up after MAX_ITERATIONS rounds.
  */
 export async function compressToTarget(
-  file: File,
+  file: File | Blob,
   options: CompressOptions,
 ): Promise<CompressResult> {
   const targetBytes = Math.max(1024, options.maxBytes)

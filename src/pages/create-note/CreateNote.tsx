@@ -4,7 +4,7 @@ import { useTypewriter } from '@/hooks/use-typewriter';
 import { PROVIDERS, getProviderEntry } from '@/api/provider-registry';
 import type { ProviderConfig, ProviderType } from '@/api/provider-types';
 import { ContentFade } from '@/components/ui/content-fade';
-import { IconMic, IconText, IconImage, IconVideo } from '@/components/ui/icons';
+import { IconMic, IconText, IconImage, IconVideo, IconDraw } from '@/components/ui/icons';
 import { NoteLink } from '../note-link';
 import {
   NoteMarkdown,
@@ -14,6 +14,7 @@ import { generateDecoyMessage } from '@/crypto';
 import { VoiceComposer } from './VoiceComposer';
 import { ImageComposer } from './ImageComposer';
 import { VideoComposer } from './VideoComposer';
+import { DrawComposer } from './DrawComposer';
 import { isVoiceRecordingSupported } from '@/audio';
 import { isImageCompressionSupported } from '@/images';
 import { isVideoRecordingSupported } from '@/video';
@@ -208,7 +209,8 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   const isVoiceMode = mode === 'voice';
   const isImageMode = mode === 'image';
   const isVideoMode = mode === 'video';
-  const isMediaMode = isVoiceMode || isImageMode || isVideoMode;
+  const isDrawMode = mode === 'draw';
+  const isMediaMode = isVoiceMode || isImageMode || isVideoMode || isDrawMode;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -856,7 +858,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
       ) : (
         <div className={styles.container}>
           <div className={styles.textareaWrap}>
-            {(voiceEnabled || imageEnabled) && (
+            {(voiceEnabled || imageEnabled || videoEnabled) && (
               <div className={styles.modeToggle} role='tablist' aria-label='note type'>
                 <button
                   type='button'
@@ -910,6 +912,20 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                   >
                     <IconVideo />
                     <span className={styles.modeToggleLabel}>video</span>
+                  </button>
+                )}
+                {imageEnabled && (
+                  <button
+                    type='button'
+                    role='tab'
+                    aria-selected={mode === 'draw'}
+                    className={`${styles.modeToggleBtn} ${mode === 'draw' ? styles.modeToggleActive : ''}`}
+                    onClick={() => setMode('draw')}
+                    disabled={loading}
+                    title='draw note'
+                  >
+                    <IconDraw />
+                    <span className={styles.modeToggleLabel}>draw</span>
                   </button>
                 )}
               </div>
@@ -1215,6 +1231,12 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
               <VideoComposer
                 clip={videoClip}
                 onClipChange={setVideoClip}
+                disabled={loading}
+              />
+            ) : isDrawMode ? (
+              <DrawComposer
+                clip={imageClip}
+                onClipChange={setImageClip}
                 disabled={loading}
               />
             ) : viewMode === 'preview' && showFormatToggle ? (
@@ -1738,7 +1760,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
             <div className={styles.footerTop}>
               <span className={styles.sentenceLine}>
                 <span className={styles.sentenceText}>
-                  your secret {isVoiceMode ? 'voice note' : isImageMode ? 'image' : isVideoMode ? 'video note' : 'note'} will{' '}
+                  your secret {isVoiceMode ? 'voice note' : isImageMode ? 'image' : isVideoMode ? 'video note' : isDrawMode ? 'drawing' : 'note'} will{' '}
                 </span>
               </span>
               <span className={styles.sentenceLine}>
