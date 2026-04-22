@@ -122,19 +122,8 @@ export async function encryptAndShorten(
   // its own internal copy that we cannot reach). SR-KEY-01 equivalent.
   crypto.getRandomValues(rawKey)
 
-  let response: Response
-  try {
-    response = await fetch(`${apiBase}/links`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ blob, ttl }),
-    })
-  } catch (err) {
-    throw new VoidHopError(
-      'NETWORK',
-      err instanceof Error ? err.message : 'failed to reach voidhop',
-    )
-  }
+  const body = JSON.stringify({ blob, ttl })
+  const response = await postWithRetry(`${apiBase}/links`, body)
 
   if (!response.ok) {
     if (response.status === 429) {
@@ -170,4 +159,48 @@ export async function encryptAndShorten(
 
   const shortUrl = `${VOIDHOP_BASE_URL}/${json.id}#${keyB64url}`
   return { shortUrl, id: json.id, ttl }
+}
+
+/**
+ * POST to a cross-origin endpoint with explicit fetch options that iOS Safari
+ * handles predictably, plus a single 1-s-backoff retry on network failure and
+ * a 20-s AbortController timeout. iOS Safari default fetch behavior for
+ * cross-origin requests is occasionally flaky (especially on cellular hand-off
+ * or after backgrounding the tab); one retry papers over the transient case.
+ */
+async function postWithRetry(url: string, body: string): Promise<Response> {
+  const attempt = async (): Promise<Response> => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 20_000)
+    try {
+      return await fetch(url, {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
+
+  try {
+    return await attempt()
+  } catch (firstErr) {
+    // Wait ~1 s, then retry once. Any fetch-level error (DNS, CORS, TLS,
+    // abort) can be retried once cheaply; if both fail, bubble up the
+    // second error.
+    await new Promise((resolve) => setTimeout(resolve, 1_000))
+    try {
+      return await attempt()
+    } catch (secondErr) {
+      throw new VoidHopError(
+        'NETWORK',
+        secondErr instanceof Error ? secondErr.message : (firstErr instanceof Error ? firstErr.message : 'failed to reach voidhop'),
+      )
+    }
+  }
 }

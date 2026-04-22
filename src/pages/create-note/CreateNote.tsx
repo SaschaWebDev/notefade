@@ -2096,7 +2096,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
           </div>
 
           {error && (
-            <div className={styles.error}>{`server error: ${error}`}</div>
+            <div className={styles.error}>{error}</div>
           )}
         </div>
       )}

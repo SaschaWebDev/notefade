@@ -544,7 +544,11 @@ export function useCreateNote(): UseCreateNoteReturn {
               }
             } catch { /* ignore cleanup errors */ }
           }
-          throw err
+          // Prefix so the user (and logs) can tell shard-storage failures
+          // apart from VoidHop failures when iOS etc. surface opaque
+          // network errors like "Load failed".
+          const msg = err instanceof Error ? err.message : String(err)
+          throw new Error(`couldn't save chunk to server — ${msg}`)
         }
 
         let bundleFragment = `${MULTI_PREFIX}${fragments.join(MULTI_DELIMITER)}`
@@ -566,14 +570,25 @@ export function useCreateNote(): UseCreateNoteReturn {
           setNoteUrl(short.shortUrl)
           setCompactUrl(null)
         } catch (vhErr) {
-          if (vhErr instanceof VoidHopError && vhErr.code === 'BUDGET_EXHAUSTED') {
-            // Budget exhausted → fall back to the long URL; user is warned.
+          if (vhErr instanceof VoidHopError) {
+            // Any voidhop failure (budget exhausted, network, rate-limited,
+            // server error) → fall back to the raw long URL so the user's
+            // shard work isn't thrown away. They see a warning explaining
+            // why the URL is long; iOS's iMessage handles long URLs fine.
             setShardId(allStoredShardIds[0]!)
             setExpiresAt(Date.now() + ttl * 1000)
             setNoteUrl(longUrl)
             setCompactUrl(null)
+            const reason =
+              vhErr.code === 'BUDGET_EXHAUSTED'
+                ? "voidhop's daily link-shortening budget is full"
+                : vhErr.code === 'RATE_LIMITED'
+                  ? 'voidhop rate-limited this request'
+                  : vhErr.code === 'NETWORK'
+                    ? "couldn't reach voidhop"
+                    : 'voidhop returned an error'
             setError(
-              'voidhop budget is full today — sharing the long URL instead. paste it only where long URLs survive.',
+              `${reason} — sharing the long URL instead. it works in iMessage and similar apps but may get mangled in places that cap URL length.`,
             )
           } else {
             throw vhErr
