@@ -18,6 +18,15 @@ export default defineConfig({
   worker: {
     format: 'es',
   },
+  // Exclude @jsquash packages from Vite's dep pre-bundling. Pre-bundling
+  // rewrites `new URL('./foo.wasm', import.meta.url)` into a path that
+  // doesn't exist on the dev server, causing the SPA fallback to return
+  // index.html instead of the WASM binary and failing with
+  // `expected magic word 00 61 73 6d, found 3c 21 44 4f` (`<!DO…`).
+  // Native ESM resolution preserves the sibling .wasm relative URL.
+  optimizeDeps: {
+    exclude: ['@jsquash/avif'],
+  },
   server: {
     proxy: {
       '/shard': {
