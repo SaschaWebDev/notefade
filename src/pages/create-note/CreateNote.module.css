@@ -932,7 +932,13 @@
   }
 
   .placeholder {
-    top: 20px;
+    /* Negative offset pulls the placeholder up into the (invisible)
+       formatting toolbar's space so it sits close under the mode toggle
+       row with a harmonized gap, rather than floating at the padding edge
+       of the textarea where it reads as vertically centered. The real
+       typed text still starts at the textarea's 20px padding — placeholder
+       only visible while the textarea is empty + unfocused. */
+    top: -20px;
     left: 20px;
     right: 20px;
     font-size: 18px;
