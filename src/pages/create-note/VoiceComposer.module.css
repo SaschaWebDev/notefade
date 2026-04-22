@@ -56,16 +56,23 @@
 }
 
 .amplitude {
-  display: flex;
+  /* Matches the playback audio-player bar style: narrow fixed-width bars
+     with a tight gap, sized to content rather than stretching the full
+     composer width. */
+  display: inline-flex;
+  align-self: flex-start;
   align-items: center;
-  justify-content: space-between;
-  gap: 3px;
-  height: 48px;
-  padding: 0 4px;
+  justify-content: flex-start;
+  gap: 1px;
+  height: 36px;
+  padding: 0 2px;
+  flex-shrink: 0;
+  width: fit-content;
 }
 
 .bar {
-  flex: 1;
+  width: 2px;
+  flex-shrink: 0;
   display: block;
   background: rgba(var(--fg), 0.35);
   border-radius: 1px;
