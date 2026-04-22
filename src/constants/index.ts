@@ -56,3 +56,20 @@ export const IMAGE_MIME_CODES = {
   a: 'image/avif',
 } as const
 export type ImageMimeCode = keyof typeof IMAGE_MIME_CODES
+
+// Video notes — bigger per-chunk budget (unpadded), outer URL is VoidHop-shortened
+export const VIDEO_BYTES_PER_CHUNK = 4096
+export const VIDEO_MAX_CHUNKS = 30
+export const VIDEO_MAX_BYTES = VIDEO_BYTES_PER_CHUNK * VIDEO_MAX_CHUNKS
+export const VIDEO_MAX_DURATION_MS = 15_000
+export const VIDEO_TARGET_BITRATE = 80_000
+export const VIDEO_MIME_CODES = {
+  w: 'video/webm;codecs=vp9',
+  v: 'video/webm;codecs=vp8',
+  m: 'video/mp4',
+} as const
+export type VideoMimeCode = keyof typeof VIDEO_MIME_CODES
+/** Prefix for unpadded multi-chunk video bundles (shortened via VoidHop) */
+export const VIDEO_MULTI_PREFIX = 'vmulti:'
+/** VoidHop base URL for shortening the bulky video fragment URL */
+export const VOIDHOP_BASE_URL = 'https://voidhop.com'

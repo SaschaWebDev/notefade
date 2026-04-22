@@ -4,9 +4,11 @@ import type { NoteMetadata } from '@/crypto'
 import { storeShard, deferShard, deleteShard, createAdapter, encodeProviderConfig } from '@/api'
 import type { ProviderConfig, ProviderType } from '@/api/provider-types'
 import type { RecordedClip } from '@/audio'
-import { MAX_NOTE_CHARS, MAX_NOTE_CHARS_SINGLE, MAX_READ_COUNT, MAX_TOTAL_SHARDS, STORAGE_KEYS, PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER, DEFAULT_BAR_SECONDS, BYOK_DELIMITER, VOICE_BYTES_PER_CHUNK, VOICE_MAX_BYTES, IMAGE_BYTES_PER_CHUNK, IMAGE_MAX_BYTES, type ImageMimeCode } from '@/constants'
+import type { RecordedVideoClip } from '@/video'
+import { encryptAndShorten, VoidHopError } from '@/voidhop'
+import { MAX_NOTE_CHARS, MAX_NOTE_CHARS_SINGLE, MAX_READ_COUNT, MAX_TOTAL_SHARDS, STORAGE_KEYS, PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER, DEFAULT_BAR_SECONDS, BYOK_DELIMITER, VOICE_BYTES_PER_CHUNK, VOICE_MAX_BYTES, IMAGE_BYTES_PER_CHUNK, IMAGE_MAX_BYTES, VIDEO_BYTES_PER_CHUNK, VIDEO_MAX_BYTES, type ImageMimeCode } from '@/constants'
 
-export type NoteMode = 'text' | 'voice' | 'image'
+export type NoteMode = 'text' | 'voice' | 'image' | 'video'
 
 export interface ImageClip {
   blob: Blob
@@ -73,6 +75,8 @@ interface UseCreateNoteReturn {
   setVoiceClip: (clip: RecordedClip | null) => void
   imageClip: ImageClip | null
   setImageClip: (clip: ImageClip | null) => void
+  videoClip: RecordedVideoClip | null
+  setVideoClip: (clip: RecordedVideoClip | null) => void
   message: string
   setMessage: (msg: string) => void
   ttl: number
@@ -140,6 +144,7 @@ export function useCreateNote(): UseCreateNoteReturn {
   const [mode, setModeState] = useState<NoteMode>('text')
   const [voiceClip, setVoiceClipState] = useState<RecordedClip | null>(null)
   const [imageClip, setImageClipState] = useState<ImageClip | null>(null)
+  const [videoClip, setVideoClipState] = useState<RecordedVideoClip | null>(null)
   const [message, setMessage] = useState('')
   const [ttl, setTtl] = useState<number>(TTL_OPTIONS[1].value)
   const [noteUrl, setNoteUrl] = useState<string | null>(null)
@@ -176,7 +181,8 @@ export function useCreateNote(): UseCreateNoteReturn {
 
   const isVoiceMode = mode === 'voice'
   const isImageMode = mode === 'image'
-  const isMediaMode = isVoiceMode || isImageMode
+  const isVideoMode = mode === 'video'
+  const isMediaMode = isVoiceMode || isImageMode || isVideoMode
   const voiceBytes = voiceClip?.blob.size ?? 0
   const voiceChunkCount = voiceBytes === 0
     ? 0
@@ -185,23 +191,33 @@ export function useCreateNote(): UseCreateNoteReturn {
   const imageChunkCount = imageBytes === 0
     ? 0
     : Math.max(1, Math.ceil(imageBytes / IMAGE_BYTES_PER_CHUNK))
+  const videoBytes = videoClip?.blob.size ?? 0
+  const videoChunkCount = videoBytes === 0
+    ? 0
+    : Math.max(1, Math.ceil(videoBytes / VIDEO_BYTES_PER_CHUNK))
   const isOverLimit = isVoiceMode
     ? voiceBytes > VOICE_MAX_BYTES
     : isImageMode
       ? imageBytes > IMAGE_MAX_BYTES
-      : message.length > MAX_NOTE_CHARS
+      : isVideoMode
+        ? videoBytes > VIDEO_MAX_BYTES
+        : message.length > MAX_NOTE_CHARS
   const isEmpty = isVoiceMode
     ? voiceClip === null
     : isImageMode
       ? imageClip === null
-      : message.trim().length === 0
+      : isVideoMode
+        ? videoClip === null
+        : message.trim().length === 0
   const isCustomServer = providerConfig !== null
   const providerType = providerConfig?.t ?? null
   const chunkCount = isVoiceMode
     ? voiceChunkCount
     : isImageMode
       ? imageChunkCount
-      : message.length <= MAX_NOTE_CHARS_SINGLE ? 1 : Math.ceil(message.length / MAX_NOTE_CHARS_SINGLE)
+      : isVideoMode
+        ? videoChunkCount
+        : message.length <= MAX_NOTE_CHARS_SINGLE ? 1 : Math.ceil(message.length / MAX_NOTE_CHARS_SINGLE)
   const isMultiChunk = chunkCount > 1
   const dynamicMaxReadCount = isMediaMode
     ? 1
@@ -210,8 +226,7 @@ export function useCreateNote(): UseCreateNoteReturn {
   const setMode = (next: NoteMode) => {
     if (next === mode) return
     setModeState(next)
-    if (next === 'voice' || next === 'image') {
-      // Entering media mode: clear text and any media-incompatible settings
+    if (next === 'voice' || next === 'image' || next === 'video') {
       setMessage('')
       setDecoyMessages([])
       setByokEnabled(false)
@@ -221,6 +236,7 @@ export function useCreateNote(): UseCreateNoteReturn {
     }
     if (next !== 'voice') setVoiceClipState(null)
     if (next !== 'image') setImageClipState(null)
+    if (next !== 'video') setVideoClipState(null)
   }
 
   const setVoiceClip = (clip: RecordedClip | null) => {
@@ -229,6 +245,10 @@ export function useCreateNote(): UseCreateNoteReturn {
 
   const setImageClip = (clip: ImageClip | null) => {
     setImageClipState(clip)
+  }
+
+  const setVideoClip = (clip: RecordedVideoClip | null) => {
+    setVideoClipState(clip)
   }
 
   const setProviderConfig = (config: ProviderConfig | null) => {
@@ -485,7 +505,80 @@ export function useCreateNote(): UseCreateNoteReturn {
     setError(null)
 
     try {
-      if (isImageMode && imageClip) {
+      if (isVideoMode && videoClip) {
+        // --- Video flow: unpadded multi-chunk + VoidHop short URL wrap ---
+        const arrayBuf = await videoClip.blob.arrayBuffer()
+        const allBytes = new Uint8Array(arrayBuf)
+        if (allBytes.length > VIDEO_MAX_BYTES) {
+          throw new Error(
+            `recording is too large (${Math.round(allBytes.length / 1024)} KB, max ${Math.round(VIDEO_MAX_BYTES / 1024)} KB). try a shorter or quieter clip`,
+          )
+        }
+        const byteChunks = splitBytes(allBytes, VIDEO_BYTES_PER_CHUNK)
+
+        const firstMeta: NoteMetadata = {
+          videoMime: videoClip.mimeCode,
+          videoDurationMs: videoClip.durationMs,
+        }
+        if (barDuration > 0) firstMeta.barSeconds = barDuration
+
+        const allStoredShardIds: string[] = []
+        const fragments: string[] = []
+        try {
+          for (let i = 0; i < byteChunks.length; i++) {
+            const meta = i === 0 ? firstMeta : {}
+            const result = await buildSingleChunkFragmentBytes(byteChunks[i]!, meta, 1)
+            fragments.push(result.compactFragment)
+            allStoredShardIds.push(...result.shardIds)
+          }
+        } catch (err) {
+          for (const id of allStoredShardIds) {
+            try {
+              if (providerConfig) {
+                const adapter = createAdapter(providerConfig)
+                await adapter.delete(id)
+              } else {
+                await deleteShard(id)
+              }
+            } catch { /* ignore cleanup errors */ }
+          }
+          throw err
+        }
+
+        let bundleFragment = `${MULTI_PREFIX}${fragments.join(MULTI_DELIMITER)}`
+        if (passwordEnabled && password.length > 0) {
+          const protectedData = await protectFragment(bundleFragment, password)
+          bundleFragment = `${PROTECTED_PREFIX}${protectedData}`
+        }
+
+        const pathname = window.location.pathname
+        const longUrl = `${window.location.origin}${pathname}#${bundleFragment}`
+
+        // Wrap the long URL through VoidHop for a shareable short link.
+        // VoidHop caps TTL at 7 days, so clamp notefade's TTL accordingly.
+        const voidhopTtl = ttl > 604800 ? 604800 : (ttl as 3600 | 86400 | 604800)
+        try {
+          const short = await encryptAndShorten(longUrl, voidhopTtl)
+          setShardId(allStoredShardIds[0]!)
+          setExpiresAt(Date.now() + voidhopTtl * 1000)
+          setNoteUrl(short.shortUrl)
+          setCompactUrl(null)
+        } catch (vhErr) {
+          if (vhErr instanceof VoidHopError && vhErr.code === 'BUDGET_EXHAUSTED') {
+            // Budget exhausted → fall back to the long URL; user is warned.
+            setShardId(allStoredShardIds[0]!)
+            setExpiresAt(Date.now() + ttl * 1000)
+            setNoteUrl(longUrl)
+            setCompactUrl(null)
+            setError(
+              'voidhop budget is full today — sharing the long URL instead. paste it only where long URLs survive.',
+            )
+          } else {
+            throw vhErr
+          }
+        }
+        setVideoClipState(null)
+      } else if (isImageMode && imageClip) {
         // --- Image flow (always multi-chunk, single-read, byte payload) ---
         const arrayBuf = await imageClip.blob.arrayBuffer()
         const allBytes = new Uint8Array(arrayBuf)
@@ -723,6 +816,7 @@ export function useCreateNote(): UseCreateNoteReturn {
     setModeState('text')
     setVoiceClipState(null)
     setImageClipState(null)
+    setVideoClipState(null)
     setMessage('')
     setTtl(TTL_OPTIONS[1].value)
     setNoteUrl(null)
@@ -752,6 +846,8 @@ export function useCreateNote(): UseCreateNoteReturn {
     setVoiceClip,
     imageClip,
     setImageClip,
+    videoClip,
+    setVideoClip,
     message,
     setMessage,
     ttl,

@@ -4,7 +4,7 @@ import { useTypewriter } from '@/hooks/use-typewriter';
 import { PROVIDERS, getProviderEntry } from '@/api/provider-registry';
 import type { ProviderConfig, ProviderType } from '@/api/provider-types';
 import { ContentFade } from '@/components/ui/content-fade';
-import { IconMic, IconText, IconImage } from '@/components/ui/icons';
+import { IconMic, IconText, IconImage, IconVideo } from '@/components/ui/icons';
 import { NoteLink } from '../note-link';
 import {
   NoteMarkdown,
@@ -13,8 +13,10 @@ import {
 import { generateDecoyMessage } from '@/crypto';
 import { VoiceComposer } from './VoiceComposer';
 import { ImageComposer } from './ImageComposer';
+import { VideoComposer } from './VideoComposer';
 import { isVoiceRecordingSupported } from '@/audio';
 import { isImageCompressionSupported } from '@/images';
+import { isVideoRecordingSupported } from '@/video';
 import {
   COPY_FEEDBACK_MS,
   DEFAULT_BAR_SECONDS,
@@ -120,6 +122,8 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
     setVoiceClip,
     imageClip,
     setImageClip,
+    videoClip,
+    setVideoClip,
     message,
     setMessage,
     ttl,
@@ -192,16 +196,19 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   const [decoyCount, setDecoyCount] = useState(1);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [imageEnabled, setImageEnabled] = useState(false);
+  const [videoEnabled, setVideoEnabled] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setVoiceEnabled(isVoiceRecordingSupported());
     setImageEnabled(isImageCompressionSupported());
+    setVideoEnabled(isVideoRecordingSupported());
   }, []);
 
   const isVoiceMode = mode === 'voice';
   const isImageMode = mode === 'image';
-  const isMediaMode = isVoiceMode || isImageMode;
+  const isVideoMode = mode === 'video';
+  const isMediaMode = isVoiceMode || isImageMode || isVideoMode;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -891,6 +898,20 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                     <span className={styles.modeToggleLabel}>image</span>
                   </button>
                 )}
+                {videoEnabled && (
+                  <button
+                    type='button'
+                    role='tab'
+                    aria-selected={mode === 'video'}
+                    className={`${styles.modeToggleBtn} ${mode === 'video' ? styles.modeToggleActive : ''}`}
+                    onClick={() => setMode('video')}
+                    disabled={loading}
+                    title='video note'
+                  >
+                    <IconVideo />
+                    <span className={styles.modeToggleLabel}>video</span>
+                  </button>
+                )}
               </div>
             )}
             {!isMediaMode && <div
@@ -1188,6 +1209,12 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
               <ImageComposer
                 clip={imageClip}
                 onClipChange={setImageClip}
+                disabled={loading}
+              />
+            ) : isVideoMode ? (
+              <VideoComposer
+                clip={videoClip}
+                onClipChange={setVideoClip}
                 disabled={loading}
               />
             ) : viewMode === 'preview' && showFormatToggle ? (
@@ -1711,7 +1738,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
             <div className={styles.footerTop}>
               <span className={styles.sentenceLine}>
                 <span className={styles.sentenceText}>
-                  your secret {isVoiceMode ? 'voice note' : isImageMode ? 'image' : 'note'} will{' '}
+                  your secret {isVoiceMode ? 'voice note' : isImageMode ? 'image' : isVideoMode ? 'video note' : 'note'} will{' '}
                 </span>
               </span>
               <span className={styles.sentenceLine}>

@@ -35,6 +35,10 @@ export interface NoteMetadata {
   voiceDurationMs?: number
   /** One-char image mime code (e.g. 'a' for avif). Only on chunk 0 of image notes. */
   imageMime?: string
+  /** One-char video mime code (e.g. 'w' for webm-vp9). Only on chunk 0 of video notes. */
+  videoMime?: string
+  /** Video duration in ms. Only on chunk 0 of video notes. */
+  videoDurationMs?: number
 }
 
 /** Result from opening a note, including parsed metadata */
@@ -285,6 +289,12 @@ function buildMetadataPrefix(metadata: NoteMetadata): string {
   if (metadata.imageMime !== undefined) {
     prefix += `I:${metadata.imageMime}:`
   }
+  if (metadata.videoMime !== undefined) {
+    prefix += `VM:${metadata.videoMime}:`
+  }
+  if (metadata.videoDurationMs !== undefined) {
+    prefix += `VD:${metadata.videoDurationMs}:`
+  }
   return prefix
 }
 
@@ -321,6 +331,18 @@ function parseMetadataPrefix(s: string): { metadata: NoteMetadata; consumed: num
   if (imageMatch) {
     metadata.imageMime = imageMatch[1]!
     offset += imageMatch[0]!.length
+  }
+
+  const videoMimeMatch = s.slice(offset).match(/^VM:([A-Za-z0-9]):/)
+  if (videoMimeMatch) {
+    metadata.videoMime = videoMimeMatch[1]!
+    offset += videoMimeMatch[0]!.length
+  }
+
+  const videoDurMatch = s.slice(offset).match(/^VD:(\d+):/)
+  if (videoDurMatch) {
+    metadata.videoDurationMs = parseInt(videoDurMatch[1]!, 10)
+    offset += videoDurMatch[0]!.length
   }
 
   return { metadata, consumed: offset }

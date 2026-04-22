@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { openNoteBytes, decryptByokContent } from '@/crypto'
 import type { NoteMetadata } from '@/crypto'
 import { checkShard, fetchShard, createAdapter } from '@/api'
-import { VOICE_MIME_CODES, IMAGE_MIME_CODES, type VoiceMimeCode, type ImageMimeCode } from '@/constants'
+import { VOICE_MIME_CODES, IMAGE_MIME_CODES, VIDEO_MIME_CODES, type VoiceMimeCode, type ImageMimeCode, type VideoMimeCode } from '@/constants'
 import type { ParsedFragment } from '@/hooks/use-hash-route'
 import type { ReadState } from '@/hooks/use-read-note'
 
@@ -89,7 +89,8 @@ export function useReadMultiNote(
     if (
       state.status !== 'decrypted' &&
       state.status !== 'decrypted-voice' &&
-      state.status !== 'decrypted-image'
+      state.status !== 'decrypted-image' &&
+      state.status !== 'decrypted-video'
     )
       return
 
@@ -109,7 +110,8 @@ export function useReadMultiNote(
           if (
             prev.status !== 'decrypted' &&
             prev.status !== 'decrypted-voice' &&
-            prev.status !== 'decrypted-image'
+            prev.status !== 'decrypted-image' &&
+            prev.status !== 'decrypted-video'
           )
             return prev
           return { ...prev, remainingMs: remaining }
@@ -121,7 +123,8 @@ export function useReadMultiNote(
   }, [
     state.status === 'decrypted' ||
     state.status === 'decrypted-voice' ||
-    state.status === 'decrypted-image'
+    state.status === 'decrypted-image' ||
+    state.status === 'decrypted-video'
       ? `${state.status}:${state.metadata.barSeconds}`
       : '',
   ]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -222,6 +225,29 @@ export function useReadMultiNote(
             status: 'decrypted-image',
             blob,
             mimeType,
+            metadata: firstMetadata,
+            remainingMs: ttlMs,
+          })
+          return
+        }
+
+        if (firstMetadata.videoMime) {
+          // --- Video branch ---
+          const mimeCode = firstMetadata.videoMime as VideoMimeCode
+          const mimeType = VIDEO_MIME_CODES[mimeCode]
+          if (!mimeType) {
+            setState({
+              status: 'error',
+              message: 'Unsupported video format.',
+            })
+            return
+          }
+          const blob = concatBytesToBlob(decrypted, mimeType)
+          setState({
+            status: 'decrypted-video',
+            blob,
+            mimeType,
+            durationMs: firstMetadata.videoDurationMs ?? 0,
             metadata: firstMetadata,
             remainingMs: ttlMs,
           })
