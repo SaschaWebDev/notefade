@@ -17,6 +17,11 @@
   background: rgba(var(--fg), 0.03);
 }
 
+.triggerHint {
+  color: rgba(var(--fg), 0.3);
+  margin-left: 4px;
+}
+
 .panel {
   align-self: stretch;
   display: flex;
@@ -40,6 +45,48 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.langRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.langLabel {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(var(--fg), 0.4);
+}
+
+.langOptions {
+  display: inline-flex;
+  border: 1px solid rgba(var(--fg), 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.langOption {
+  background: transparent;
+  color: rgba(var(--fg), 0.55);
+  border: none;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.langOption:hover:not(:disabled) {
+  color: rgba(var(--fg), 0.85);
+  background: rgba(var(--fg), 0.04);
+}
+
+.langOptionActive,
+.langOptionActive:hover {
+  background: rgba(var(--accent-rgb), 0.14);
+  color: rgb(var(--accent-rgb));
 }
 
 .primaryBtn {

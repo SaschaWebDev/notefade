@@ -168,6 +168,15 @@
   padding: 32px;
 }
 
+/* Stack voice playback + transcribe button vertically with consistent spacing. */
+.voicePlayback {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+  margin-top: 16px;
+}
+
 .containerCentered {
   display: flex;
   flex-direction: column;

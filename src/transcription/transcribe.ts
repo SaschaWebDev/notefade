@@ -1,19 +1,23 @@
 /**
  * On-device audio transcription using Whisper via @xenova/transformers.
  *
- * Runs entirely in-browser — the model is downloaded once from HuggingFace CDN
- * (~40 MB for whisper-tiny.en, cached by the browser's HTTP cache), then
- * inference happens locally. No audio bytes leave the device.
+ * Runs entirely in-browser — the multilingual model is downloaded once
+ * from HuggingFace CDN (~150 MB for whisper-tiny, cached by the browser's
+ * HTTP cache), then inference happens locally. No audio bytes leave the
+ * device. Supports English and German (the multilingual tiny model covers
+ * 99 languages total; we surface only these two in the UI for now).
  *
  * Usage is recipient-only: sender records audio, recipient optionally
  * triggers transcription on playback. Keeps the sender's ciphertext budget
- * untouched and avoids shipping 40 MB of model to every visitor.
+ * untouched and avoids shipping the model to every visitor.
  */
 
 import type { Pipeline } from '@xenova/transformers'
 
-const MODEL = 'Xenova/whisper-tiny.en'
+const MODEL = 'Xenova/whisper-tiny'
 const TARGET_SAMPLE_RATE = 16_000
+
+export type TranscribeLanguage = 'english' | 'german'
 
 export interface TranscribeProgress {
   phase: 'download' | 'decode' | 'transcribe' | 'done'
@@ -26,8 +30,9 @@ export type TranscribeProgressCallback = (p: TranscribeProgress) => void
 let pipelinePromise: Promise<Pipeline> | null = null
 
 /**
- * Lazy-load the ASR pipeline. First call downloads the model (~40 MB),
- * subsequent calls reuse the cached pipeline.
+ * Lazy-load the ASR pipeline. First call downloads the model (~150 MB),
+ * subsequent calls reuse the cached pipeline regardless of target language —
+ * the multilingual model handles language switching per call via options.
  */
 async function getPipeline(onProgress?: TranscribeProgressCallback): Promise<Pipeline> {
   if (!pipelinePromise) {
@@ -82,10 +87,18 @@ export interface TranscribeResult {
   text: string
 }
 
+export interface TranscribeOptions {
+  /** Spoken language in the clip. Default: 'english'. */
+  language?: TranscribeLanguage
+}
+
 export async function transcribeBlob(
   blob: Blob,
   onProgress?: TranscribeProgressCallback,
+  options: TranscribeOptions = {},
 ): Promise<TranscribeResult> {
+  const language = options.language ?? 'english'
+
   onProgress?.({ phase: 'download' })
   const asr = await getPipeline(onProgress)
 
@@ -94,6 +107,8 @@ export async function transcribeBlob(
 
   onProgress?.({ phase: 'transcribe' })
   const output = (await asr(samples, {
+    language,
+    task: 'transcribe',
     // Chunk long audio. For <=30s clips this is irrelevant but harmless.
     chunk_length_s: 30,
     stride_length_s: 5,

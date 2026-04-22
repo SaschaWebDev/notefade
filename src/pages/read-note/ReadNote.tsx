@@ -381,8 +381,10 @@ export function ReadNote({
             )}
           </div>
         </div>
-        <AudioPlayer blob={state.blob} durationMs={state.durationMs} />
-        <TranscribeButton blob={state.blob} />
+        <div className={styles.voicePlayback}>
+          <AudioPlayer blob={state.blob} durationMs={state.durationMs} />
+          <TranscribeButton blob={state.blob} />
+        </div>
       </div>
     );
   } else if (state.status === 'decrypted-image') {

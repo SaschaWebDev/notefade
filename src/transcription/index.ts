@@ -6,4 +6,6 @@ export type {
   TranscribeProgress,
   TranscribeProgressCallback,
   TranscribeResult,
+  TranscribeOptions,
+  TranscribeLanguage,
 } from './transcribe'
