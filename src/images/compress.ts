@@ -59,7 +59,12 @@ async function encodeAvif(
   quality: number,
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { encode } = await import('@jsquash/avif')
-  const buf = await encode(imageData, { quality })
+  // qualityAlpha pinned at 100 so fully-opaque inputs (canvas drawings with a
+  // chosen background color) stay fully opaque in the encoded AVIF — otherwise
+  // the viewer's frame background bleeds through translucent alpha and the
+  // drawing appears tinted. For photographic content the alpha channel is
+  // usually irrelevant, so this has no visible size cost in practice.
+  const buf = await encode(imageData, { quality, qualityAlpha: 100 })
   // Copy into a fresh ArrayBuffer-backed Uint8Array so Blob construction
   // stays strictly typed under TS's new ArrayBufferLike/SharedArrayBuffer split.
   const out = new Uint8Array(new ArrayBuffer(buf.byteLength))

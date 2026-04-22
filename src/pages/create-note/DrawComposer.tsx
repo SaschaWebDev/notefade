@@ -45,6 +45,7 @@ export function DrawComposer({ clip, onClipChange, disabled }: DrawComposerProps
 
   const [tool, setTool] = useState<Tool>('brush')
   const [color, setColor] = useState<string>('#000000')
+  const [backgroundColor, setBackgroundColor] = useState<string>('#ffffff')
   const [brushSize, setBrushSize] = useState<number>(4)
   const [phase, setPhase] = useState<Phase>(() =>
     clip ? { kind: 'ready' } : { kind: 'idle' },
@@ -57,14 +58,21 @@ export function DrawComposer({ clip, onClipChange, disabled }: DrawComposerProps
     setSupported(isImageCompressionSupported())
   }, [])
 
-  // Initialize canvas with white background once mounted.
-  useEffect(() => {
+  const fillCanvasBackground = useCallback((bg: string) => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    ctx.fillStyle = '#ffffff'
+    ctx.fillStyle = bg
     ctx.fillRect(0, 0, canvas.width, canvas.height)
+  }, [])
+
+  // Initialize canvas with the current background color on mount.
+  // Intentionally runs once — changes to backgroundColor are handled via the
+  // setter's explicit canvas repaint + stroke reset.
+  useEffect(() => {
+    fillCanvasBackground(backgroundColor)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // When a clip arrives externally (e.g. from resetNote), sync phase.
@@ -72,7 +80,18 @@ export function DrawComposer({ clip, onClipChange, disabled }: DrawComposerProps
     if (clip) setPhase({ kind: 'ready' })
   }, [clip])
 
-  const strokeColor = tool === 'eraser' ? '#ffffff' : color
+  const handleBackgroundChange = (next: string) => {
+    if (next === backgroundColor) return
+    setBackgroundColor(next)
+    fillCanvasBackground(next)
+    setHasStrokes(false)
+    if (clip) {
+      onClipChange(null)
+      setPhase({ kind: 'idle' })
+    }
+  }
+
+  const strokeColor = tool === 'eraser' ? backgroundColor : color
 
   const pointerPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
@@ -141,11 +160,7 @@ export function DrawComposer({ clip, onClipChange, disabled }: DrawComposerProps
   }
 
   const handleClear = () => {
-    const canvas = canvasRef.current
-    const ctx = canvas?.getContext('2d')
-    if (!canvas || !ctx) return
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    fillCanvasBackground(backgroundColor)
     setHasStrokes(false)
     if (clip) {
       onClipChange(null)
@@ -157,8 +172,26 @@ export function DrawComposer({ clip, onClipChange, disabled }: DrawComposerProps
     const canvas = canvasRef.current
     if (!canvas) return
     setPhase({ kind: 'compressing' })
+
+    // Flatten onto an explicitly opaque background before export. Even though
+    // the main canvas is already filled with backgroundColor, encoders
+    // downstream (AVIF) treat alpha channels independently — so we compose
+    // onto a fresh context to guarantee the PNG (and thus the AVIF) carries
+    // only RGB data and the receiver sees exactly the chosen bg color.
+    const flat = document.createElement('canvas')
+    flat.width = canvas.width
+    flat.height = canvas.height
+    const flatCtx = flat.getContext('2d', { alpha: false })
+    if (!flatCtx) {
+      setPhase({ kind: 'error', message: 'could not prepare canvas for export' })
+      return
+    }
+    flatCtx.fillStyle = backgroundColor
+    flatCtx.fillRect(0, 0, flat.width, flat.height)
+    flatCtx.drawImage(canvas, 0, 0)
+
     const blob: Blob | null = await new Promise((resolve) => {
-      canvas.toBlob((b) => resolve(b), 'image/png')
+      flat.toBlob((b) => resolve(b), 'image/png')
     })
     if (!blob) {
       setPhase({ kind: 'error', message: 'could not capture the canvas — try again' })
@@ -192,7 +225,7 @@ export function DrawComposer({ clip, onClipChange, disabled }: DrawComposerProps
             : 'could not compress the drawing',
       })
     }
-  }, [onClipChange])
+  }, [onClipChange, backgroundColor])
 
   const handleReturnToCanvas = () => {
     onClipChange(null)
@@ -313,6 +346,24 @@ export function DrawComposer({ clip, onClipChange, disabled }: DrawComposerProps
               className={styles.customColorSwatch}
               style={{ background: `conic-gradient(red, yellow, lime, aqua, blue, magenta, red)` }}
             />
+          </label>
+        </div>
+
+        <div className={styles.bgGroup}>
+          <span className={styles.bgLabel}>bg</span>
+          <label
+            className={styles.bgSwatchLabel}
+            title='background color · changing clears the canvas'
+          >
+            <input
+              type='color'
+              value={backgroundColor}
+              onChange={(e) => handleBackgroundChange(e.target.value)}
+              className={styles.bgSwatchInput}
+              disabled={disabled}
+              aria-label='background color'
+            />
+            <span className={styles.bgSwatchVisual} style={{ background: backgroundColor }} />
           </label>
         </div>
 
