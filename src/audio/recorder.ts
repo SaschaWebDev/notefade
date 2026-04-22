@@ -44,7 +44,7 @@ export function isVoiceRecordingSupported(): boolean {
 }
 
 /** Number of spectrum bars exposed to consumers (A/B meter comparison). */
-export const SPECTRUM_BAR_COUNT = 32
+export const SPECTRUM_BAR_COUNT = 64
 
 export interface UseAudioRecorderReturn {
   state: RecorderState
@@ -116,20 +116,33 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     const rms = Math.sqrt(sumSq / timeBuf.length)
     setAmplitude(Math.min(1, rms * 2.2))
 
-    // Frequency-domain data downsampled to SPECTRUM_BAR_COUNT bars
-    // focused on voice band (~80 Hz – 3 kHz).
+    // Frequency-domain data downsampled to SPECTRUM_BAR_COUNT bars,
+    // log-spaced across the voice range (~23 Hz → ~2.5 kHz). Linear
+    // spacing stacked too much of the bar strip onto the low-frequency
+    // fundamentals, leaving upper bars near-silent even during clearly
+    // voiced formants. Log spacing mimics perceptual hearing, so each
+    // bar covers a similar-feeling slice of the vocal spectrum.
+    //
+    // Aggregation is peak (max) instead of mean: wide upper-band
+    // buckets contain one loud formant peak surrounded by quiet bins,
+    // and averaging flattened that signal to invisibility.
     const freqBuf = new Uint8Array(analyser.frequencyBinCount)
     analyser.getByteFrequencyData(freqBuf)
     const startBin = 3
-    const endBin = Math.min(analyser.frequencyBinCount - 1, 192)
-    const binsPerBar = (endBin - startBin) / SPECTRUM_BAR_COUNT
+    const endBin = Math.min(analyser.frequencyBinCount - 1, 320)
+    const logStart = Math.log(startBin)
+    const logEnd = Math.log(endBin)
+    const logStep = (logEnd - logStart) / SPECTRUM_BAR_COUNT
     const next = new Array<number>(SPECTRUM_BAR_COUNT)
     for (let i = 0; i < SPECTRUM_BAR_COUNT; i++) {
-      const from = Math.floor(startBin + i * binsPerBar)
-      const to = Math.max(from + 1, Math.floor(startBin + (i + 1) * binsPerBar))
-      let sum = 0
-      for (let j = from; j < to; j++) sum += freqBuf[j] ?? 0
-      next[i] = sum / (to - from) / 255
+      const from = Math.max(startBin, Math.floor(Math.exp(logStart + i * logStep)))
+      const to = Math.max(from + 1, Math.floor(Math.exp(logStart + (i + 1) * logStep)))
+      let peak = 0
+      for (let j = from; j < to; j++) {
+        const v = freqBuf[j] ?? 0
+        if (v > peak) peak = v
+      }
+      next[i] = peak / 255
     }
     setSpectrum(next)
 
