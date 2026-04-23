@@ -30,11 +30,17 @@ export function hasMarkdownPatterns(text: string): boolean {
   return false;
 }
 
-/** Parse inline formatting: bold, italic, inline code, links */
+/** Check whether plaintext contains a bare http/https URL worth linkifying */
+export function hasPlainUrls(text: string): boolean {
+  return /\bhttps?:\/\/\S+/i.test(text);
+}
+
+/** Parse inline formatting: bold, italic, inline code, markdown links, bare URLs */
 function parseInline(text: string): InlineNode[] {
   const nodes: InlineNode[] = [];
-  // Pattern matches inline code, underline, bold, italic, or links
-  const pattern = /`([^`]+)`|__([^_]+)__|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\(([^)]+)\)/g;
+  // Pattern matches inline code, underline, bold, italic, markdown links, or bare URLs
+  const pattern =
+    /`([^`]+)`|__([^_]+)__|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\(([^)]+)\)|(\bhttps?:\/\/[^\s<>"')\]]+)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -95,6 +101,24 @@ function parseInline(text: string): InlineNode[] {
       } else {
         nodes.push(match[0]);
       }
+    } else if (match[7] !== undefined) {
+      // Bare URL — trim trailing sentence punctuation that isn't part of the URL
+      const raw = match[7];
+      const trailMatch = /[.,;:!?]+$/.exec(raw);
+      const trail = trailMatch ? trailMatch[0] : '';
+      const url = trail ? raw.slice(0, raw.length - trail.length) : raw;
+      nodes.push(
+        <a
+          key={match.index}
+          className={styles.link}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {url}
+        </a>,
+      );
+      if (trail) nodes.push(trail);
     }
 
     lastIndex = match.index + match[0].length;

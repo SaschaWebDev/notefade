@@ -1,1 +1,1 @@
-export { NoteMarkdown, hasMarkdownPatterns } from './NoteMarkdown'
+export { NoteMarkdown, hasMarkdownPatterns, hasPlainUrls } from './NoteMarkdown'

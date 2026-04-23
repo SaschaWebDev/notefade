@@ -22,6 +22,7 @@ import { NoteGone } from '../note-gone';
 import {
   NoteMarkdown,
   hasMarkdownPatterns,
+  hasPlainUrls,
 } from '@/components/ui/note-markdown';
 import {
   IconTimeLockClock,
@@ -426,7 +427,8 @@ export function ReadNote({
       </div>
     );
   } else if (state.status === 'decrypted') {
-    const showToggle = hasMarkdownPatterns(state.plaintext);
+    const showToggle =
+      hasMarkdownPatterns(state.plaintext) || hasPlainUrls(state.plaintext);
     const hasBarTimer =
       state.metadata.barSeconds !== undefined && state.metadata.barSeconds > 0;
     const hasReceipt = Boolean(state.metadata.receiptSeed);
