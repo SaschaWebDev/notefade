@@ -7,7 +7,21 @@ export const STORAGE_KEYS = {
   PROVIDER: 'notefade-provider',
   LEGACY_API_URL: 'notefade-api-url',
   THEME: 'notefade-theme',
+  /** Tri-state preference for the share-screen voidhop shortener:
+   *  - 'short' = always use the short URL when available
+   *  - 'long'  = user opted out of auto-shorten
+   *  - absent  = auto: shorten when displayUrl exceeds AUTO_SHORTEN_THRESHOLD */
+  SHORTEN_PREF: 'notefade-shorten-pref',
 } as const
+
+export type ShortenPref = 'short' | 'long'
+
+/** URL length above which the share screen auto-shortens through voidhop.
+ * Padded notefade URLs are typically ~3 KB; the voidhop short URL is ~110
+ * chars. Picking 500 keeps the toggle off for already-short fragments
+ * (where shortening would be net-negative) while always engaging it for
+ * the standard padded share URL. */
+export const AUTO_SHORTEN_THRESHOLD = 500
 
 // Copy feedback timings (ms)
 export const COPY_FEEDBACK_MS = 1500
@@ -71,5 +85,16 @@ export const VIDEO_MIME_CODES = {
 export type VideoMimeCode = keyof typeof VIDEO_MIME_CODES
 /** Prefix for unpadded multi-chunk video bundles (shortened via VoidHop) */
 export const VIDEO_MULTI_PREFIX = 'vmulti:'
-/** VoidHop base URL for shortening the bulky video fragment URL */
-export const VOIDHOP_BASE_URL = 'https://voidhop.com'
+/**
+ * VoidHop base URL for shortening long share URLs.
+ *
+ * Defaults to the production deployment. For local end-to-end testing,
+ * override via a Vite env var (`VITE_VOIDHOP_BASE_URL`) in `.env.local`,
+ * e.g. `VITE_VOIDHOP_BASE_URL=http://localhost:5173` if your local voidhop
+ * vite dev server is on :5173 (it proxies `/api/*` to the worker and serves
+ * the `/$id` redirect page from the same origin, so CORS, POST, and the
+ * recipient redirect all work end-to-end against the local stack).
+ */
+export const VOIDHOP_BASE_URL: string =
+  (import.meta.env?.VITE_VOIDHOP_BASE_URL as string | undefined) ??
+  'https://voidhop.com'

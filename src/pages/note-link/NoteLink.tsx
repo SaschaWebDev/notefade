@@ -45,7 +45,11 @@ import {
   MIN_STEGO_TEXT_LENGTH,
   PROTECTED_PREFIX,
   BYOK_DELIMITER,
+  VOIDHOP_BASE_URL,
+  AUTO_SHORTEN_THRESHOLD,
+  type ShortenPref,
 } from '@/constants';
+import { encryptAndShorten, VoidHopError } from '@/voidhop';
 import { formatCountdown, formatDate } from '@/utils/time';
 import { buildZip } from '@/utils/zip';
 import styles from './NoteLink.module.css';
@@ -122,6 +126,25 @@ export function NoteLink({
   );
   const [byokKeyInput, setByokKeyInput] = useState('');
 
+  // ---- voidhop short-link state (auto-shorten on the share screen) ----
+  // The URL produced by notefade is typically ~3KB padded; sharing it via
+  // chat clients that cap URL length is brittle. When the URL is long enough
+  // we transparently route it through voidhop's zero-knowledge shortener:
+  // the long URL is AES-256-GCM encrypted *in this browser* before voidhop
+  // sees anything, and the decryption key lives only in the returned short
+  // URL's fragment. voidhop's server stores opaque ciphertext under a key
+  // it cannot reach. See src/voidhop/client.ts.
+  const [shortenState, setShortenState] = useState<
+    'idle' | 'shortening' | 'short' | 'failed'
+  >('idle');
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [shortenError, setShortenError] = useState<string | null>(null);
+  const [shortenPref, setShortenPref] = useState<ShortenPref | null>(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.SHORTEN_PREF);
+    return stored === 'short' || stored === 'long' ? stored : null;
+  });
+  const shortenFiredRef = useRef(false);
+
   const pathname = window.location.pathname;
   const defaultBase = window.location.origin + pathname;
 
@@ -129,9 +152,27 @@ export function NoteLink({
   const byokSuffix = byokKeyInput && isValidByokKey(byokKeyInput)
     ? `${BYOK_DELIMITER}${byokKeyInput}`
     : '';
-  const displayUrl = (customBase
+  const longDisplayUrl = (customBase
     ? customBase.replace(/\/+$/, '') + '/' + fragment
     : url) + byokSuffix;
+
+  // The URL coming from notefade's video flow already wraps through voidhop;
+  // skip our own auto-shorten and surface a small "already a short link" hint
+  // instead, so we don't pointlessly chain two voidhop redirects.
+  const isAlreadyShort = url.startsWith(VOIDHOP_BASE_URL);
+
+  // Custom base URL is the user's explicit self-host / decoy intent — routing
+  // through voidhop would override their domain choice, so we suppress
+  // shortening whenever a custom base is set.
+  const isCustomBaseSet = Boolean(customBase);
+
+  const showShort =
+    shortenState === 'short' &&
+    shortUrl != null &&
+    shortenPref !== 'long' &&
+    !isCustomBaseSet;
+
+  const displayUrl = showShort ? (shortUrl as string) : longDisplayUrl;
 
   const handleCopy = useCallback(async () => {
     if (copyState !== 'idle') return;
@@ -187,8 +228,11 @@ export function NoteLink({
   const isCustom = Boolean(customBase) && customBase !== defaultBase;
   const isUnsafeBase = isCustom && !isValidBaseUrl(customBase);
 
-  // For QR codes, use the compact (unpadded) URL when available
+  // For QR codes, use the short URL when active (it is already shorter than
+  // any compact URL); otherwise fall back to the existing compact-or-padded
+  // logic and apply the custom base if set.
   const qrValue = (() => {
+    if (showShort) return shortUrl as string;
     if (!compactUrl) return displayUrl;
     // Apply custom base URL to the compact URL's fragment
     const compactFragment = compactUrl.includes('#')
@@ -222,6 +266,60 @@ export function NoteLink({
   const linkBoxInnerRef = useRef<HTMLDivElement>(null);
   const qrRef = useRef<SVGSVGElement>(null);
   const [qrSize, setQrSize] = useState<number | null>(null);
+
+  // Auto-shorten through voidhop on mount when eligible. Fires exactly once
+  // per share-screen mount (StrictMode-safe via shortenFiredRef) so we don't
+  // burn voidhop's per-origin write budget on duplicate requests.
+  useEffect(() => {
+    if (shortenFiredRef.current) return;
+    if (isAlreadyShort) return;
+    if (isCustomBaseSet) return;
+    if (shortenPref === 'long') return;
+    if (longDisplayUrl.length <= AUTO_SHORTEN_THRESHOLD) return;
+
+    shortenFiredRef.current = true;
+    setShortenState('shortening');
+
+    // Snap to the next allowed voidhop TTL bucket (one of {1h, 24h, 7d}) so
+    // the short link outlives the underlying note rather than expiring early.
+    // If the note's remaining time exceeds 7d, voidhop's universal cap of
+    // 604800s applies — opening the short URL after that lands on a dead
+    // notefade URL, which is harmless because the shard is already gone.
+    const remainingMs = Math.max(0, expiresAt - Date.now());
+    const remainingSec = Math.ceil(remainingMs / 1000);
+    const voidhopTtl: 3600 | 86400 | 604800 =
+      remainingSec > 86400 ? 604800 : remainingSec > 3600 ? 86400 : 3600;
+
+    encryptAndShorten(longDisplayUrl, voidhopTtl)
+      .then((result) => {
+        setShortUrl(result.shortUrl);
+        setShortenState('short');
+      })
+      .catch((err) => {
+        const reason =
+          err instanceof VoidHopError
+            ? err.code === 'BUDGET_EXHAUSTED'
+              ? "voidhop's daily budget is full — sharing the long URL"
+              : err.code === 'RATE_LIMITED'
+                ? 'voidhop rate-limited this request — sharing the long URL'
+                : err.code === 'NETWORK'
+                  ? "couldn't reach voidhop — sharing the long URL"
+                  : 'voidhop unavailable — sharing the long URL'
+            : 'voidhop unavailable — sharing the long URL';
+        setShortenError(reason);
+        setShortenState('failed');
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleToggleShortPref = useCallback(() => {
+    // Flip the user's preference between 'short' and 'long'. We don't try to
+    // delete an already-created voidhop record on opt-out — it's already
+    // opaque ciphertext that will self-expire at the bucket TTL we picked.
+    const next: ShortenPref = shortenPref === 'long' ? 'short' : 'long';
+    setShortenPref(next);
+    localStorage.setItem(STORAGE_KEYS.SHORTEN_PREF, next);
+  }, [shortenPref]);
 
   useEffect(() => {
     const el = linkBoxInnerRef.current;
@@ -563,6 +661,79 @@ export function NoteLink({
               </div>
             )}
           </div>
+
+          {isAlreadyShort ? (
+            <div className={styles.shortenRow}>
+              <span className={styles.shortenHint}>
+                already a short link via{' '}
+                <a
+                  href='https://voidhop.com'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className={styles.shortenLink}
+                >
+                  voidhop
+                </a>
+              </span>
+            </div>
+          ) : isCustomBaseSet ? null : shortenState === 'shortening' ? (
+            <div className={styles.shortenRow}>
+              <span className={styles.shortenHint}>
+                shortening via{' '}
+                <a
+                  href='https://voidhop.com'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className={styles.shortenLink}
+                >
+                  voidhop
+                </a>
+                …
+              </span>
+            </div>
+          ) : shortenState === 'short' ? (
+            <div className={styles.shortenRow}>
+              <span className={styles.shortenHint}>
+                {showShort ? (
+                  <>
+                    shortened via{' '}
+                    <a
+                      href='https://voidhop.com'
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className={styles.shortenLink}
+                    >
+                      voidhop
+                    </a>
+                    {' · zero-knowledge'}
+                  </>
+                ) : (
+                  <>
+                    <a
+                      href='https://voidhop.com'
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className={styles.shortenLink}
+                    >
+                      voidhop
+                    </a>
+                    {' short link ready'}
+                  </>
+                )}
+              </span>
+              <button
+                type='button'
+                className={styles.shortenToggle}
+                onClick={handleToggleShortPref}
+              >
+                {showShort ? 'show long URL instead' : 'use short URL'}
+              </button>
+            </div>
+          ) : shortenState === 'failed' && shortenError ? (
+            <div className={styles.shortenRow}>
+              <span className={styles.shortenError}>{shortenError}</span>
+            </div>
+          ) : null}
 
           <div className={styles.shareRow}>
             <span className={styles.shareLabel}>share via</span>
