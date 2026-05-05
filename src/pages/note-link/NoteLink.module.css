@@ -597,6 +597,62 @@
   color: rgba(var(--fg), 0.6);
 }
 
+/* ---- voidhop shorten status ---- */
+
+.shortenRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.shortenHint {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(var(--fg), 0.4);
+  letter-spacing: 0.01em;
+}
+
+.shortenError {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(var(--error-rgb), 0.7);
+  letter-spacing: 0.01em;
+}
+
+.shortenLink {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(var(--fg), 0.25);
+  text-underline-offset: 2px;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.shortenLink:hover {
+  color: rgba(var(--accent-rgb), 1);
+  text-decoration-color: rgba(var(--accent-rgb), 0.6);
+}
+
+.shortenToggle {
+  font: inherit;
+  font-size: 12px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgba(var(--accent-rgb), 0.7);
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.shortenToggle:hover {
+  color: rgba(var(--accent-rgb), 1);
+}
+
 /* ---- Share row ---- */
 
 .shareRow {
