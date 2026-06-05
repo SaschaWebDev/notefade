@@ -1,4 +1,7 @@
 .frame {
+  appearance: none;
+  font: inherit;
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -8,6 +11,17 @@
   padding: 12px;
   max-height: 520px;
   overflow: hidden;
+  cursor: zoom-in;
+  transition: border-color 0.15s ease;
+}
+
+.frame:hover {
+  border-color: rgba(var(--fg), 0.18);
+}
+
+.frame:focus-visible {
+  outline: 2px solid rgba(var(--accent-rgb), 0.6);
+  outline-offset: 2px;
 }
 
 .img {
@@ -16,6 +30,61 @@
   border-radius: 8px;
   object-fit: contain;
   display: block;
+}
+
+/* ---- full-screen view (mirrors the LandingShell diagram overlay) ---- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: overlayIn 0.2s ease;
+  cursor: zoom-out;
+}
+
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.overlayClose {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  /* Backdrop is always dark regardless of theme, so don't use --fg. */
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 8px;
+  z-index: 101;
+  display: inline-flex;
+  transition: color 0.15s ease;
+}
+
+.overlayClose:hover {
+  color: #fff;
+}
+
+.overlayClose:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.overlayImg {
+  max-width: 95vw;
+  max-height: 92vh;
+  object-fit: contain;
+  cursor: default;
 }
 
 @media (max-width: 480px) {
