@@ -2,11 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   VOICE_MAX_DURATION_MS,
   VOICE_TARGET_BITRATE,
+  VOICE_MAX_BYTES,
+  VOICE_BYTE_BACKSTOP_HEADROOM,
   VOICE_MIME_CODES,
   type VoiceMimeCode,
 } from '@/constants'
 
 export type RecorderState = 'idle' | 'recording' | 'stopped' | 'error'
+
+/** Why the last recording stopped: the duration cap, the byte-budget
+ * backstop, or the user pressing stop. */
+export type StopReason = 'time' | 'size' | 'manual'
 
 export type RecorderErrorCode =
   | 'permission'
@@ -54,6 +60,7 @@ export interface UseAudioRecorderReturn {
   /** Normalized (0..1) voice-band spectrum, `SPECTRUM_BAR_COUNT` entries. */
   spectrum: number[]
   clip: RecordedClip | null
+  stopReason: StopReason | null
   start: () => Promise<void>
   stop: () => Promise<void>
   discard: () => void
@@ -68,10 +75,15 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     new Array(SPECTRUM_BAR_COUNT).fill(0),
   )
   const [clip, setClip] = useState<RecordedClip | null>(null)
+  const [stopReason, setStopReason] = useState<StopReason | null>(null)
 
   const recorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const chunksRef = useRef<Blob[]>([])
+  // Mirrored in a ref because ondataavailable/onstop and the size backstop
+  // run outside React's render cycle and need the latest value synchronously.
+  const stopReasonRef = useRef<StopReason | null>(null)
+  const accumulatedBytesRef = useRef(0)
   const startTimeRef = useRef<number>(0)
   const rafRef = useRef<number | null>(null)
   const stopTimerRef = useRef<number | null>(null)
@@ -153,6 +165,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const stop = useCallback(async () => {
     const recorder = recorderRef.current
     if (!recorder || recorder.state !== 'recording') return
+    if (stopReasonRef.current === null) stopReasonRef.current = 'manual'
     await new Promise<void>((resolve) => {
       stopResolveRef.current = resolve
       try {
@@ -168,6 +181,9 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     setClip(null)
     setDurationMs(0)
     setAmplitude(0)
+    setStopReason(null)
+    stopReasonRef.current = null
+    accumulatedBytesRef.current = 0
 
     const mimeCode = getSupportedVoiceMime()
     if (!mimeCode) {
@@ -224,13 +240,28 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     }
 
     recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunksRef.current.push(e.data)
+      if (e.data.size > 0) {
+        chunksRef.current.push(e.data)
+        accumulatedBytesRef.current += e.data.size
+        // Byte-budget backstop: the bitrate is only a target (Safari's AAC
+        // encoder can overshoot), so stop with headroom before the budget
+        // instead of trusting the duration cap alone. The null-guard lets
+        // the first trigger win and prevents a double stop().
+        if (
+          stopReasonRef.current === null &&
+          accumulatedBytesRef.current >= VOICE_MAX_BYTES - VOICE_BYTE_BACKSTOP_HEADROOM
+        ) {
+          stopReasonRef.current = 'size'
+          void stop()
+        }
+      }
     }
     recorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: mime })
       const durMs = Date.now() - startTimeRef.current
       setClip({ blob, mimeCode, durationMs: durMs })
       setDurationMs(durMs)
+      setStopReason(stopReasonRef.current)
       setState('stopped')
       tearDown()
       if (stopResolveRef.current) {
@@ -261,6 +292,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     rafRef.current = requestAnimationFrame(pumpAmplitude)
 
     stopTimerRef.current = window.setTimeout(() => {
+      if (stopReasonRef.current === null) stopReasonRef.current = 'time'
       void stop()
     }, VOICE_MAX_DURATION_MS)
   }, [pumpAmplitude, stop, tearDown])
@@ -269,12 +301,15 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     tearDown()
     chunksRef.current = []
     recorderRef.current = null
+    stopReasonRef.current = null
+    accumulatedBytesRef.current = 0
     setClip(null)
     setState('idle')
     setDurationMs(0)
     setAmplitude(0)
     setError(null)
+    setStopReason(null)
   }, [tearDown])
 
-  return { state, error, durationMs, amplitude, spectrum, clip, start, stop, discard }
+  return { state, error, durationMs, amplitude, spectrum, clip, stopReason, start, stop, discard }
 }

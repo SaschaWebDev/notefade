@@ -206,6 +206,13 @@
   max-width: 520px;
 }
 
+.sizeNotice {
+  font-size: 11px;
+  color: rgba(var(--fg), 0.45);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
 .errorText {
   color: var(--error-text);
   font-size: 13px;

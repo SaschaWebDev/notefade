@@ -6,7 +6,7 @@ import type { ProviderConfig, ProviderType } from '@/api/provider-types'
 import type { RecordedClip } from '@/audio'
 import type { RecordedVideoClip } from '@/video'
 import { encryptAndShorten, VoidHopError } from '@/voidhop'
-import { MAX_NOTE_CHARS, MAX_NOTE_CHARS_SINGLE, MAX_READ_COUNT, MAX_TOTAL_SHARDS, STORAGE_KEYS, PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER, DEFAULT_BAR_SECONDS, BYOK_DELIMITER, VOICE_BYTES_PER_CHUNK, VOICE_MAX_BYTES, IMAGE_BYTES_PER_CHUNK, IMAGE_MAX_BYTES, VIDEO_BYTES_PER_CHUNK, VIDEO_MAX_BYTES, type ImageMimeCode } from '@/constants'
+import { MAX_NOTE_CHARS, MAX_NOTE_CHARS_SINGLE, MAX_READ_COUNT, MAX_TOTAL_SHARDS, STORAGE_KEYS, PROTECTED_PREFIX, TIME_LOCK_PREFIX, MULTI_PREFIX, MULTI_DELIMITER, DEFAULT_BAR_SECONDS, BYOK_DELIMITER, VOICE_BYTES_PER_CHUNK, VOICE_MAX_BYTES, IMAGE_BYTES_PER_CHUNK, IMAGE_MAX_BYTES, IMAGE_MAX_IMAGES, VIDEO_BYTES_PER_CHUNK, VIDEO_MAX_BYTES, type ImageMimeCode } from '@/constants'
 
 export type NoteMode = 'text' | 'voice' | 'image' | 'video' | 'draw'
 
@@ -15,6 +15,12 @@ export interface ImageClip {
   mimeCode: ImageMimeCode
   width: number
   height: number
+  /** Original picked/pasted file, kept in-memory so the gallery can be
+   * recompressed loss-free when the quality tier changes. Never uploaded. */
+  source?: Blob
+  /** Which compression tier the current blob was encoded at (1 = counts 1-4,
+   * 2 = counts 5-6). Lets the composer skip no-op recompressions. */
+  tier?: 1 | 2
 }
 
 const TTL_OPTIONS = [
@@ -73,8 +79,8 @@ interface UseCreateNoteReturn {
   setMode: (mode: NoteMode) => void
   voiceClip: RecordedClip | null
   setVoiceClip: (clip: RecordedClip | null) => void
-  imageClip: ImageClip | null
-  setImageClip: (clip: ImageClip | null) => void
+  imageClips: ImageClip[]
+  setImageClips: (clips: ImageClip[]) => void
   videoClip: RecordedVideoClip | null
   setVideoClip: (clip: RecordedVideoClip | null) => void
   message: string
@@ -143,7 +149,7 @@ interface UseCreateNoteReturn {
 export function useCreateNote(): UseCreateNoteReturn {
   const [mode, setModeState] = useState<NoteMode>('text')
   const [voiceClip, setVoiceClipState] = useState<RecordedClip | null>(null)
-  const [imageClip, setImageClipState] = useState<ImageClip | null>(null)
+  const [imageClips, setImageClipsState] = useState<ImageClip[]>([])
   const [videoClip, setVideoClipState] = useState<RecordedVideoClip | null>(null)
   const [message, setMessage] = useState('')
   const [ttl, setTtl] = useState<number>(TTL_OPTIONS[1].value)
@@ -188,7 +194,7 @@ export function useCreateNote(): UseCreateNoteReturn {
   const voiceChunkCount = voiceBytes === 0
     ? 0
     : Math.max(1, Math.ceil(voiceBytes / VOICE_BYTES_PER_CHUNK))
-  const imageBytes = imageClip?.blob.size ?? 0
+  const imageBytes = imageClips.reduce((sum, c) => sum + c.blob.size, 0)
   const imageChunkCount = imageBytes === 0
     ? 0
     : Math.max(1, Math.ceil(imageBytes / IMAGE_BYTES_PER_CHUNK))
@@ -199,14 +205,14 @@ export function useCreateNote(): UseCreateNoteReturn {
   const isOverLimit = isVoiceMode
     ? voiceBytes > VOICE_MAX_BYTES
     : isImageMode || isDrawMode
-      ? imageBytes > IMAGE_MAX_BYTES
+      ? imageBytes > IMAGE_MAX_BYTES || imageClips.length > IMAGE_MAX_IMAGES
       : isVideoMode
         ? videoBytes > VIDEO_MAX_BYTES
         : message.length > MAX_NOTE_CHARS
   const isEmpty = isVoiceMode
     ? voiceClip === null
     : isImageMode || isDrawMode
-      ? imageClip === null
+      ? imageClips.length === 0
       : isVideoMode
         ? videoClip === null
         : message.trim().length === 0
@@ -236,8 +242,8 @@ export function useCreateNote(): UseCreateNoteReturn {
       setReadCount(1)
     }
     if (next !== 'voice') setVoiceClipState(null)
-    // Image and draw share imageClip — only clear when leaving both.
-    if (next !== 'image' && next !== 'draw') setImageClipState(null)
+    // Image and draw share imageClips — only clear when leaving both.
+    if (next !== 'image' && next !== 'draw') setImageClipsState([])
     if (next !== 'video') setVideoClipState(null)
   }
 
@@ -245,8 +251,8 @@ export function useCreateNote(): UseCreateNoteReturn {
     setVoiceClipState(clip)
   }
 
-  const setImageClip = (clip: ImageClip | null) => {
-    setImageClipState(clip)
+  const setImageClips = (clips: ImageClip[]) => {
+    setImageClipsState(clips)
   }
 
   const setVideoClip = (clip: RecordedVideoClip | null) => {
@@ -595,18 +601,31 @@ export function useCreateNote(): UseCreateNoteReturn {
           }
         }
         setVideoClipState(null)
-      } else if ((isImageMode || isDrawMode) && imageClip) {
+      } else if ((isImageMode || isDrawMode) && imageClips.length > 0) {
         // --- Image flow (always multi-chunk, single-read, byte payload) ---
-        const arrayBuf = await imageClip.blob.arrayBuffer()
-        const allBytes = new Uint8Array(arrayBuf)
-        if (allBytes.length > IMAGE_MAX_BYTES) {
-          throw new Error('image is too large — please use a smaller image')
+        // Concatenate all gallery images into one payload; per-image byte
+        // lengths go into chunk-0 metadata so the reader can slice them
+        // apart again. Single images omit the boundary list (legacy format).
+        const blobBufs = await Promise.all(imageClips.map((c) => c.blob.arrayBuffer()))
+        const lengths = blobBufs.map((b) => b.byteLength)
+        const total = lengths.reduce((sum, n) => sum + n, 0)
+        if (total > IMAGE_MAX_BYTES) {
+          throw new Error(
+            `images are too large (${Math.round(total / 1024)} KB, max ${Math.round(IMAGE_MAX_BYTES / 1024)} KB). remove one or use smaller images`,
+          )
+        }
+        const allBytes = new Uint8Array(total)
+        let mergeOffset = 0
+        for (const buf of blobBufs) {
+          allBytes.set(new Uint8Array(buf), mergeOffset)
+          mergeOffset += buf.byteLength
         }
         const byteChunks = splitBytes(allBytes, IMAGE_BYTES_PER_CHUNK)
 
         const firstMeta: NoteMetadata = {
-          imageMime: imageClip.mimeCode,
+          imageMime: imageClips[0]!.mimeCode,
         }
+        if (imageClips.length > 1) firstMeta.imageBoundaries = lengths
         if (barDuration > 0) firstMeta.barSeconds = barDuration
 
         const allStoredShardIds: string[] = []
@@ -645,13 +664,15 @@ export function useCreateNote(): UseCreateNoteReturn {
         setExpiresAt(Date.now() + ttl * 1000)
         setNoteUrl(url)
         setCompactUrl(null)
-        setImageClipState(null)
+        setImageClipsState([])
       } else if (isVoiceMode && voiceClip) {
         // --- Voice flow (always multi-chunk, single-read, byte payload) ---
         const arrayBuf = await voiceClip.blob.arrayBuffer()
         const allBytes = new Uint8Array(arrayBuf)
         if (allBytes.length > VOICE_MAX_BYTES) {
-          throw new Error('recording is too large — please record a shorter clip')
+          throw new Error(
+            `recording is too large (${Math.round(allBytes.length / 1024)} KB, max ${Math.round(VOICE_MAX_BYTES / 1024)} KB). try a shorter clip`,
+          )
         }
         const byteChunks = splitBytes(allBytes, VOICE_BYTES_PER_CHUNK)
 
@@ -832,7 +853,7 @@ export function useCreateNote(): UseCreateNoteReturn {
   const resetNote = () => {
     setModeState('text')
     setVoiceClipState(null)
-    setImageClipState(null)
+    setImageClipsState([])
     setVideoClipState(null)
     setMessage('')
     setTtl(TTL_OPTIONS[1].value)
@@ -861,8 +882,8 @@ export function useCreateNote(): UseCreateNoteReturn {
     setMode,
     voiceClip,
     setVoiceClip,
-    imageClip,
-    setImageClip,
+    imageClips,
+    setImageClips,
     videoClip,
     setVideoClip,
     message,

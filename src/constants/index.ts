@@ -51,10 +51,16 @@ export const TIME_LOCK_PREFIX = 'tl:'
 export const BYOK_DELIMITER = '!'
 
 // Voice notes
-export const VOICE_MAX_DURATION_MS = 15_000
+export const VOICE_MAX_DURATION_MS = 60_000
 export const VOICE_TARGET_BITRATE = 16_000
-export const VOICE_BYTES_PER_CHUNK = 1250
+export const VOICE_BYTES_PER_CHUNK = 5120
 export const VOICE_MAX_BYTES = VOICE_BYTES_PER_CHUNK * MAX_TOTAL_SHARDS
+/** Headroom subtracted from VOICE_MAX_BYTES before the recorder auto-stops
+ * on the size budget: covers the final 250ms timeslice at ~2x target bitrate
+ * (Safari's AAC encoder can overshoot the 16 kbps target) plus container
+ * finalization. One full chunk of slack also guarantees the chunk count
+ * never exceeds MAX_TOTAL_SHARDS. */
+export const VOICE_BYTE_BACKSTOP_HEADROOM = 5120
 /** One-char mime codes embedded in note metadata */
 export const VOICE_MIME_CODES = {
   w: 'audio/webm;codecs=opus',
@@ -62,10 +68,24 @@ export const VOICE_MIME_CODES = {
 } as const
 export type VoiceMimeCode = keyof typeof VOICE_MIME_CODES
 
-// Image notes
-export const IMAGE_BYTES_PER_CHUNK = 1250
+// Image notes — multi-image gallery with tiered per-image compression.
+// Tier invariant: tier target × max count of that tier = exactly IMAGE_MAX_BYTES,
+// so any gallery compressed at the applicable tier always fits the budget.
+export const IMAGE_BYTES_PER_CHUNK = 5120
 export const IMAGE_MAX_BYTES = IMAGE_BYTES_PER_CHUNK * MAX_TOTAL_SHARDS
+export const IMAGE_MAX_IMAGES = 6
+export const IMAGE_TIER1_TARGET_BYTES = IMAGE_MAX_BYTES / 4 // 38,400 — counts 1-4
+export const IMAGE_TIER2_TARGET_BYTES = IMAGE_MAX_BYTES / 6 // 25,600 — counts 5-6
+export const IMAGE_TIER1_MAX_DIMENSION = 1024
+export const IMAGE_TIER2_MAX_DIMENSION = 864
 export const IMAGE_MAX_DIMENSION = 1024
+// Source-input hard limits, checked BEFORE any decode/compression so a
+// decode-bomb file (huge bytes, extreme pixels, page-length screenshots)
+// never reaches createImageBitmap.
+export const IMAGE_MAX_FILE_BYTES = 20 * 1024 * 1024
+export const IMAGE_MAX_SOURCE_PIXELS = 50_000_000
+export const IMAGE_MAX_SOURCE_LONGEST_SIDE = 12_000
+export const IMAGE_MAX_ASPECT_RATIO = 6
 export const IMAGE_MIME_CODES = {
   a: 'image/avif',
 } as const

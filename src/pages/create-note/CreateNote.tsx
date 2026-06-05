@@ -121,8 +121,8 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
     setMode,
     voiceClip,
     setVoiceClip,
-    imageClip,
-    setImageClip,
+    imageClips,
+    setImageClips,
     videoClip,
     setVideoClip,
     message,
@@ -198,6 +198,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [imageEnabled, setImageEnabled] = useState(false);
   const [videoEnabled, setVideoEnabled] = useState(false);
+  // True while the image composer is compressing or re-tiering the gallery;
+  // blocks note creation so a half-optimized gallery can't be submitted.
+  const [imageBusy, setImageBusy] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -1223,8 +1226,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
               />
             ) : isImageMode ? (
               <ImageComposer
-                clip={imageClip}
-                onClipChange={setImageClip}
+                clips={imageClips}
+                onClipsChange={setImageClips}
+                onBusyChange={setImageBusy}
                 disabled={loading}
               />
             ) : isVideoMode ? (
@@ -1235,8 +1239,9 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
               />
             ) : isDrawMode ? (
               <DrawComposer
-                clip={imageClip}
-                onClipChange={setImageClip}
+                clip={imageClips.length === 1 ? imageClips[0]! : null}
+                onClipChange={(c) => setImageClips(c ? [c] : [])}
+                galleryCount={imageClips.length}
                 disabled={loading}
               />
             ) : viewMode === 'preview' && showFormatToggle ? (
@@ -1760,7 +1765,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
             <div className={styles.footerTop}>
               <span className={styles.sentenceLine}>
                 <span className={styles.sentenceText}>
-                  your secret {isVoiceMode ? 'voice note' : isImageMode ? 'image' : isVideoMode ? 'video note' : isDrawMode ? 'drawing' : 'note'} will{' '}
+                  your secret {isVoiceMode ? 'voice note' : isImageMode ? (imageClips.length > 1 ? 'images' : 'image') : isVideoMode ? 'video note' : isDrawMode ? 'drawing' : 'note'} will{' '}
                 </span>
               </span>
               <span className={styles.sentenceLine}>
@@ -2085,6 +2090,7 @@ export function CreateNote({ onNoteCreated }: CreateNoteProps = {}) {
                   isEmpty ||
                   isOverLimit ||
                   loading ||
+                  imageBusy ||
                   (isCustomServer &&
                     !isProviderConfigComplete(providerConfig)) ||
                   (passwordEnabled && password.length === 0)

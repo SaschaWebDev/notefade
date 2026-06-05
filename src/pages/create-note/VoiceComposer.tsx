@@ -14,7 +14,7 @@ function formatClock(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000))
   const m = Math.floor(totalSeconds / 60)
   const s = totalSeconds % 60
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  return `${m}:${s.toString().padStart(2, '0')}`
 }
 
 function SpectrumMeter({ spectrum }: { spectrum: number[] }) {
@@ -41,7 +41,7 @@ function SpectrumMeter({ spectrum }: { spectrum: number[] }) {
 }
 
 export function VoiceComposer({ clip, onClipChange, disabled }: VoiceComposerProps) {
-  const { state, error, durationMs, spectrum, clip: recorderClip, start, stop, discard } = useAudioRecorder()
+  const { state, error, durationMs, spectrum, clip: recorderClip, stopReason, start, stop, discard } = useAudioRecorder()
 
   useEffect(() => {
     if (recorderClip && !clip) {
@@ -97,6 +97,11 @@ export function VoiceComposer({ clip, onClipChange, disabled }: VoiceComposerPro
           <span className={styles.previewLabel}>recorded</span>
         </div>
         <AudioPlayer blob={clip.blob} durationMs={clip.durationMs} />
+        {stopReason === 'size' && (
+          <p className={styles.sizeNotice}>
+            reached the size limit — recording stopped a little early.
+          </p>
+        )}
         <div className={styles.actions}>
           <button type='button' className={styles.ghostBtn} onClick={handleDiscard} disabled={disabled}>
             re-record

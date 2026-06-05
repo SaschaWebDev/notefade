@@ -34,6 +34,6 @@ export {
   isValidByokKey,
 } from './crypto'
 export type { SplitResult, NoteMetadata, OpenNoteResult, OpenNoteBytesResult } from './crypto'
-export { splitText, splitBytes, estimateMultiFragmentLength, FRAGMENT_LIMIT } from './multi-note'
+export { splitText, splitBytes, sliceByLengths, estimateMultiFragmentLength, FRAGMENT_LIMIT } from './multi-note'
 export { encodeZeroWidth, decodeZeroWidth, hasZeroWidthData, encodeImageStego, decodeImageStego, generateStegoImage, generateStegoFilename } from './stego'
 export { generateDecoyMessage } from './decoy-messages'
