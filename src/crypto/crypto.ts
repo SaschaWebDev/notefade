@@ -35,6 +35,9 @@ export interface NoteMetadata {
   voiceDurationMs?: number
   /** One-char image mime code (e.g. 'a' for avif). Only on chunk 0 of image notes. */
   imageMime?: string
+  /** Per-image byte lengths within the merged image payload. Only on chunk 0
+   * of multi-image notes (omitted for single images — legacy format). */
+  imageBoundaries?: number[]
   /** One-char video mime code (e.g. 'w' for webm-vp9). Only on chunk 0 of video notes. */
   videoMime?: string
   /** Video duration in ms. Only on chunk 0 of video notes. */
@@ -289,6 +292,9 @@ function buildMetadataPrefix(metadata: NoteMetadata): string {
   if (metadata.imageMime !== undefined) {
     prefix += `I:${metadata.imageMime}:`
   }
+  if (metadata.imageBoundaries !== undefined) {
+    prefix += `IB:${metadata.imageBoundaries.join(',')}:`
+  }
   if (metadata.videoMime !== undefined) {
     prefix += `VM:${metadata.videoMime}:`
   }
@@ -331,6 +337,14 @@ function parseMetadataPrefix(s: string): { metadata: NoteMetadata; consumed: num
   if (imageMatch) {
     metadata.imageMime = imageMatch[1]!
     offset += imageMatch[0]!.length
+  }
+
+  const imageBoundariesMatch = s.slice(offset).match(/^IB:(\d+(?:,\d+)*):/)
+  if (imageBoundariesMatch) {
+    metadata.imageBoundaries = imageBoundariesMatch[1]!
+      .split(',')
+      .map((n) => parseInt(n, 10))
+    offset += imageBoundariesMatch[0]!.length
   }
 
   const videoMimeMatch = s.slice(offset).match(/^VM:([A-Za-z0-9]):/)

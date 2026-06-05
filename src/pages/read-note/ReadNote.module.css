@@ -177,6 +177,13 @@
   margin-top: 16px;
 }
 
+/* Vertical gallery for multi-image notes. */
+.imageStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .containerCentered {
   display: flex;
   flex-direction: column;

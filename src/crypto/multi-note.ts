@@ -88,3 +88,27 @@ export function splitBytes(bytes: Uint8Array, maxBytesPerChunk: number): Uint8Ar
   }
   return chunks
 }
+
+/**
+ * Partition `bytes` into consecutive slices of the given `lengths` —
+ * the inverse of concatenation, used to split a merged multi-image payload
+ * back into per-image byte ranges.
+ * Strict: throws if the lengths don't account for every byte exactly.
+ */
+export function sliceByLengths(bytes: Uint8Array, lengths: number[]): Uint8Array<ArrayBuffer>[] {
+  const total = lengths.reduce((sum, n) => sum + n, 0)
+  if (total !== bytes.length) {
+    throw new Error(
+      `boundary mismatch: lengths sum to ${total} but payload is ${bytes.length} bytes`,
+    )
+  }
+  // .slice() allocates fresh ArrayBuffer-backed views, keeping the result
+  // valid as BlobPart under TS's ArrayBufferLike/SharedArrayBuffer split.
+  const out: Uint8Array<ArrayBuffer>[] = []
+  let offset = 0
+  for (const len of lengths) {
+    out.push(bytes.slice(offset, offset + len))
+    offset += len
+  }
+  return out
+}

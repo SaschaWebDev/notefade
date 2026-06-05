@@ -9,6 +9,7 @@ export type {
   RecorderError,
   RecorderErrorCode,
   RecordedClip,
+  StopReason,
   UseAudioRecorderReturn,
 } from './recorder'
 export { useBlobUrl } from './player'

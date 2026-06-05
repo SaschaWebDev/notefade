@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { compressToTarget, isImageCompressionSupported } from '@/images'
-import { IMAGE_MAX_BYTES, IMAGE_MAX_DIMENSION } from '@/constants'
+import { IMAGE_TIER1_TARGET_BYTES, IMAGE_TIER1_MAX_DIMENSION } from '@/constants'
 import { useBlobUrl } from '@/audio'
 import type { ImageClip } from '@/hooks/use-create-note'
 import styles from './DrawComposer.module.css'
@@ -8,6 +8,9 @@ import styles from './DrawComposer.module.css'
 interface DrawComposerProps {
   clip: ImageClip | null
   onClipChange: (clip: ImageClip | null) => void
+  /** Number of images currently in the shared gallery; using a drawing
+   * replaces all of them, so warn when more than one would be lost. */
+  galleryCount?: number
   disabled?: boolean
 }
 
@@ -38,7 +41,7 @@ function formatBytes(b: number): string {
   return `${(b / 1024).toFixed(1)} KB`
 }
 
-export function DrawComposer({ clip, onClipChange, disabled }: DrawComposerProps) {
+export function DrawComposer({ clip, onClipChange, galleryCount, disabled }: DrawComposerProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const lastPointRef = useRef<{ x: number; y: number } | null>(null)
   const drawingRef = useRef(false)
@@ -198,11 +201,12 @@ export function DrawComposer({ clip, onClipChange, disabled }: DrawComposerProps
       return
     }
     try {
+      // A drawing is always a single-image gallery → tier-1 budget.
       const result = await compressToTarget(blob, {
-        maxBytes: IMAGE_MAX_BYTES,
-        maxDimension: IMAGE_MAX_DIMENSION,
+        maxBytes: IMAGE_TIER1_TARGET_BYTES,
+        maxDimension: IMAGE_TIER1_MAX_DIMENSION,
       })
-      if (result.blob.size > IMAGE_MAX_BYTES) {
+      if (result.blob.size > IMAGE_TIER1_TARGET_BYTES) {
         setPhase({
           kind: 'error',
           message:
@@ -215,6 +219,7 @@ export function DrawComposer({ clip, onClipChange, disabled }: DrawComposerProps
         mimeCode: 'a',
         width: result.width,
         height: result.height,
+        tier: 1,
       })
     } catch (err) {
       setPhase({
@@ -403,6 +408,11 @@ export function DrawComposer({ clip, onClipChange, disabled }: DrawComposerProps
         </div>
       </div>
 
+      {galleryCount !== undefined && galleryCount > 1 && (
+        <p className={styles.replaceHint}>
+          using this drawing will replace your {galleryCount} attached images.
+        </p>
+      )}
       {phase.kind === 'error' && <p className={styles.errorText}>{phase.message}</p>}
     </div>
   )

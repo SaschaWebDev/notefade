@@ -391,10 +391,13 @@ export function ReadNote({
   } else if (state.status === 'decrypted-image') {
     const hasBarTimer =
       state.metadata.barSeconds !== undefined && state.metadata.barSeconds > 0;
+    const imageCount = state.blobs.length;
     content = (
       <div className={styles.container}>
         <div className={styles.header}>
-          <h2 className={styles.heading}>decrypted image</h2>
+          <h2 className={styles.heading}>
+            {imageCount > 1 ? `decrypted images (${imageCount})` : 'decrypted image'}
+          </h2>
           <div className={styles.badgeRow}>
             <span className={styles.badge}>this note url has self-destructed</span>
             {hasBarTimer && (
@@ -404,7 +407,11 @@ export function ReadNote({
             )}
           </div>
         </div>
-        <ImageViewer blob={state.blob} />
+        <div className={styles.imageStack}>
+          {state.blobs.map((blob, i) => (
+            <ImageViewer key={i} blob={blob} />
+          ))}
+        </div>
       </div>
     );
   } else if (state.status === 'decrypted-video') {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { openNoteBytes, decryptByokContent } from '@/crypto'
+import { openNoteBytes, decryptByokContent, sliceByLengths } from '@/crypto'
 import type { NoteMetadata } from '@/crypto'
 import { checkShard, fetchShard, createAdapter } from '@/api'
 import { VOICE_MIME_CODES, IMAGE_MIME_CODES, VIDEO_MIME_CODES, type VoiceMimeCode, type ImageMimeCode, type VideoMimeCode } from '@/constants'
@@ -254,10 +254,29 @@ export function useReadMultiNote(
             })
             return
           }
-          const blob = concatBytesToBlob(decrypted, mimeType)
+          // Multi-image notes carry per-image byte lengths in chunk-0
+          // metadata; slice the merged payload back apart. Legacy/single
+          // notes have no boundaries — the whole payload is one image.
+          const merged = concatBytes(decrypted)
+          let blobs: Blob[]
+          if (firstMetadata.imageBoundaries && firstMetadata.imageBoundaries.length > 1) {
+            try {
+              blobs = sliceByLengths(merged, firstMetadata.imageBoundaries).map(
+                (slice) => new Blob([slice], { type: mimeType }),
+              )
+            } catch {
+              setState({
+                status: 'error',
+                message: 'This image note is corrupted — the image boundaries do not match the data.',
+              })
+              return
+            }
+          } else {
+            blobs = [new Blob([merged], { type: mimeType })]
+          }
           setState({
             status: 'decrypted-image',
-            blob,
+            blobs,
             mimeType,
             metadata: firstMetadata,
             remainingMs: ttlMs,
@@ -342,10 +361,7 @@ export function useReadMultiNote(
   return { state, remainingReads }
 }
 
-function concatBytesToBlob(
-  decrypted: { content: Uint8Array }[],
-  mimeType: string,
-): Blob {
+function concatBytes(decrypted: { content: Uint8Array }[]): Uint8Array<ArrayBuffer> {
   let total = 0
   for (const d of decrypted) total += d.content.length
   const merged = new Uint8Array(total)
@@ -354,5 +370,12 @@ function concatBytesToBlob(
     merged.set(d.content, offset)
     offset += d.content.length
   }
-  return new Blob([merged], { type: mimeType })
+  return merged
+}
+
+function concatBytesToBlob(
+  decrypted: { content: Uint8Array }[],
+  mimeType: string,
+): Blob {
+  return new Blob([concatBytes(decrypted)], { type: mimeType })
 }
